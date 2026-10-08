@@ -132,6 +132,7 @@ export function PlaygroundTab() {
                 onChange={(e) => setModel(e.target.value)}
                 className="w-full rounded-lg border border-white/10 bg-black/50 px-3 py-2 text-xs font-mono text-zinc-200 focus:outline-none focus:border-orange-500 cursor-pointer"
               >
+                <option value="private-server-5002">⚡ Private Server (localhost:5002)</option>
                 <option value="claude-3-7-sonnet">Claude 3.7 Sonnet (Anthropic - Hybrid)</option>
                 <option value="claude-3-5-sonnet">Claude 3.5 Sonnet (Anthropic - Standard)</option>
                 <option value="claude-3-5-haiku">Claude 3.5 Haiku (Anthropic - Fast)</option>

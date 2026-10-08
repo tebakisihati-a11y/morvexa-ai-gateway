@@ -7,15 +7,24 @@ export function FailoverFlowMap() {
   const pipeline = [
     {
       step: 1,
+      type: "Private Mesh",
+      provider: "Private Server (localhost:5002)",
+      status: "Local / Private Node",
+      latency: "8ms",
+      badgeColor: "bg-purple-500/10 border-purple-500/20 text-purple-400",
+      description: "Direct connection to your private local server or local LLM engine.",
+    },
+    {
+      step: 2,
       type: "Primary Upstream",
       provider: "Anthropic Claude 3.7",
-      status: "Active (Default)",
+      status: "Active (Managed)",
       latency: "142ms",
       badgeColor: "bg-orange-500/10 border-orange-500/20 text-orange-400",
       description: "Direct upstream connection via SSE zero-buffer stream.",
     },
     {
-      step: 2,
+      step: 3,
       type: "Fallback Hop 1",
       provider: "DeepSeek V3 (Chat)",
       status: "Triggered on 429 / 5xx",
@@ -24,7 +33,7 @@ export function FailoverFlowMap() {
       description: "Auto-routes in <150ms if Anthropic rate limit hits.",
     },
     {
-      step: 3,
+      step: 4,
       type: "Fallback Hop 2",
       provider: "Groq LPU (Ultra-Fast)",
       status: "Emergency Circuit",
@@ -43,7 +52,7 @@ export function FailoverFlowMap() {
             <span>Intelligent Multi-Provider Failover Mesh</span>
           </h3>
           <p className="text-xs text-zinc-400 mt-0.5">
-            Zero-downtime execution graph ensuring 99.99% availability during provider outages
+            Zero-downtime execution graph ensuring 99.99% availability with Private Server + Cloud Providers
           </p>
         </div>
         <span className="text-[11px] font-mono text-zinc-400 bg-white/5 border border-white/5 px-2.5 py-1 rounded-md">
@@ -51,7 +60,7 @@ export function FailoverFlowMap() {
         </span>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 relative">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 relative">
         {pipeline.map((item, idx) => (
           <div
             key={idx}

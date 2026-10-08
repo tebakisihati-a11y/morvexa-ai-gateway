@@ -24,7 +24,33 @@ export async function forwardToUpstreamProvider(
   }
 
   try {
-    if (provider === "anthropic") {
+    if (provider === "custom") {
+      const privateServerUrl =
+        process.env.PRIVATE_SERVER_URL || "http://localhost:5002";
+      const formattedMessages = system
+        ? [{ role: "system", content: system }, ...messages]
+        : messages;
+
+      const targetEndpoint = `${privateServerUrl.replace(/\/+$/, "")}/v1/chat/completions`;
+
+      const privateRes = await fetch(targetEndpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(apiKey && apiKey !== "configured" ? { Authorization: `Bearer ${apiKey}` } : {}),
+        },
+        body: JSON.stringify({
+          model,
+          messages: formattedMessages,
+          temperature,
+          stream,
+        }),
+      });
+
+      if (privateRes.ok) {
+        return privateRes;
+      }
+    } else if (provider === "anthropic") {
       const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: {

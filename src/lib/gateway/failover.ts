@@ -9,10 +9,20 @@ export interface FailoverRouteResult {
 
 export const DEFAULT_PROVIDERS: UpstreamProviderConfig[] = [
   {
+    id: "custom",
+    name: "Private Server (localhost:5002)",
+    apiKey: "configured",
+    priority: 1,
+    isActive: true,
+    latencyMs: 12,
+    health: "healthy",
+    baseUrl: process.env.PRIVATE_SERVER_URL || "http://localhost:5002",
+  },
+  {
     id: "anthropic",
     name: "Anthropic Claude",
     apiKey: "",
-    priority: 1,
+    priority: 2,
     isActive: true,
     latencyMs: 142,
     health: "healthy",

@@ -1,6 +1,6 @@
 export type ModelCategory = "latest_token" | "standard_request";
 
-export type UpstreamProviderId = "anthropic" | "openai" | "gemini" | "groq" | "deepseek";
+export type UpstreamProviderId = "anthropic" | "openai" | "gemini" | "groq" | "deepseek" | "custom";
 
 export interface QuotaConfig {
   standardRequest5hLimit: number; // e.g. 100 requests per 5 hours

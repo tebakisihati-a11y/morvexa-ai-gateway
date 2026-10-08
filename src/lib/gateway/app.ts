@@ -32,6 +32,15 @@ app.get("/v1/models", (c) => {
     object: "list",
     data: [
       {
+        id: "private-server-5002",
+        name: "Private Local Model (localhost:5002)",
+        provider: "custom",
+        category: "standard_request",
+        contextWindow: 128000,
+        costPer1kInput: 0.0,
+        costPer1kOutput: 0.0,
+      },
+      {
         id: "claude-3-7-sonnet",
         name: "Claude 3.7 Sonnet (Hybrid Reasoning)",
         provider: "anthropic",
