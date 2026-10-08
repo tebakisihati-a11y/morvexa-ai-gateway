@@ -74,15 +74,39 @@ export default function AppRoot() {
   return (
     <div className="min-h-screen bg-[#09090b] text-zinc-100 flex flex-col font-sans selection:bg-orange-500/20 selection:text-orange-200">
       {/* Top Navbar */}
-      <Navbar currentTab={activeTab} />
+      <Navbar currentTab={activeTab} onTabChange={setActiveTab} />
+
+      {/* Mobile Horizontal Quick Navigation Bar (<md screens) */}
+      <div className="md:hidden border-b border-white/10 bg-[#0e0e11] px-3 py-2 overflow-x-auto flex gap-1.5 scrollbar-none">
+        {[
+          { id: "overview", label: "Overview" },
+          { id: "keys", label: "API Keys" },
+          { id: "routing", label: "Routing" },
+          { id: "playground", label: "Playground" },
+          { id: "traces", label: "Traces" },
+          { id: "guardrails", label: "Guardrails" },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id as NavTabId)}
+            className={`px-3 py-1.5 rounded text-xs font-mono whitespace-nowrap transition-colors shrink-0 cursor-pointer ${
+              activeTab === tab.id
+                ? "bg-white/10 text-white font-semibold border border-white/10"
+                : "text-zinc-400 hover:text-zinc-200 bg-black/40 border border-white/5"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
       {/* Main App Container */}
       <div className="flex-1 flex flex-col md:flex-row">
-        {/* Left Sidebar */}
+        {/* Left Sidebar (Desktop only) */}
         <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
 
         {/* Dynamic Content Panel */}
-        <main className="flex-1 p-5 md:p-8 max-w-7xl mx-auto w-full">
+        <main className="flex-1 p-3.5 sm:p-6 md:p-8 max-w-7xl mx-auto w-full overflow-x-hidden">
           {activeTab === "overview" && (
             <OverviewTab
               quota={quota}

@@ -17,9 +17,9 @@ export function KeysTab({ keys, onCreateKey, onRevokeKey }: KeysTabProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-bold text-zinc-100 tracking-tight">API Key Management & Policy</h2>
+          <h2 className="text-sm font-semibold text-zinc-100 tracking-tight">API Key Management & Policy</h2>
           <p className="text-xs text-zinc-400 mt-0.5">
             Authenticate applications and control per-key rate limits, daily quotas, and model restrictions.
           </p>
@@ -27,23 +27,21 @@ export function KeysTab({ keys, onCreateKey, onRevokeKey }: KeysTabProps) {
 
         <button
           onClick={() => setIsModalOpen(true)}
-          className="px-3.5 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold flex items-center gap-2 transition-all shadow-md shadow-orange-500/20 cursor-pointer self-start sm:self-auto"
+          className="px-3 py-1.5 rounded bg-orange-600 hover:bg-orange-500 text-white text-xs font-mono font-medium flex items-center gap-1.5 transition-colors cursor-pointer self-start sm:self-auto"
         >
-          <Plus className="h-4 w-4" />
-          <span>Generate API Key</span>
+          <Plus className="h-3.5 w-3.5" />
+          <span>generate_key</span>
         </button>
       </div>
 
       <ApiKeyList keys={keys} onRevoke={onRevokeKey} />
 
       {/* Security info card */}
-      <div className="rounded-xl border border-white/5 bg-[#121215] p-4 flex items-start gap-3">
-        <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 shrink-0">
-          <ShieldCheck className="h-4 w-4" />
-        </div>
-        <div className="space-y-1 text-xs">
-          <div className="font-semibold text-zinc-200">Zero-Plaintext Security Architecture</div>
-          <p className="text-zinc-400 leading-relaxed">
+      <div className="rounded-lg border border-white/10 bg-[#0e0e11] p-3.5 sm:p-4 flex items-start gap-3">
+        <ShieldCheck className="h-4 w-4 text-zinc-400 shrink-0 mt-0.5" />
+        <div className="space-y-0.5 text-xs">
+          <div className="font-mono text-xs font-semibold text-zinc-200">Zero-Plaintext Security Architecture</div>
+          <p className="text-zinc-400 text-[11px] leading-relaxed">
             All secret keys are generated with high-entropy cryptographic primitives. Morvexa stores only the salted SHA-256 hash. Once created, keys cannot be reverse-engineered or recovered from the database.
           </p>
         </div>

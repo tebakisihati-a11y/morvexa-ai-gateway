@@ -36,25 +36,24 @@ export function TraceDetailDrawer({ trace, onClose }: TraceDetailDrawerProps) {
         </div>
 
         {/* Trace Payload details */}
-        <div className="space-y-5 py-5 text-xs font-mono">
+        <div className="space-y-4 py-4 text-xs font-mono">
           {/* Status & Provider Banner */}
-          <div className="p-3.5 rounded-lg bg-black/50 border border-white/5 flex items-center justify-between">
+          <div className="p-3 rounded border border-white/10 bg-black/50 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span
-                className={`px-2 py-0.5 rounded text-[11px] font-bold ${
-                  trace.statusCode === 200
-                    ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                    : "bg-red-500/10 text-red-400 border border-red-500/20"
+                className={`font-mono text-xs ${
+                  trace.statusCode === 200 ? "text-emerald-400" : "text-red-400"
                 }`}
               >
-                HTTP {trace.statusCode}
+                ● HTTP {trace.statusCode}
               </span>
-              <span className="text-zinc-300 font-sans font-medium">
+              <span className="text-zinc-500">·</span>
+              <span className="text-zinc-300">
                 {trace.modelRequested}
               </span>
             </div>
 
-            <span className="text-zinc-400 capitalize">{trace.provider}</span>
+            <span className="text-zinc-400">{trace.provider}</span>
           </div>
 
           {/* Failover Event (if occurred) */}

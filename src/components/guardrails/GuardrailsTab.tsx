@@ -11,64 +11,71 @@ export function GuardrailsTab() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-bold text-zinc-100 tracking-tight flex items-center gap-2">
-          <Shield className="h-4 w-4 text-orange-400" />
-          <span>Security Guardrails & 100% Free Deployment</span>
+        <h2 className="text-sm font-semibold text-zinc-100 tracking-tight flex items-center gap-2">
+          <Shield className="h-3.5 w-3.5 text-zinc-400" />
+          <span>Security Guardrails & Deployment Configuration</span>
         </h2>
         <p className="text-xs text-zinc-400 mt-0.5">
           Enterprise compliance controls, budget protection, and zero-cost hosting setup guide.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Compliance Guardrails */}
-        <div className="rounded-xl border border-white/10 bg-[#121215] p-5 shadow-lg space-y-4">
-          <h3 className="text-sm font-semibold text-zinc-100 pb-3 border-b border-white/5 flex items-center gap-2">
-            <Lock className="h-4 w-4 text-orange-400" />
-            <span>Data Protection & Cost Optimizers</span>
-          </h3>
+        <div className="rounded-lg border border-white/10 bg-[#0e0e11] p-4 sm:p-5 space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-white/5">
+            <h3 className="text-xs font-mono uppercase tracking-wider font-semibold text-zinc-200 flex items-center gap-2">
+              <Lock className="h-3.5 w-3.5 text-zinc-400" />
+              <span>Data Protection & Cost Controls</span>
+            </h3>
+            <span className="text-[11px] font-mono text-zinc-500">[layer: edge_waf]</span>
+          </div>
 
-          <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 rounded-lg border border-white/5 bg-black/40">
-              <div>
-                <div className="text-xs font-medium text-zinc-200">PII Data Masking</div>
-                <div className="text-[11px] text-zinc-400">
-                  Automatically sanitizes emails, credit cards, and tokens before upstream delivery.
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between p-3 rounded border border-white/5 bg-black/40">
+              <div className="pr-2">
+                <div className="text-xs font-mono font-medium text-zinc-200">PII Data Sanitization</div>
+                <div className="text-[11px] text-zinc-400 mt-0.5">
+                  Masks credit cards, emails, and API keys before forwarding upstream.
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setMaskPii(!maskPii)}
-                className={`w-10 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer ${
-                  maskPii ? "bg-orange-500 justify-end" : "bg-zinc-800 justify-start"
+                className={`px-2.5 py-1 rounded text-xs font-mono border transition-colors cursor-pointer shrink-0 ${
+                  maskPii
+                    ? "bg-white/5 border-white/10 text-emerald-400"
+                    : "bg-white/[0.02] border-white/5 text-zinc-500"
                 }`}
               >
-                <div className="w-4 h-4 rounded-full bg-white shadow-md" />
+                {maskPii ? "enabled" : "disabled"}
               </button>
             </div>
 
-            <div className="flex items-center justify-between p-3 rounded-lg border border-white/5 bg-black/40">
-              <div>
-                <div className="text-xs font-medium text-zinc-200">Semantic Prompt Caching</div>
-                <div className="text-[11px] text-zinc-400">
-                  Cache identical user requests to return responses in &lt;15ms with 0 upstream cost.
+            <div className="flex items-center justify-between p-3 rounded border border-white/5 bg-black/40">
+              <div className="pr-2">
+                <div className="text-xs font-mono font-medium text-zinc-200">Semantic Prompt Caching</div>
+                <div className="text-[11px] text-zinc-400 mt-0.5">
+                  Short-circuits identical inferences at edge in &lt;15ms with 0 token cost.
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setPromptCaching(!promptCaching)}
-                className={`w-10 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer ${
-                  promptCaching ? "bg-orange-500 justify-end" : "bg-zinc-800 justify-start"
+                className={`px-2.5 py-1 rounded text-xs font-mono border transition-colors cursor-pointer shrink-0 ${
+                  promptCaching
+                    ? "bg-white/5 border-white/10 text-emerald-400"
+                    : "bg-white/[0.02] border-white/5 text-zinc-500"
                 }`}
               >
-                <div className="w-4 h-4 rounded-full bg-white shadow-md" />
+                {promptCaching ? "enabled" : "disabled"}
               </button>
             </div>
 
-            <div className="p-3 rounded-lg border border-white/5 bg-black/40 space-y-2">
-              <div className="flex justify-between items-center text-xs">
-                <span className="font-medium text-zinc-200">Monthly Team Budget Ceiling</span>
-                <span className="font-mono text-orange-400 font-bold">${budgetCap} / mo</span>
+            <div className="p-3 rounded border border-white/5 bg-black/40 space-y-2">
+              <div className="flex justify-between items-center text-xs font-mono">
+                <span className="text-zinc-300">Monthly Team Budget Ceiling</span>
+                <span className="text-zinc-200 font-bold">${budgetCap} / mo</span>
               </div>
               <input
                 type="range"
@@ -79,48 +86,51 @@ export function GuardrailsTab() {
                 onChange={(e) => setBudgetCap(Number(e.target.value))}
                 className="w-full accent-orange-500 cursor-pointer"
               />
-              <span className="text-[10px] text-zinc-500 block">
-                Stops requests immediately once organizational budget ceiling is reached.
+              <span className="text-[10px] font-mono text-zinc-500 block">
+                circuit_breaker: rejects requests when organizational threshold is exceeded.
               </span>
             </div>
           </div>
         </div>
 
         {/* Free Cloud Deployment Guide */}
-        <div className="rounded-xl border border-white/10 bg-[#121215] p-5 shadow-lg space-y-4">
-          <h3 className="text-sm font-semibold text-zinc-100 pb-3 border-b border-white/5 flex items-center gap-2">
-            <Globe className="h-4 w-4 text-emerald-400" />
-            <span>100% Free Hosting & Domain Guide</span>
-          </h3>
+        <div className="rounded-lg border border-white/10 bg-[#0e0e11] p-4 sm:p-5 space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-white/5">
+            <h3 className="text-xs font-mono uppercase tracking-wider font-semibold text-zinc-200 flex items-center gap-2">
+              <Globe className="h-3.5 w-3.5 text-zinc-400" />
+              <span>100% Free Hosting & Domain Architecture</span>
+            </h3>
+            <span className="text-[11px] font-mono text-emerald-400">[cost: $0.00/mo]</span>
+          </div>
 
           <div className="space-y-2.5 text-xs">
-            <div className="p-3 rounded-lg bg-black/40 border border-white/5 space-y-1">
-              <div className="flex items-center gap-1.5 font-semibold text-zinc-200">
-                <CheckCircle className="h-3.5 w-3.5 text-emerald-400" />
-                <span>1. Hosting Gratis (Vercel Hobby Tier)</span>
+            <div className="p-3 rounded bg-black/40 border border-white/5 space-y-1">
+              <div className="flex items-center justify-between font-mono text-xs">
+                <span className="text-zinc-200 font-semibold">[01] Hosting Gratis (Vercel Edge)</span>
+                <span className="text-emerald-400 text-[10px]">active</span>
               </div>
               <p className="text-zinc-400 text-[11px] leading-relaxed">
-                Push repository ini ke GitHub, lalu import di Vercel. Next.js 15 & Hono Edge Routes langsung live gratis selamanya dengan SSL otomatis.
+                Serverless Edge Workers dengan SSL otomatis gratis selamanya. Tanpa biaya server per jam.
               </p>
             </div>
 
-            <div className="p-3 rounded-lg bg-black/40 border border-white/5 space-y-1">
-              <div className="flex items-center gap-1.5 font-semibold text-zinc-200">
-                <CheckCircle className="h-3.5 w-3.5 text-emerald-400" />
-                <span>2. Database Gratis (Supabase Free Tier)</span>
+            <div className="p-3 rounded bg-black/40 border border-white/5 space-y-1">
+              <div className="flex items-center justify-between font-mono text-xs">
+                <span className="text-zinc-200 font-semibold">[02] Database Gratis (Supabase Postgres)</span>
+                <span className="text-emerald-400 text-[10px]">configured</span>
               </div>
               <p className="text-zinc-400 text-[11px] leading-relaxed">
-                Buat project gratis di Supabase, jalankan SQL di <code className="text-orange-300">supabase/migrations/20261008_init.sql</code>, lalu masukkan environment variable.
+                Migration schema <code className="text-zinc-300">supabase/migrations/20261008_init.sql</code> menyediakan storage quota & audit logs permanen.
               </p>
             </div>
 
-            <div className="p-3 rounded-lg bg-black/40 border border-white/5 space-y-1">
-              <div className="flex items-center gap-1.5 font-semibold text-zinc-200">
-                <CheckCircle className="h-3.5 w-3.5 text-emerald-400" />
-                <span>3. Domain Gratis (Vercel / is-a.dev)</span>
+            <div className="p-3 rounded bg-black/40 border border-white/5 space-y-1">
+              <div className="flex items-center justify-between font-mono text-xs">
+                <span className="text-zinc-200 font-semibold">[03] Domain Gratis (Vercel / is-a.dev)</span>
+                <span className="text-emerald-400 text-[10px]">ssl_ready</span>
               </div>
               <p className="text-zinc-400 text-[11px] leading-relaxed">
-                Gunakan domain bawaan <code className="text-orange-300">*.vercel.app</code> atau daftarkan subdomain gratis untuk developer via <strong>is-a.dev</strong> (GitHub PR) diarahkan ke CNAME Vercel.
+                Domain live <code className="text-zinc-300">morvexa-ai-gateway.vercel.app</code> dapat dihubungkan ke custom subdomain gratis via is-a.dev CNAME.
               </p>
             </div>
           </div>

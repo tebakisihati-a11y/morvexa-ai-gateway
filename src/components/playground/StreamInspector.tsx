@@ -23,53 +23,49 @@ export function StreamInspector({
   const [viewMode, setViewMode] = useState<"rendered" | "raw">("rendered");
 
   return (
-    <div className="rounded-xl border border-white/10 bg-[#121215] flex flex-col h-full overflow-hidden shadow-lg">
+    <div className="rounded-lg border border-white/10 bg-[#0e0e11] flex flex-col h-full overflow-hidden">
       {/* Inspector Header with Telemetry Stats */}
-      <div className="p-4 border-b border-white/5 flex items-center justify-between bg-black/30">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <Terminal className="h-4 w-4 text-orange-400" />
-            <span className="text-xs font-semibold text-zinc-100">Live SSE Stream Output</span>
-          </div>
+      <div className="p-3.5 sm:p-4 border-b border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-black/40">
+        <div className="flex items-center gap-2.5">
+          <Terminal className="h-3.5 w-3.5 text-zinc-400" />
+          <span className="text-xs font-mono font-semibold text-zinc-100">Live SSE Stream Output</span>
 
           {isStreaming && (
-            <span className="flex items-center gap-1.5 text-[11px] font-mono text-orange-400 bg-orange-500/10 border border-orange-500/20 px-2 py-0.5 rounded-full">
-              <span className="h-1.5 w-1.5 rounded-full bg-orange-400 animate-ping" />
-              Streaming Zero-Buffer
+            <span className="flex items-center gap-1.5 text-[11px] font-mono text-orange-400 border border-orange-400/20 bg-orange-500/10 px-2 py-0.5 rounded">
+              <span className="h-1.5 w-1.5 rounded-full bg-orange-400 animate-pulse" />
+              <span>streaming</span>
             </span>
           )}
         </div>
 
         {/* Telemetry metrics bar */}
-        <div className="flex items-center gap-4 text-xs font-mono">
-          <div className="flex items-center gap-1.5 text-zinc-400">
-            <Clock className="h-3.5 w-3.5 text-zinc-500" />
-            <span>TTFT:</span>
-            <strong className="text-emerald-400 font-bold">{ttftMs ? `${ttftMs}ms` : "—"}</strong>
+        <div className="flex flex-wrap items-center gap-3 text-xs font-mono">
+          <div className="flex items-center gap-1 text-zinc-400">
+            <span className="text-zinc-500">ttft:</span>
+            <span className="text-emerald-400 font-medium">{ttftMs ? `${ttftMs}ms` : "—"}</span>
           </div>
 
-          <div className="flex items-center gap-1.5 text-zinc-400">
-            <Zap className="h-3.5 w-3.5 text-zinc-500" />
-            <span>Velocity:</span>
-            <strong className="text-orange-400 font-bold">{tokensPerSec} t/s</strong>
+          <div className="flex items-center gap-1 text-zinc-400">
+            <span className="text-zinc-500">velocity:</span>
+            <span className="text-orange-400 font-medium">{tokensPerSec} t/s</span>
           </div>
 
-          <div className="flex items-center gap-1 bg-white/5 border border-white/5 rounded p-0.5">
+          <div className="flex items-center gap-0.5 bg-white/5 border border-white/10 rounded p-0.5">
             <button
               onClick={() => setViewMode("rendered")}
-              className={`px-2 py-0.5 rounded text-[11px] transition-colors cursor-pointer ${
+              className={`px-2 py-0.5 rounded text-[11px] font-mono transition-colors cursor-pointer ${
                 viewMode === "rendered" ? "bg-white/10 text-white font-medium" : "text-zinc-500 hover:text-zinc-300"
               }`}
             >
-              Rendered
+              rendered
             </button>
             <button
               onClick={() => setViewMode("raw")}
-              className={`px-2 py-0.5 rounded text-[11px] transition-colors cursor-pointer ${
+              className={`px-2 py-0.5 rounded text-[11px] font-mono transition-colors cursor-pointer ${
                 viewMode === "raw" ? "bg-white/10 text-white font-medium" : "text-zinc-500 hover:text-zinc-300"
               }`}
             >
-              Raw SSE
+              raw_sse
             </button>
           </div>
         </div>

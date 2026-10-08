@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import type { ApiKeyItem } from "@/lib/types";
-import { Key, Copy, Check, Ban, CheckCircle2, Shield } from "lucide-react";
+import { Copy, Check } from "lucide-react";
 
 interface ApiKeyListProps {
   keys: ApiKeyItem[];
@@ -19,25 +19,27 @@ export function ApiKeyList({ keys, onRevoke }: ApiKeyListProps) {
   };
 
   return (
-    <div className="rounded-xl border border-white/10 bg-[#121215] overflow-hidden shadow-lg">
-      <div className="p-4 border-b border-white/5 flex items-center justify-between">
+    <div className="rounded-lg border border-white/10 bg-[#0e0e11] overflow-hidden">
+      <div className="p-4 border-b border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
-          <h3 className="text-sm font-semibold text-zinc-100 tracking-tight">Active API Keys</h3>
+          <h3 className="text-xs font-mono uppercase tracking-wider font-semibold text-zinc-200">
+            Active Gateway API Keys
+          </h3>
           <p className="text-xs text-zinc-400 mt-0.5">
-            Keys authenticated via Bearer token with per-key rate limiting policies
+            Cryptographic SHA-256 validated keys with per-key rate limits and daily ceilings.
           </p>
         </div>
-        <span className="text-xs font-mono text-zinc-400 bg-white/5 border border-white/5 px-2.5 py-1 rounded-md">
+        <span className="text-[11px] font-mono text-zinc-400 border border-white/5 bg-black/40 px-2 py-0.5 rounded self-start sm:self-auto">
           {keys.filter((k) => k.isActive).length} active keys
         </span>
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+        <table className="w-full text-left border-collapse min-w-[640px]">
           <thead>
-            <tr className="border-b border-white/5 bg-white/[0.02] text-[11px] font-mono uppercase text-zinc-500">
-              <th className="py-2.5 px-4 font-semibold">Name & Description</th>
-              <th className="py-2.5 px-4 font-semibold">Key Token</th>
+            <tr className="border-b border-white/5 bg-white/[0.01] text-[10px] font-mono uppercase text-zinc-500">
+              <th className="py-2.5 px-4 font-semibold">Key Identifier</th>
+              <th className="py-2.5 px-4 font-semibold">Token Prefix</th>
               <th className="py-2.5 px-4 font-semibold">Rate Limit</th>
               <th className="py-2.5 px-4 font-semibold">Daily Token Cap</th>
               <th className="py-2.5 px-4 font-semibold">Status</th>
@@ -53,19 +55,19 @@ export function ApiKeyList({ keys, onRevoke }: ApiKeyListProps) {
                 </td>
 
                 <td className="py-3 px-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-zinc-300 bg-black/40 border border-white/5 px-2 py-1 rounded">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-zinc-300 bg-black/40 border border-white/5 px-2 py-0.5 rounded font-mono text-[11px]">
                       {item.maskedKey}
                     </span>
                     <button
                       onClick={() => handleCopy(item.id, item.maskedKey)}
-                      className="text-zinc-400 hover:text-zinc-200 p-1 rounded hover:bg-white/5 transition-colors cursor-pointer"
-                      title="Copy key prefix"
+                      className="text-zinc-500 hover:text-zinc-300 p-1 rounded hover:bg-white/5 transition-colors cursor-pointer"
+                      title="Copy key"
                     >
                       {copiedId === item.id ? (
-                        <Check className="h-3.5 w-3.5 text-emerald-400" />
+                        <Check className="h-3 w-3 text-emerald-400" />
                       ) : (
-                        <Copy className="h-3.5 w-3.5" />
+                        <Copy className="h-3 w-3" />
                       )}
                     </button>
                   </div>
@@ -81,14 +83,14 @@ export function ApiKeyList({ keys, onRevoke }: ApiKeyListProps) {
 
                 <td className="py-3 px-4">
                   {item.isActive ? (
-                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    <span className="inline-flex items-center gap-1.5 text-xs font-mono text-emerald-400">
                       <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                      Active
+                      active
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-500/10 text-red-400 border border-red-500/20">
-                      <span className="h-1.5 w-1.5 rounded-full bg-red-400" />
-                      Revoked
+                    <span className="inline-flex items-center gap-1.5 text-xs font-mono text-zinc-500">
+                      <span className="h-1.5 w-1.5 rounded-full bg-zinc-600" />
+                      revoked
                     </span>
                   )}
                 </td>
@@ -97,12 +99,12 @@ export function ApiKeyList({ keys, onRevoke }: ApiKeyListProps) {
                   {item.isActive ? (
                     <button
                       onClick={() => onRevoke(item.id)}
-                      className="text-xs text-red-400 hover:text-red-300 font-sans hover:bg-red-500/10 px-2 py-1 rounded transition-colors cursor-pointer"
+                      className="text-xs text-red-400 hover:text-red-300 font-mono hover:bg-red-500/10 px-2 py-0.5 rounded transition-colors cursor-pointer"
                     >
-                      Revoke
+                      revoke
                     </button>
                   ) : (
-                    <span className="text-[11px] text-zinc-600">Inactive</span>
+                    <span className="text-[11px] text-zinc-600">inactive</span>
                   )}
                 </td>
               </tr>

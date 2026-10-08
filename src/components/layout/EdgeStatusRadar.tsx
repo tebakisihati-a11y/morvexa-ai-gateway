@@ -33,22 +33,19 @@ export function EdgeStatusRadar() {
   }, []);
 
   return (
-    <div className="flex items-center gap-3 text-xs border border-white/10 bg-[#121215] px-3 py-1.5 rounded-lg shadow-sm">
-      <div className="flex items-center gap-1.5 text-emerald-400 font-medium">
-        <span className="relative flex h-2 w-2">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-        </span>
-        <span className="text-[11px] font-mono tracking-tight text-zinc-300">EDGE OPERATIONAL</span>
+    <div className="flex items-center gap-2.5 text-xs border border-white/10 bg-[#0e0e11] px-2.5 py-1 rounded">
+      <div className="flex items-center gap-1.5 text-emerald-400 font-mono text-[11px]">
+        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+        <span className="text-zinc-300">mesh: operational</span>
       </div>
 
       <div className="h-3 w-[1px] bg-white/10 hidden sm:block" />
 
-      <div className="hidden sm:flex items-center gap-3">
+      <div className="hidden sm:flex items-center gap-2.5">
         {regions.map((reg) => (
-          <div key={reg.code} className="flex items-center gap-1 font-mono text-[11px] text-zinc-400">
+          <div key={reg.code} className="flex items-center gap-1 font-mono text-[10px] text-zinc-400">
             <span className="text-zinc-500">{reg.code}:</span>
-            <span className="text-zinc-200">{reg.currentLatency}ms</span>
+            <span className="text-zinc-300">{reg.currentLatency}ms</span>
           </div>
         ))}
       </div>

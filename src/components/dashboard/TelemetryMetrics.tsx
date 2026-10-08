@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { Activity, Zap, Database, AlertTriangle } from "lucide-react";
 import type { SystemMetrics } from "@/lib/types";
 
 interface TelemetryMetricsProps {
@@ -11,70 +10,68 @@ interface TelemetryMetricsProps {
 export function TelemetryMetrics({ metrics }: TelemetryMetricsProps) {
   const cards = [
     {
-      title: "Throughput (RPS)",
-      value: `${metrics.rps} req/s`,
-      change: "+12.4% vs 1h ago",
-      icon: Activity,
-      color: "text-orange-400",
-      bgColor: "bg-orange-500/10",
-      borderColor: "border-orange-500/20",
+      label: "INGRESS THROUGHPUT",
+      value: `${metrics.rps}`,
+      unit: "req/s",
+      meta: "+12.4% vs 1h peak",
+      submeta: "128,940 reqs / 24h",
+      statusColor: "text-emerald-400",
     },
     {
-      title: "Avg TTFT Latency",
-      value: `${metrics.avgTtftMs} ms`,
-      change: "Global edge avg",
-      icon: Zap,
-      color: "text-emerald-400",
-      bgColor: "bg-emerald-500/10",
-      borderColor: "border-emerald-500/20",
+      label: "MEDIAN TTFT (EDGE)",
+      value: `${metrics.avgTtftMs}`,
+      unit: "ms",
+      meta: "Global edge avg",
+      submeta: "sin1: 14ms · iad1: 128ms",
+      statusColor: "text-zinc-400",
     },
     {
-      title: "Prompt Cache Hit",
-      value: `${(metrics.cacheHitRatio * 100).toFixed(1)}%`,
-      change: "100% cost reduction",
-      icon: Database,
-      color: "text-cyan-400",
-      bgColor: "bg-cyan-500/10",
-      borderColor: "border-cyan-500/20",
+      label: "CACHE HIT RATIO",
+      value: `${(metrics.cacheHitRatio * 100).toFixed(1)}`,
+      unit: "%",
+      meta: "36,103 cached",
+      submeta: "Zero upstream billing",
+      statusColor: "text-cyan-400",
     },
     {
-      title: "Gateway Error Rate",
-      value: `${(metrics.errorRate * 100).toFixed(2)}%`,
-      change: "Auto-failover active",
-      icon: AlertTriangle,
-      color: "text-amber-400",
-      bgColor: "bg-amber-500/10",
-      borderColor: "border-amber-500/20",
+      label: "GATEWAY ERROR RATE",
+      value: `${(metrics.errorRate * 100).toFixed(2)}`,
+      unit: "%",
+      meta: "Circuit breaker: normal",
+      submeta: "Auto-failover ready",
+      statusColor: "text-zinc-400",
     },
   ];
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      {cards.map((card, idx) => {
-        const Icon = card.icon;
-        return (
-          <div
-            key={idx}
-            className="rounded-xl border border-white/10 bg-[#121215] p-4 flex flex-col justify-between hover:border-white/20 transition-all shadow-sm"
-          >
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-medium text-zinc-400">{card.title}</span>
-              <div className={`p-1.5 rounded-md ${card.bgColor} ${card.borderColor} border`}>
-                <Icon className={`h-3.5 w-3.5 ${card.color}`} />
-              </div>
-            </div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+      {cards.map((card, idx) => (
+        <div
+          key={idx}
+          className="rounded-lg border border-white/10 bg-[#0e0e11] p-4 flex flex-col justify-between hover:border-white/20 transition-colors"
+        >
+          <div className="flex items-center justify-between text-[11px] font-mono text-zinc-400 tracking-wider">
+            <span>{card.label}</span>
+            <span className={`text-[10px] font-mono ${card.statusColor}`}>●</span>
+          </div>
 
-            <div>
-              <div className="text-2xl font-bold font-mono tracking-tight text-zinc-100">
+          <div className="my-2.5">
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-2xl sm:text-3xl font-mono font-bold text-zinc-100 tracking-tight">
                 {card.value}
-              </div>
-              <div className="text-[11px] font-mono text-zinc-500 mt-1">
-                {card.change}
-              </div>
+              </span>
+              <span className="text-xs font-mono text-zinc-500 font-medium">
+                {card.unit}
+              </span>
             </div>
           </div>
-        );
-      })}
+
+          <div className="pt-2 border-t border-white/5 flex items-center justify-between text-[10px] font-mono text-zinc-500">
+            <span>{card.meta}</span>
+            <span className="text-zinc-600 truncate ml-2">{card.submeta}</span>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

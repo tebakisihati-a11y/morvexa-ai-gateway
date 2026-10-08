@@ -111,28 +111,28 @@ export function PlaygroundTab() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-bold text-zinc-100 tracking-tight flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-orange-400" />
-          <span>Interactive SSE Streaming Playground</span>
+        <h2 className="text-sm font-semibold text-zinc-100 tracking-tight flex items-center gap-2">
+          <Play className="h-3.5 w-3.5 text-zinc-400" />
+          <span>Inference Playground & SSE Streaming</span>
         </h2>
         <p className="text-xs text-zinc-400 mt-0.5">
-          Test real-time model inferences through the Morvexa Edge Proxy with live Time-To-First-Token and chunk telemetry.
+          Benchmark model inferences through the edge proxy with live Time-To-First-Token and chunk telemetry.
         </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Prompt Controls */}
         <div className="lg:col-span-5 space-y-4">
-          <div className="rounded-xl border border-white/10 bg-[#121215] p-5 shadow-lg space-y-4">
+          <div className="rounded-lg border border-white/10 bg-[#0e0e11] p-4 sm:p-5 space-y-4">
             {/* Model Selector */}
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-zinc-300">Model Selection</label>
+              <label className="text-xs font-mono font-medium text-zinc-300">Model Selection</label>
               <select
                 value={model}
                 onChange={(e) => setModel(e.target.value)}
-                className="w-full rounded-lg border border-white/10 bg-black/50 px-3 py-2 text-xs font-mono text-zinc-200 focus:outline-none focus:border-orange-500 cursor-pointer"
+                className="w-full rounded border border-white/10 bg-black/50 px-3 py-2 text-xs font-mono text-zinc-200 focus:outline-none focus:border-zinc-400 cursor-pointer"
               >
-                <option value="private-server-5002">⚡ Private Server (localhost:5002)</option>
+                <option value="private-server-5002">[Node 01] Private Server (localhost:5002)</option>
                 <option value="claude-3-7-sonnet">Claude 3.7 Sonnet (Anthropic - Hybrid)</option>
                 <option value="claude-3-5-sonnet">Claude 3.5 Sonnet (Anthropic - Standard)</option>
                 <option value="claude-3-5-haiku">Claude 3.5 Haiku (Anthropic - Fast)</option>
@@ -186,16 +186,16 @@ export function PlaygroundTab() {
               <button
                 onClick={handleSendPrompt}
                 disabled={isStreaming || !prompt.trim()}
-                className="flex-1 py-2.5 rounded-lg bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white text-xs font-semibold flex items-center justify-center gap-2 transition-all shadow-md shadow-orange-500/20 cursor-pointer"
+                className="flex-1 py-2 rounded bg-orange-600 hover:bg-orange-500 disabled:opacity-50 text-white text-xs font-mono font-medium flex items-center justify-center gap-2 transition-colors cursor-pointer"
               >
-                <Play className="h-3.5 w-3.5 fill-current" />
-                <span>{isStreaming ? "Streaming..." : "Send Prompt"}</span>
+                <Play className="h-3 w-3 fill-current" />
+                <span>{isStreaming ? "streaming_chunks..." : "send_prompt"}</span>
               </button>
 
               <button
                 onClick={handleReset}
                 disabled={isStreaming}
-                className="p-2.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer"
+                className="p-2 rounded bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer"
                 title="Reset Prompt"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
