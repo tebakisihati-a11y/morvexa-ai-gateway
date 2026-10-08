@@ -1,7 +1,8 @@
 import { Hono } from "hono";
 import { verifyGatewayApiKey } from "./auth";
 import { createAnthropicSseStream } from "./stream";
-import { resolveProviderRoute } from "./failover";
+import { resolveProviderRoute, DEFAULT_PROVIDERS } from "./failover";
+import { forwardToUpstreamProvider } from "./upstream";
 
 export const app = new Hono().basePath("/api");
 
@@ -108,10 +109,50 @@ app.post("/v1/messages", async (c) => {
 
   const body = await c.req.json().catch(() => ({}));
   const model = body.model || "claude-3-7-sonnet";
+  const messages = body.messages || [{ role: "user", content: "Hello" }];
+  const system = body.system;
+  const temperature = body.temperature;
   const stream = body.stream !== false;
 
   const route = resolveProviderRoute(model);
 
+  // Check if env variable or custom provider key is set for live proxying
+  const envKey =
+    route.selectedProvider === "anthropic"
+      ? process.env.ANTHROPIC_API_KEY
+      : route.selectedProvider === "openai"
+      ? process.env.OPENAI_API_KEY
+      : route.selectedProvider === "deepseek"
+      ? process.env.DEEPSEEK_API_KEY
+      : route.selectedProvider === "groq"
+      ? process.env.GROQ_API_KEY
+      : undefined;
+
+  if (envKey) {
+    const upstreamRes = await forwardToUpstreamProvider({
+      provider: route.selectedProvider,
+      apiKey: envKey,
+      model,
+      messages,
+      system,
+      temperature,
+      stream,
+    });
+
+    if (upstreamRes && upstreamRes.body) {
+      return new Response(upstreamRes.body, {
+        status: upstreamRes.status,
+        headers: {
+          "Content-Type": upstreamRes.headers.get("content-type") || "text/event-stream",
+          "Cache-Control": "no-cache, no-transform",
+          "X-Morvexa-Provider": route.selectedProvider,
+          "X-Morvexa-Live": "true",
+        },
+      });
+    }
+  }
+
+  // Simulated Zero-Buffer SSE stream fallback for playground & testing
   if (stream) {
     const sampleChunks = [
       "Hello! ",
