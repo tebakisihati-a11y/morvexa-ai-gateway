@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { app } from "../src/app/api/[[...route]]/route";
+import { app } from "../src/lib/gateway/app";
 
 describe("Hono Edge Gateway Router", () => {
   it("rejects unauthorized requests with 401 when Bearer token is missing", async () => {
