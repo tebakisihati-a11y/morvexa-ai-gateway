@@ -1,5 +1,6 @@
 import { isSupabaseConfigured, supabase } from "./client";
 import type { ApiKeyItem, QuotaRecord, RequestTraceLog } from "../types";
+import { generateSecureApiKey } from "../auth/keys";
 
 // Seed data for immediate out-of-the-box local interactivity
 const now = Date.now();
@@ -156,16 +157,14 @@ export async function getApiKeys(): Promise<ApiKeyItem[]> {
 }
 
 export async function createApiKey(name: string, rateLimitRpm: number, dailyTokenLimit: number): Promise<{ key: ApiKeyItem; rawSecret: string }> {
-  const randomSuffix = Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10);
-  const rawSecret = `mvx_live_${randomSuffix}`;
-  const maskedKey = `mvx_live_...${randomSuffix.slice(-4)}`;
+  const generated = generateSecureApiKey("live");
 
   const newKey: ApiKeyItem = {
     id: `key-${Date.now()}`,
     name,
-    prefix: "mvx_live_",
-    maskedKey,
-    hash: `sha256_${randomSuffix}`,
+    prefix: generated.keyPrefix,
+    maskedKey: generated.maskedKey,
+    hash: generated.keyHash,
     isActive: true,
     rateLimitRpm,
     dailyTokenLimit,
@@ -174,7 +173,7 @@ export async function createApiKey(name: string, rateLimitRpm: number, dailyToke
   };
 
   memoryApiKeys.unshift(newKey);
-  return { key: newKey, rawSecret };
+  return { key: newKey, rawSecret: generated.rawSecret };
 }
 
 export async function revokeApiKey(id: string): Promise<boolean> {
