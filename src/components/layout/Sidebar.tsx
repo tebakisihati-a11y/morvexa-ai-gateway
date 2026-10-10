@@ -8,9 +8,21 @@ import {
   PlaySquare,
   Activity,
   Shield,
+  CreditCard,
+  Server,
+  Building2,
 } from "lucide-react";
 
-export type NavTabId = "overview" | "keys" | "routing" | "playground" | "traces" | "guardrails";
+export type NavTabId =
+  | "overview"
+  | "keys"
+  | "billing"
+  | "infrastructure"
+  | "nexus"
+  | "routing"
+  | "playground"
+  | "traces"
+  | "guardrails";
 
 interface SidebarProps {
   activeTab: NavTabId;
@@ -21,11 +33,15 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
   const navItems: { id: NavTabId; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
     { id: "overview", label: "Command Center", icon: LayoutDashboard },
     { id: "keys", label: "API Keys & Policies", icon: KeyRound },
+    { id: "billing", label: "Billing & Subscriptions", icon: CreditCard },
+    { id: "infrastructure", label: "Hybrid Infrastructure", icon: Server },
+    { id: "nexus", label: "Nexus Control Plane", icon: Building2 },
     { id: "routing", label: "Routing & Failover", icon: GitBranch },
     { id: "playground", label: "Live SSE Playground", icon: PlaySquare },
     { id: "traces", label: "Audit Traces & Logs", icon: Activity },
     { id: "guardrails", label: "Guardrails & Config", icon: Shield },
   ];
+
 
   return (
     <aside className="hidden md:flex w-60 border-r border-white/10 bg-[#0c0c0e] flex-col shrink-0 min-h-[calc(100vh-3.5rem)]">

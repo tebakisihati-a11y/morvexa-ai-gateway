@@ -9,6 +9,9 @@ import { RoutingTab } from "@/components/routing/RoutingTab";
 import { PlaygroundTab } from "@/components/playground/PlaygroundTab";
 import { TracesTab } from "@/components/traces/TracesTab";
 import { GuardrailsTab } from "@/components/guardrails/GuardrailsTab";
+import { BillingTab } from "@/components/billing/BillingTab";
+import { InfrastructureTab } from "@/components/infrastructure/InfrastructureTab";
+import { NexusTab } from "@/components/nexus/NexusTab";
 import {
   getApiKeys,
   createApiKey,
@@ -81,6 +84,9 @@ export default function AppRoot() {
         {[
           { id: "overview", label: "Overview" },
           { id: "keys", label: "API Keys" },
+          { id: "billing", label: "Billing" },
+          { id: "infrastructure", label: "Infrastructure" },
+          { id: "nexus", label: "Nexus" },
           { id: "routing", label: "Routing" },
           { id: "playground", label: "Playground" },
           { id: "traces", label: "Traces" },
@@ -123,6 +129,12 @@ export default function AppRoot() {
             />
           )}
 
+          {activeTab === "billing" && <BillingTab />}
+
+          {activeTab === "infrastructure" && <InfrastructureTab />}
+
+          {activeTab === "nexus" && <NexusTab />}
+
           {activeTab === "routing" && <RoutingTab />}
 
           {activeTab === "playground" && <PlaygroundTab />}
@@ -135,3 +147,4 @@ export default function AppRoot() {
     </div>
   );
 }
+

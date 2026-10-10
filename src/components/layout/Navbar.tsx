@@ -16,6 +16,9 @@ export function Navbar({ currentTab, onTabChange }: NavbarProps) {
   const navItems: { id: NavTabId; label: string }[] = [
     { id: "overview", label: "Overview & Quota" },
     { id: "keys", label: "API Keys & Policies" },
+    { id: "billing", label: "Billing & Subscriptions" },
+    { id: "infrastructure", label: "Hybrid Infrastructure" },
+    { id: "nexus", label: "Nexus Control Plane" },
     { id: "routing", label: "Model Routing & Failover" },
     { id: "playground", label: "Streaming Playground" },
     { id: "traces", label: "Live Traces & Logs" },
