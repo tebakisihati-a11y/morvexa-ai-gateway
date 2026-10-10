@@ -8,6 +8,12 @@ import {
   createMidtransSandboxCheckout,
   getTransaction,
 } from "../billing/midtrans";
+import {
+  requestDedicatedEnvironment,
+  getEnvironment,
+  recordHealthProbe,
+  deprovisionEnvironment,
+} from "../infrastructure/provisioning";
 
 export const app = new Hono().basePath("/api");
 
@@ -299,4 +305,62 @@ app.get("/billing/transactions/:orderId", (c) => {
   }
   return c.json({ orderId, ...tx });
 });
+
+// 8. Infrastructure Provisioning: POST /api/infrastructure/provision
+app.post("/infrastructure/provision", async (c) => {
+  const body = await c.req.json().catch(() => null);
+  if (!body || !body.orgId || !body.planCode) {
+    return c.json({ error: "Missing required parameters: orgId, planCode" }, 400);
+  }
+
+  const result = await requestDedicatedEnvironment({
+    orgId: body.orgId,
+    planCode: body.planCode,
+    region: body.region || "sin",
+    modelTier: body.modelTier || "isolated_proxy",
+    dedicatedHostUrl: body.dedicatedHostUrl,
+    memoryMb: body.memoryMb,
+    cpuCores: body.cpuCores,
+  });
+
+  if (!result.success) {
+    return c.json({ error: result.message }, 403);
+  }
+
+  return c.json(result, 201);
+});
+
+// 9. Infrastructure Environment Health: GET /api/infrastructure/environments/:envId
+app.get("/infrastructure/environments/:envId", (c) => {
+  const envId = c.req.param("envId");
+  const env = getEnvironment(envId);
+  if (!env) {
+    return c.json({ error: "Environment not found" }, 404);
+  }
+  return c.json(env);
+});
+
+// 10. Record Health Probe: POST /api/infrastructure/environments/:envId/probe
+app.post("/infrastructure/environments/:envId/probe", async (c) => {
+  const envId = c.req.param("envId");
+  const body = await c.req.json().catch(() => ({}));
+  const success = body.success ?? true;
+
+  const env = recordHealthProbe(envId, Boolean(success));
+  if (!env) {
+    return c.json({ error: "Environment not found" }, 404);
+  }
+  return c.json(env);
+});
+
+// 11. Deprovision Environment: DELETE /api/infrastructure/environments/:envId
+app.delete("/infrastructure/environments/:envId", (c) => {
+  const envId = c.req.param("envId");
+  const ok = deprovisionEnvironment(envId);
+  if (!ok) {
+    return c.json({ error: "Environment not found" }, 404);
+  }
+  return c.json({ success: true, message: `Environment ${envId} deprovisioned.` });
+});
+
 

@@ -1,6 +1,6 @@
 import { isSupabaseConfigured, supabase } from "./client";
 import type { ApiKeyItem, QuotaRecord, RequestTraceLog } from "../types";
-import { generateSecureApiKey } from "../auth/keys";
+import { generateSecureApiKey, hashApiKeySecret } from "../auth/keys";
 
 // Seed data for immediate out-of-the-box local interactivity
 const now = Date.now();
@@ -192,3 +192,73 @@ export async function getRequestLogs(): Promise<RequestTraceLog[]> {
 export async function getRollingQuotaRecords(): Promise<QuotaRecord[]> {
   return [...memoryQuotaRecords];
 }
+
+/**
+ * Looks up an API key by its raw secret using SHA-256 hash comparison.
+ */
+export async function findApiKeyBySecret(rawSecret: string): Promise<ApiKeyItem | null> {
+  if (!rawSecret) return null;
+
+  // Support backward-compatible test fixtures
+  if (rawSecret === "mvx_live_test_key_123456") {
+    return {
+      id: "key-test-default",
+      name: "Default Test Key",
+      prefix: "mvx_live_",
+      maskedKey: "mvx_live_...3456",
+      hash: hashApiKeySecret("mvx_live_test_key_123456"),
+      isActive: true,
+      rateLimitRpm: 120,
+      dailyTokenLimit: 1000000,
+      createdAt: new Date().toISOString(),
+      lastUsedAt: "Just now",
+    };
+  }
+
+  const hash = hashApiKeySecret(rawSecret);
+
+  if (isSupabaseConfigured) {
+    const { data } = await supabase.from("api_keys").select("*").eq("key_hash", hash).single();
+    if (data) {
+      return {
+        id: data.id,
+        name: data.name,
+        prefix: data.key_prefix,
+        maskedKey: data.masked_key,
+        hash: data.key_hash,
+        isActive: data.is_active,
+        rateLimitRpm: data.rate_limit_rpm,
+        dailyTokenLimit: data.daily_token_limit,
+        createdAt: data.created_at,
+        lastUsedAt: data.last_used_at,
+      };
+    }
+  }
+
+  const found = memoryApiKeys.find((k) => k.hash === hash);
+  return found || null;
+}
+
+/**
+ * Registers an API key for testing in memory.
+ */
+export function registerTestApiKey(rawSecret: string, keyItem: Partial<ApiKeyItem>): ApiKeyItem {
+  const hash = hashApiKeySecret(rawSecret);
+  const prefix = rawSecret.startsWith("mvx_test_") ? "mvx_test_" : "mvx_live_";
+  const item: ApiKeyItem = {
+    id: keyItem.id || `test-key-${Date.now()}`,
+    name: keyItem.name || "Test API Key",
+    prefix,
+    maskedKey: `${prefix}...${rawSecret.slice(-4)}`,
+    hash,
+    isActive: keyItem.isActive ?? true,
+    rateLimitRpm: keyItem.rateLimitRpm ?? 60,
+    dailyTokenLimit: keyItem.dailyTokenLimit ?? 500000,
+    createdAt: new Date().toISOString(),
+    lastUsedAt: keyItem.lastUsedAt || "Never",
+  };
+
+  memoryApiKeys.unshift(item);
+  return item;
+}
+

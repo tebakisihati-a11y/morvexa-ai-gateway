@@ -56,4 +56,25 @@ describe("Hono Edge Gateway Router", () => {
     expect(typeof json.rps).toBe("number");
     expect(typeof json.avgTtftMs).toBe("number");
   });
+
+  describe("API Key Cryptographic Verification (SEC-01 Guard)", () => {
+    it("rejects unregistered pseudo-keys even if starting with mvx_live_", async () => {
+      const res = await app.request("/api/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer mvx_live_unregistered_arbitrary_pseudo_token",
+        },
+        body: JSON.stringify({
+          model: "claude-3-7-sonnet",
+          messages: [{ role: "user", content: "Should fail" }],
+        }),
+      });
+
+      expect(res.status).toBe(401);
+      const json = await res.json();
+      expect(json.error.message).toContain("does not exist or has not been registered");
+    });
+  });
 });
+
