@@ -3,6 +3,11 @@ import { verifyGatewayApiKey } from "./auth";
 import { createAnthropicSseStream } from "./stream";
 import { resolveProviderRoute, DEFAULT_PROVIDERS } from "./failover";
 import { forwardToUpstreamProvider } from "./upstream";
+import {
+  processMidtransWebhook,
+  createMidtransSandboxCheckout,
+  getTransaction,
+} from "../billing/midtrans";
 
 export const app = new Hono().basePath("/api");
 
@@ -251,3 +256,47 @@ app.post("/v1/chat/completions", async (c) => {
     },
   });
 });
+
+// 5. Billing Checkout Endpoint: POST /api/billing/checkout
+app.post("/billing/checkout", async (c) => {
+  const body = await c.req.json().catch(() => null);
+  if (!body || !body.planCode || !body.amount) {
+    return c.json({ error: "Missing required checkout parameters: planCode, amount" }, 400);
+  }
+
+  const session = createMidtransSandboxCheckout({
+    orgId: body.orgId || "org_default",
+    planCode: body.planCode,
+    amount: Number(body.amount),
+    customerName: body.customerName || "Customer",
+    customerEmail: body.customerEmail || "customer@example.com",
+  });
+
+  return c.json(session, 201);
+});
+
+// 6. Midtrans Webhook Receiver: POST /api/billing/webhooks/midtrans
+app.post("/billing/webhooks/midtrans", async (c) => {
+  const payload = await c.req.json().catch(() => null);
+  if (!payload || !payload.order_id || !payload.status_code || !payload.gross_amount) {
+    return c.json({ error: "Invalid webhook payload structure" }, 400);
+  }
+
+  const result = await processMidtransWebhook(payload);
+  if (!result.success) {
+    return c.json({ error: result.message }, 401);
+  }
+
+  return c.json(result, 200);
+});
+
+// 7. Transaction Status Query: GET /api/billing/transactions/:orderId
+app.get("/billing/transactions/:orderId", (c) => {
+  const orderId = c.req.param("orderId");
+  const tx = getTransaction(orderId);
+  if (!tx) {
+    return c.json({ error: "Transaction not found" }, 404);
+  }
+  return c.json({ orderId, ...tx });
+});
+
