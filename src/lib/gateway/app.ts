@@ -14,6 +14,12 @@ import {
   recordHealthProbe,
   deprovisionEnvironment,
 } from "../infrastructure/provisioning";
+import { checkRateLimit } from "./ratelimit";
+import {
+  reconcileSingleOrder,
+  runAutomatedReconciliation,
+  getReconciliationLogs,
+} from "../billing/reconciliation";
 
 export const app = new Hono().basePath("/api");
 
@@ -127,6 +133,30 @@ app.post("/v1/messages", async (c) => {
     );
   }
 
+  // Rate Limiting Enforcement
+  const limitRpm = auth.apiKey?.rateLimitRpm || 60;
+  const keyIdentifier = auth.apiKey?.id || auth.keyPrefix || "default";
+  const rateLimit = checkRateLimit(keyIdentifier, limitRpm);
+
+  if (!rateLimit.allowed) {
+    return c.json(
+      {
+        type: "error",
+        error: {
+          type: "rate_limit_error",
+          message: `Rate limit exceeded (${rateLimit.limit} RPM). Please retry after ${rateLimit.retryAfterSeconds}s.`,
+        },
+      },
+      429,
+      {
+        "Retry-After": String(rateLimit.retryAfterSeconds),
+        "X-RateLimit-Limit": String(rateLimit.limit),
+        "X-RateLimit-Remaining": "0",
+        "X-RateLimit-Reset": String(rateLimit.resetSeconds),
+      }
+    );
+  }
+
   const body = await c.req.json().catch(() => ({}));
   const model = body.model || "claude-3-7-sonnet";
   const messages = body.messages || [{ role: "user", content: "Hello" }];
@@ -234,6 +264,30 @@ app.post("/v1/chat/completions", async (c) => {
         },
       },
       401
+    );
+  }
+
+  // Rate Limiting Enforcement
+  const limitRpm = auth.apiKey?.rateLimitRpm || 60;
+  const keyIdentifier = auth.apiKey?.id || auth.keyPrefix || "default";
+  const rateLimit = checkRateLimit(keyIdentifier, limitRpm);
+
+  if (!rateLimit.allowed) {
+    return c.json(
+      {
+        error: {
+          message: `Rate limit exceeded (${rateLimit.limit} RPM). Please retry after ${rateLimit.retryAfterSeconds}s.`,
+          type: "rate_limit_error",
+          code: "rate_limit_exceeded",
+        },
+      },
+      429,
+      {
+        "Retry-After": String(rateLimit.retryAfterSeconds),
+        "X-RateLimit-Limit": String(rateLimit.limit),
+        "X-RateLimit-Remaining": "0",
+        "X-RateLimit-Reset": String(rateLimit.resetSeconds),
+      }
     );
   }
 
@@ -361,6 +415,32 @@ app.delete("/infrastructure/environments/:envId", (c) => {
     return c.json({ error: "Environment not found" }, 404);
   }
   return c.json({ success: true, message: `Environment ${envId} deprovisioned.` });
+});
+
+// 12. Automated Reconciliation Runner: POST /api/billing/reconcile
+app.post("/billing/reconcile", async (c) => {
+  const body = await c.req.json().catch(() => ({}));
+  const minPendingAgeMs = body.minPendingAgeMs !== undefined ? Number(body.minPendingAgeMs) : 0;
+  const result = await runAutomatedReconciliation({ minPendingAgeMs });
+  return c.json(result, 200);
+});
+
+// 13. Reconcile Single Order: POST /api/billing/reconcile/:orderId
+app.post("/billing/reconcile/:orderId", async (c) => {
+  const orderId = c.req.param("orderId");
+  const body = await c.req.json().catch(() => ({}));
+  const record = await reconcileSingleOrder(orderId, {
+    mockGatewayStatus: body.mockGatewayStatus,
+    mockGatewayAmount: body.mockGatewayAmount ? Number(body.mockGatewayAmount) : undefined,
+    mockFraudStatus: body.mockFraudStatus,
+  });
+  return c.json(record, 200);
+});
+
+// 14. Query Reconciliation Audit Logs: GET /api/billing/reconcile/logs
+app.get("/billing/reconcile/logs", (c) => {
+  const logs = getReconciliationLogs();
+  return c.json({ count: logs.length, logs }, 200);
 });
 
 

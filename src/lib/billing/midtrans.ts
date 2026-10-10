@@ -132,8 +132,16 @@ interface ProcessedEventRecord {
   invoiceId?: string;
 }
 
+export interface StoredTransaction {
+  status: TransactionStatus;
+  orgId?: string;
+  amount: number;
+  createdAt: number;
+  invoiceId?: string;
+}
+
 const memoryProcessedEvents = new Map<string, ProcessedEventRecord>();
-const memoryTransactions = new Map<string, { status: TransactionStatus; orgId?: string; amount: number }>();
+const memoryTransactions = new Map<string, StoredTransaction>();
 
 /**
  * Resets in-memory storage (used exclusively by test suites).
@@ -146,9 +154,16 @@ export function resetBillingTestStore(): void {
 /**
  * Seeds a transaction state in memory for testing or local execution.
  */
-export function seedTransaction(orderId: string, status: TransactionStatus, amount = 750000, orgId = "org_default"): void {
-  memoryTransactions.set(orderId, { status, orgId, amount });
+export function seedTransaction(
+  orderId: string,
+  status: TransactionStatus,
+  amount = 750000,
+  orgId = "org_default",
+  createdAt = Date.now()
+): void {
+  memoryTransactions.set(orderId, { status, orgId, amount, createdAt });
 }
+
 
 /**
  * Ingests and processes a Midtrans webhook notification with full idempotency,
@@ -227,6 +242,8 @@ export async function processMidtransWebhook(
     status: targetStatus,
     amount: parseFloat(payload.gross_amount) || 0,
     orgId: payload.custom_field1 || currentTx?.orgId || "org_default",
+    createdAt: currentTx?.createdAt || Date.now(),
+    invoiceId,
   });
 
   // Record processed webhook event for replay defense
@@ -254,9 +271,34 @@ export async function processMidtransWebhook(
 /**
  * Retrieves the stored state of a transaction by orderId.
  */
-export function getTransaction(orderId: string): { status: TransactionStatus; amount: number; orgId?: string } | null {
+export function getTransaction(orderId: string): StoredTransaction | null {
   return memoryTransactions.get(orderId) || null;
 }
+
+/**
+ * Retrieves all stored transactions in memory.
+ */
+export function getAllTransactions(): Array<{ orderId: string } & StoredTransaction> {
+  const result: Array<{ orderId: string } & StoredTransaction> = [];
+  for (const [orderId, tx] of memoryTransactions.entries()) {
+    result.push({ orderId, ...tx });
+  }
+  return result;
+}
+
+/**
+ * Updates properties on a stored transaction.
+ */
+export function updateTransaction(
+  orderId: string,
+  updates: Partial<StoredTransaction>
+): boolean {
+  const tx = memoryTransactions.get(orderId);
+  if (!tx) return false;
+  memoryTransactions.set(orderId, { ...tx, ...updates });
+  return true;
+}
+
 
 /**
  * Creates a sandbox checkout session with Midtrans Snap simulation.

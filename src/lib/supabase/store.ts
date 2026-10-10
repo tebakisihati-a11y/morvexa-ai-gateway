@@ -262,3 +262,27 @@ export function registerTestApiKey(rawSecret: string, keyItem: Partial<ApiKeyIte
   return item;
 }
 
+/**
+ * Resets any dynamically registered test keys in memory.
+ */
+export function resetStoreForTest(): void {
+  memoryApiKeys = memoryApiKeys.filter(
+    (k) => k.id === "key-1" || k.id === "key-2" || k.id === "key-3"
+  );
+}
+
+/**
+ * Helper to seed API keys for testing.
+ */
+export function seedApiKeyForTest(item: {
+  id?: string;
+  name?: string;
+  prefix?: string;
+  secret: string;
+  rateLimitRpm?: number;
+  dailyTokenLimit?: number;
+  isActive?: boolean;
+}): ApiKeyItem {
+  return registerTestApiKey(item.secret, item);
+}
+
