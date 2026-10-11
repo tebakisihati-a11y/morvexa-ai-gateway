@@ -23,6 +23,35 @@ import {
 
 export const app = new Hono().basePath("/api");
 
+// Global Resilient Error & 404 Handlers (Zero Unhandled Crashes)
+app.onError((err, c) => {
+  console.error("[Morvexa Gateway Error]:", err);
+  const status = typeof (err as any).status === "number" ? (err as any).status : 500;
+  return c.json(
+    {
+      error: {
+        message: err.message || "Internal server error occurred in gateway pipeline",
+        type: "api_error",
+        code: "internal_error",
+      },
+    },
+    status
+  );
+});
+
+app.notFound((c) => {
+  return c.json(
+    {
+      error: {
+        message: `Endpoint not found: ${c.req.method} ${c.req.path}`,
+        type: "invalid_request_error",
+        code: "not_found",
+      },
+    },
+    404
+  );
+});
+
 // 1. Health & Telemetry Metrics Endpoint
 app.get("/v1/metrics", (c) => {
   return c.json({

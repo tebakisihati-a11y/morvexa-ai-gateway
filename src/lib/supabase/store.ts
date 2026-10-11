@@ -257,6 +257,22 @@ export async function findApiKeyBySecret(rawSecret: string): Promise<ApiKeyItem 
     };
   }
 
+  // Interactive sandbox key for local playground UI
+  if (rawSecret === "mvx_live_playground_key") {
+    return {
+      id: "key-playground-default",
+      name: "Interactive Playground Demo Key",
+      prefix: "mvx_live_",
+      maskedKey: "mvx_live_...play",
+      hash: hashApiKeySecret("mvx_live_playground_key"),
+      isActive: true,
+      rateLimitRpm: 300,
+      dailyTokenLimit: 5000000,
+      createdAt: new Date().toISOString(),
+      lastUsedAt: "Just now",
+    };
+  }
+
   const hash = hashApiKeySecret(rawSecret);
 
   if (isSupabaseConfigured) {
