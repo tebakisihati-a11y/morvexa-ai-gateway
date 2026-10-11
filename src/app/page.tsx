@@ -20,22 +20,14 @@ import {
   getRollingQuotaRecords,
 } from "@/lib/supabase/store";
 import { calculateRollingQuotaStatus } from "@/lib/quota";
-import type { ApiKeyItem, QuotaConfig, QuotaStatus, RequestTraceLog, SystemMetrics } from "@/lib/types";
+import { DEFAULT_SYSTEM_METRICS } from "@/lib/constants";
+import type { ApiKeyItem, QuotaConfig, QuotaStatus, RequestTraceLog } from "@/lib/types";
 
 const defaultQuotaConfig: QuotaConfig = {
   standardRequest5hLimit: 100,
   standardRequest7dLimit: 1000,
   latestTokenDailyLimit: 157100,
   latestTokenWeeklyLimit: 1100000,
-};
-
-const defaultSystemMetrics: SystemMetrics = {
-  rps: 38.4,
-  avgTtftMs: 142,
-  cacheHitRatio: 0.28,
-  errorRate: 0.0012,
-  activeKeysCount: 14,
-  totalRequests24h: 128940,
 };
 
 export default function AppRoot() {
@@ -115,7 +107,7 @@ export default function AppRoot() {
           {activeTab === "overview" && (
             <OverviewTab
               quota={quota}
-              metrics={defaultSystemMetrics}
+              metrics={DEFAULT_SYSTEM_METRICS}
               onNavigateToTab={setActiveTab}
             />
           )}

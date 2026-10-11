@@ -16,7 +16,7 @@ interface OverviewTabProps {
 export function OverviewTab({ quota, metrics, onNavigateToTab }: OverviewTabProps) {
   const [copied, setCopied] = useState(false);
 
-  const curlSnippet = `curl -X POST https://morvexa-ai-gateway.vercel.app/api/v1/messages \\
+  const curlSnippet = `curl -X POST https://morvexa-sistem.vercel.app/api/v1/messages \\
   -H "Authorization: Bearer mvx_live_your_api_key" \\
   -H "Content-Type: application/json" \\
   -d '{

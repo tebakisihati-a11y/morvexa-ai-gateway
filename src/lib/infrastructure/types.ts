@@ -2,8 +2,6 @@
  * Morvexa Nexus — Hybrid Infrastructure & Provisioning Types
  */
 
-export type InfrastructureTier = "shared" | "dedicated";
-
 export type ProvisioningStatus =
   | "requested"
   | "validating"

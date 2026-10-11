@@ -20,6 +20,7 @@ import {
   runAutomatedReconciliation,
   getReconciliationLogs,
 } from "../billing/reconciliation";
+import { DEFAULT_SYSTEM_METRICS } from "../constants";
 
 export const app = new Hono().basePath("/api");
 
@@ -57,12 +58,12 @@ app.get("/v1/metrics", (c) => {
   return c.json({
     status: "healthy",
     uptimeSeconds: Math.floor(process.uptime ? process.uptime() : 1240),
-    rps: 38.4,
-    avgTtftMs: 142,
-    cacheHitRatio: 0.28,
-    errorRate: 0.0012,
-    activeKeysCount: 14,
-    totalRequests24h: 128940,
+    rps: DEFAULT_SYSTEM_METRICS.rps,
+    avgTtftMs: DEFAULT_SYSTEM_METRICS.avgTtftMs,
+    cacheHitRatio: DEFAULT_SYSTEM_METRICS.cacheHitRatio,
+    errorRate: DEFAULT_SYSTEM_METRICS.errorRate,
+    activeKeysCount: DEFAULT_SYSTEM_METRICS.activeKeysCount,
+    totalRequests24h: DEFAULT_SYSTEM_METRICS.totalRequests24h,
     regions: [
       { region: "SIN (Singapore)", latencyMs: 14, status: "optimal" },
       { region: "FRA (Frankfurt)", latencyMs: 86, status: "optimal" },

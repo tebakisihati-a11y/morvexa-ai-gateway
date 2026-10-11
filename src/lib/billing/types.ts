@@ -10,16 +10,6 @@ export type TransactionStatus =
   | "refunded"
   | "disputed";
 
-export type SubscriptionStatus =
-  | "trialing"
-  | "active"
-  | "pending_payment"
-  | "past_due"
-  | "canceled"
-  | "expired";
-
-export type PaymentProvider = "midtrans" | "xendit";
-
 export type PaymentMethod =
   | "qris"
   | "bank_transfer"
@@ -53,14 +43,6 @@ export interface WebhookProcessingResult {
   subscriptionActivated: boolean;
   invoiceId?: string;
   message: string;
-}
-
-export interface CheckoutRequest {
-  orgId: string;
-  planCode: "developer" | "pro" | "apex" | "zenith";
-  billingPeriod: "monthly" | "annual";
-  customerName: string;
-  customerEmail: string;
 }
 
 export interface CheckoutResult {
