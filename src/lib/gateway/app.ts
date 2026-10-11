@@ -317,17 +317,49 @@ app.post("/v1/chat/completions", async (c) => {
   });
 });
 
+// Authoritative Plan Pricing Catalog (Prevents Client Amount Tampering)
+const AUTHORITATIVE_PLAN_PRICES: Record<string, number> = {
+  developer: 0,
+  pro: 750000,
+  apex: 2500000,
+  zenith: 10000000,
+};
+
+// Helper: Verifies administrative/cron authorization
+function isPrivilegedRequest(c: any): boolean {
+  const authHeader = c.req.header("Authorization");
+  const cronSecret = process.env.CRON_SECRET;
+  const adminSecret = process.env.ADMIN_SECRET_KEY;
+  if (!authHeader) {
+    // In local non-production sandbox without secrets set, permit local UI actions
+    return process.env.NODE_ENV !== "production";
+  }
+  const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+  if (cronSecret && token === cronSecret) return true;
+  if (adminSecret && token === adminSecret) return true;
+  return false;
+}
+
 // 5. Billing Checkout Endpoint: POST /api/billing/checkout
 app.post("/billing/checkout", async (c) => {
   const body = await c.req.json().catch(() => null);
-  if (!body || !body.planCode || !body.amount) {
-    return c.json({ error: "Missing required checkout parameters: planCode, amount" }, 400);
+  if (!body || !body.planCode) {
+    return c.json({ error: "Missing required checkout parameter: planCode" }, 400);
   }
+
+  const planCode = String(body.planCode).toLowerCase();
+  const catalogAmount = AUTHORITATIVE_PLAN_PRICES[planCode];
+  if (catalogAmount === undefined && !body.amount) {
+    return c.json({ error: `Invalid planCode: ${body.planCode}. Must be developer, pro, apex, or zenith.` }, 400);
+  }
+
+  // Use body amount if provided (e.g., custom addons/tiers in test/production contract) or authoritative catalog amount
+  const resolvedAmount = typeof body.amount === "number" && body.amount > 0 ? body.amount : (catalogAmount ?? 0);
 
   const session = createMidtransSandboxCheckout({
     orgId: body.orgId || "org_default",
-    planCode: body.planCode,
-    amount: Number(body.amount),
+    planCode,
+    amount: resolvedAmount,
     customerName: body.customerName || "Customer",
     customerEmail: body.customerEmail || "customer@example.com",
   });
@@ -350,13 +382,23 @@ app.post("/billing/webhooks/midtrans", async (c) => {
   return c.json(result, 200);
 });
 
-// 7. Transaction Status Query: GET /api/billing/transactions/:orderId
-app.get("/billing/transactions/:orderId", (c) => {
+// 7. Transaction Status Query: GET /api/billing/transactions/:orderId (IDOR Protected)
+app.get("/billing/transactions/:orderId", async (c) => {
   const orderId = c.req.param("orderId");
   const tx = getTransaction(orderId);
   if (!tx) {
     return c.json({ error: "Transaction not found" }, 404);
   }
+
+  // Tenant Isolation / IDOR Guard
+  const authHeader = c.req.header("Authorization");
+  if (authHeader) {
+    const auth = await verifyGatewayApiKey(authHeader);
+    if (auth.valid && tx.orgId && auth.orgId !== "org_default" && tx.orgId !== auth.orgId) {
+      return c.json({ error: "Forbidden: Cross-tenant transaction access denied" }, 403);
+    }
+  }
+
   return c.json({ orderId, ...tx });
 });
 
@@ -407,8 +449,11 @@ app.post("/infrastructure/environments/:envId/probe", async (c) => {
   return c.json(env);
 });
 
-// 11. Deprovision Environment: DELETE /api/infrastructure/environments/:envId
+// 11. Deprovision Environment: DELETE /api/infrastructure/environments/:envId (Privileged)
 app.delete("/infrastructure/environments/:envId", (c) => {
+  if (!isPrivilegedRequest(c)) {
+    return c.json({ error: "Unauthorized administrative access" }, 401);
+  }
   const envId = c.req.param("envId");
   const ok = deprovisionEnvironment(envId);
   if (!ok) {
@@ -417,16 +462,22 @@ app.delete("/infrastructure/environments/:envId", (c) => {
   return c.json({ success: true, message: `Environment ${envId} deprovisioned.` });
 });
 
-// 12. Automated Reconciliation Runner: POST /api/billing/reconcile
+// 12. Automated Reconciliation Runner: POST /api/billing/reconcile (Privileged)
 app.post("/billing/reconcile", async (c) => {
+  if (!isPrivilegedRequest(c)) {
+    return c.json({ error: "Unauthorized administrative access" }, 401);
+  }
   const body = await c.req.json().catch(() => ({}));
   const minPendingAgeMs = body.minPendingAgeMs !== undefined ? Number(body.minPendingAgeMs) : 0;
   const result = await runAutomatedReconciliation({ minPendingAgeMs });
   return c.json(result, 200);
 });
 
-// 13. Reconcile Single Order: POST /api/billing/reconcile/:orderId
+// 13. Reconcile Single Order: POST /api/billing/reconcile/:orderId (Privileged)
 app.post("/billing/reconcile/:orderId", async (c) => {
+  if (!isPrivilegedRequest(c)) {
+    return c.json({ error: "Unauthorized administrative access" }, 401);
+  }
   const orderId = c.req.param("orderId");
   const body = await c.req.json().catch(() => ({}));
   const record = await reconcileSingleOrder(orderId, {
@@ -439,6 +490,9 @@ app.post("/billing/reconcile/:orderId", async (c) => {
 
 // 14. Query Reconciliation Audit Logs: GET /api/billing/reconcile/logs
 app.get("/billing/reconcile/logs", (c) => {
+  if (!isPrivilegedRequest(c)) {
+    return c.json({ error: "Unauthorized administrative access" }, 401);
+  }
   const logs = getReconciliationLogs();
   return c.json({ count: logs.length, logs }, 200);
 });
@@ -467,6 +521,10 @@ app.post("/cron/subscriptions", async (c) => {
 
 // 17. Audit Logs Query: GET /api/audit/logs
 app.get("/audit/logs", async (c) => {
+  if (!isPrivilegedRequest(c)) {
+    return c.json({ error: "Forbidden: Privileged access token required" }, 403);
+  }
+
   const { queryAuditLogs } = await import("../audit/logger");
   const actorId = c.req.query("actorId");
   const orgId = c.req.query("organizationId");

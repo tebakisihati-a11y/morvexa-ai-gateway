@@ -176,10 +176,23 @@ export async function processMidtransWebhook(
     overrideStore?: boolean;
   }
 ): Promise<WebhookProcessingResult> {
-  const serverKey = options?.serverKey || process.env.MIDTRANS_SERVER_KEY || "dummy_sandbox_key";
+  const serverKey = options?.serverKey || process.env.MIDTRANS_SERVER_KEY;
+  if (!serverKey && process.env.NODE_ENV === "production") {
+    return {
+      success: false,
+      duplicate: false,
+      orderId: payload.order_id,
+      status: "failed",
+      subscriptionActivated: false,
+      message: "Server configuration error: MIDTRANS_SERVER_KEY is not configured.",
+    };
+  }
+
+  // Non-production fallback only: dummy_sandbox_key matching UI/test mock sandbox
+  const effectiveKey = serverKey || options?.serverKey || "dummy_sandbox_key";
 
   // 1. Authenticate signature
-  const isValid = verifyMidtransSignature(payload, serverKey);
+  const isValid = verifyMidtransSignature(payload, effectiveKey);
   if (!isValid) {
     return {
       success: false,

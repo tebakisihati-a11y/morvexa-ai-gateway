@@ -241,8 +241,8 @@ export async function getRollingQuotaRecords(): Promise<QuotaRecord[]> {
 export async function findApiKeyBySecret(rawSecret: string): Promise<ApiKeyItem | null> {
   if (!rawSecret) return null;
 
-  // Support backward-compatible test fixtures
-  if (rawSecret === "mvx_live_test_key_123456") {
+  // Support backward-compatible test fixtures strictly in test environments
+  if (process.env.NODE_ENV === "test" && rawSecret === "mvx_live_test_key_123456") {
     return {
       id: "key-test-default",
       name: "Default Test Key",
