@@ -443,4 +443,45 @@ app.get("/billing/reconcile/logs", (c) => {
   return c.json({ count: logs.length, logs }, 200);
 });
 
+// 15. Scheduled Cron: POST /api/cron/reconcile
+app.post("/cron/reconcile", async (c) => {
+  const authHeader = c.req.header("Authorization");
+  const { verifyCronAuthorization, executeReconciliationCron } = await import("../cron/scheduler");
+  if (!verifyCronAuthorization(authHeader)) {
+    return c.json({ error: "Unauthorized cron trigger" }, 401);
+  }
+  const result = await executeReconciliationCron();
+  return c.json(result, result.success ? 200 : 500);
+});
+
+// 16. Scheduled Cron: POST /api/cron/subscriptions
+app.post("/cron/subscriptions", async (c) => {
+  const authHeader = c.req.header("Authorization");
+  const { verifyCronAuthorization, executeSubscriptionLifecycleCron } = await import("../cron/scheduler");
+  if (!verifyCronAuthorization(authHeader)) {
+    return c.json({ error: "Unauthorized cron trigger" }, 401);
+  }
+  const result = await executeSubscriptionLifecycleCron();
+  return c.json(result, result.success ? 200 : 500);
+});
+
+// 17. Audit Logs Query: GET /api/audit/logs
+app.get("/audit/logs", async (c) => {
+  const { queryAuditLogs } = await import("../audit/logger");
+  const actorId = c.req.query("actorId");
+  const orgId = c.req.query("organizationId");
+  const action = c.req.query("action") as any;
+  const limit = c.req.query("limit") ? Number(c.req.query("limit")) : 50;
+
+  const logs = queryAuditLogs({
+    actorId,
+    organizationId: orgId,
+    action,
+    limit,
+  });
+
+  return c.json({ count: logs.length, logs }, 200);
+});
+
+
 

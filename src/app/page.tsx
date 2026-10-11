@@ -95,11 +95,10 @@ export default function AppRoot() {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as NavTabId)}
-            className={`px-3 py-1.5 rounded text-xs font-mono whitespace-nowrap transition-colors shrink-0 cursor-pointer ${
-              activeTab === tab.id
-                ? "bg-white/10 text-white font-semibold border border-white/10"
-                : "text-zinc-400 hover:text-zinc-200 bg-black/40 border border-white/5"
-            }`}
+            className={`px-3 py-1.5 rounded text-xs font-mono whitespace-nowrap transition-colors shrink-0 cursor-pointer ${activeTab === tab.id
+              ? "bg-white/10 text-white font-semibold border border-white/10"
+              : "text-zinc-400 hover:text-zinc-200 bg-black/40 border border-white/5"
+              }`}
           >
             {tab.label}
           </button>
