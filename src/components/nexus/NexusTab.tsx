@@ -12,7 +12,22 @@ import {
   Layers,
   ArrowUpRight,
   Filter,
+  Play,
+  RotateCw,
+  Clock,
 } from "lucide-react";
+
+interface AuditLogItem {
+  id: string;
+  timestamp: string;
+  actorType: string;
+  actorId: string;
+  action: string;
+  resourceType: string;
+  resourceId: string;
+  status: string;
+  details?: Record<string, unknown>;
+}
 
 interface TenantOrg {
   id: string;
@@ -114,6 +129,48 @@ const MOCK_LEDGER: LedgerEntry[] = [
 
 export function NexusTab() {
   const [filterPlan, setFilterPlan] = useState<string>("all");
+  const [auditLogs, setAuditLogs] = useState<AuditLogItem[]>([]);
+  const [isLoadingLogs, setIsLoadingLogs] = useState<boolean>(false);
+  const [isTriggeringCron, setIsTriggeringCron] = useState<boolean>(false);
+  const [cronMessage, setCronMessage] = useState<string | null>(null);
+
+  const fetchLogs = async () => {
+    setIsLoadingLogs(true);
+    try {
+      const res = await fetch("/api/audit/logs?limit=10");
+      if (res.ok) {
+        const data = await res.json();
+        setAuditLogs(data.logs || []);
+      }
+    } catch (err) {
+      console.error("Failed to load audit logs:", err);
+    } finally {
+      setIsLoadingLogs(false);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchLogs();
+  }, []);
+
+  const handleTriggerReconcile = async () => {
+    setIsTriggeringCron(true);
+    setCronMessage(null);
+    try {
+      const res = await fetch("/api/cron/reconcile", { method: "POST" });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setCronMessage(`Rekonsiliasi Sukses: ${data.details.scannedCount ?? 0} dipindai, ${data.details.resolvedCount ?? 0} diselesaikan.`);
+        fetchLogs();
+      } else {
+        setCronMessage("Gagal memicu rekonsiliasi cron.");
+      }
+    } catch {
+      setCronMessage("Kesalahan jaringan saat memicu cron.");
+    } finally {
+      setIsTriggeringCron(false);
+    }
+  };
 
   const filteredOrgs = MOCK_ORGS.filter((org) => {
     if (filterPlan === "all") return true;
@@ -304,6 +361,91 @@ export function NexusTab() {
                   </td>
                 </tr>
               ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Live System Audit Trail & Cron Automation Trigger */}
+      <div className="rounded-lg border border-white/10 bg-[#0e0e11] overflow-hidden space-y-4 p-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/5 pb-3">
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4 text-orange-400" />
+            <div>
+              <h3 className="text-xs font-mono font-semibold uppercase tracking-wider text-zinc-200">
+                Live Audit Logs & Scheduled Automation
+              </h3>
+              <p className="text-[11px] font-mono text-zinc-500 mt-0.5">
+                Log aktivitas administratif dan trigger manual cron rekonsiliasi Vercel
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={fetchLogs}
+              disabled={isLoadingLogs}
+              className="px-2.5 py-1.5 rounded bg-white/5 hover:bg-white/10 text-zinc-300 text-xs font-mono border border-white/10 flex items-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <RotateCw className={`h-3 w-3 ${isLoadingLogs ? "animate-spin" : ""}`} />
+              Segarkan Log
+            </button>
+            <button
+              onClick={handleTriggerReconcile}
+              disabled={isTriggeringCron}
+              className="px-3 py-1.5 rounded bg-orange-500/20 hover:bg-orange-500/30 text-orange-300 text-xs font-mono border border-orange-500/30 flex items-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <Play className="h-3 w-3" />
+              {isTriggeringCron ? "Memproses..." : "Trigger Cron Sekarang"}
+            </button>
+          </div>
+        </div>
+
+        {cronMessage && (
+          <div className="text-xs font-mono p-2.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+            {cronMessage}
+          </div>
+        )}
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs font-mono">
+            <thead className="bg-white/[0.02] border-b border-white/5 text-zinc-400 text-[10px] uppercase">
+              <tr>
+                <th className="py-2.5 px-3 font-semibold">Log ID</th>
+                <th className="py-2.5 px-3 font-semibold">Timestamp</th>
+                <th className="py-2.5 px-3 font-semibold">Actor</th>
+                <th className="py-2.5 px-3 font-semibold">Action</th>
+                <th className="py-2.5 px-3 font-semibold">Resource</th>
+                <th className="py-2.5 px-3 font-semibold">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5 text-zinc-300">
+              {auditLogs.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-6 text-center text-zinc-500 italic">
+                    Belum ada event audit log tercatat dalam sesi ini.
+                  </td>
+                </tr>
+              ) : (
+                auditLogs.map((log) => (
+                  <tr key={log.id} className="hover:bg-white/[0.01]">
+                    <td className="py-2.5 px-3 text-zinc-500">{log.id}</td>
+                    <td className="py-2.5 px-3 text-zinc-400">{new Date(log.timestamp).toLocaleTimeString()}</td>
+                    <td className="py-2.5 px-3 text-zinc-300">{log.actorId}</td>
+                    <td className="py-2.5 px-3 font-semibold text-orange-400">{log.action}</td>
+                    <td className="py-2.5 px-3 text-zinc-400">{log.resourceType}:{log.resourceId}</td>
+                    <td className="py-2.5 px-3">
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold uppercase ${
+                        log.status === "success"
+                          ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                          : "bg-red-500/10 text-red-400 border border-red-500/20"
+                      }`}>
+                        {log.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
