@@ -173,6 +173,28 @@ export async function createApiKey(name: string, rateLimitRpm: number, dailyToke
   };
 
   memoryApiKeys.unshift(newKey);
+
+  // Automatically record security audit trail for key generation
+  try {
+    const { recordAuditLog } = await import("../audit/logger");
+    recordAuditLog({
+      actorType: "user",
+      actorId: "usr_active_admin",
+      action: "API_KEY_CREATED",
+      resourceType: "api_key",
+      resourceId: newKey.id,
+      status: "success",
+      details: {
+        name,
+        maskedKey: newKey.maskedKey,
+        rateLimitRpm,
+        dailyTokenLimit,
+      },
+    });
+  } catch {
+    // Fail-open for logging to prevent blocking key creation
+  }
+
   return { key: newKey, rawSecret: generated.rawSecret };
 }
 
@@ -180,6 +202,26 @@ export async function revokeApiKey(id: string): Promise<boolean> {
   const item = memoryApiKeys.find((k) => k.id === id);
   if (item) {
     item.isActive = false;
+
+    // Automatically record security audit trail for key revocation
+    try {
+      const { recordAuditLog } = await import("../audit/logger");
+      recordAuditLog({
+        actorType: "user",
+        actorId: "usr_active_admin",
+        action: "API_KEY_REVOKED",
+        resourceType: "api_key",
+        resourceId: id,
+        status: "success",
+        details: {
+          name: item.name,
+          maskedKey: item.maskedKey,
+        },
+      });
+    } catch {
+      // Fail-open for logging
+    }
+
     return true;
   }
   return false;
