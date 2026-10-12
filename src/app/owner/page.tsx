@@ -16,6 +16,8 @@ import {
   getApiKeys,
   createApiKey,
   revokeApiKey,
+  regenerateKeySecret,
+  resetKeyQuota,
   getRequestLogs,
   getRollingQuotaRecords,
 } from "@/lib/supabase/store";
@@ -70,7 +72,23 @@ export default function OwnerControlPlanePage() {
 
   const handleRevokeKey = async (id: string) => {
     await revokeApiKey(id);
-    setKeys((prev) => prev.map((k) => (k.id === id ? { ...k, isActive: false } : k)));
+    setKeys((prev) => prev.map((k) => (k.id === id ? { ...k, isActive: false, healthStatus: "revoked" } : k)));
+  };
+
+  const handleRegenerateKey = async (id: string) => {
+    const res = await regenerateKeySecret(id);
+    if (res) {
+      setKeys((prev) => prev.map((k) => (k.id === id ? res.key : k)));
+      return { rawSecret: res.rawSecret };
+    }
+    return null;
+  };
+
+  const handleResetQuota = async (id: string, boostTokens = 100000) => {
+    const updated = await resetKeyQuota(id, boostTokens);
+    if (updated) {
+      setKeys((prev) => prev.map((k) => (k.id === id ? updated : k)));
+    }
   };
 
   const handleLogin = (e: React.FormEvent) => {
@@ -152,22 +170,26 @@ export default function OwnerControlPlanePage() {
   // Once authenticated, render complete Owner Command Center
   return (
     <div className="min-h-screen bg-[#010302] text-[#F0FEF8] flex flex-col font-sans selection:bg-[#1CE172]/20 selection:text-[#1CE172]">
-      {/* Top Navbar */}
-      <div className="relative">
-        <Navbar currentTab={activeTab} onTabChange={setActiveTab} />
-        {/* Owner Privileged Badge */}
-        <div className="absolute right-40 top-3 hidden md:flex items-center gap-2 z-50">
-          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-red-500/10 text-red-400 border border-red-500/20">
-            OWNER PRIVILEGED MODE
-          </span>
-          <Link
-            href="/customer"
-            className="text-[11px] font-mono px-3 py-1 rounded-full border border-[#1CE172]/30 bg-[#010302]/80 text-[#1CE172] hover:bg-[#1CE172]/10 transition-colors"
-          >
-            Buka Sistem Customer →
-          </Link>
-        </div>
-      </div>
+      {/* Top Navbar with integrated Owner Badge & Customer Navigation */}
+      <Navbar
+        currentTab={activeTab}
+        onTabChange={setActiveTab}
+        customBadge={
+          <div className="flex items-center gap-2">
+            <span className="hidden xl:inline-flex items-center gap-1.5 text-[10px] font-mono px-2.5 py-1 rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/30">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
+              <span>OWNER MASTER PLANE</span>
+            </span>
+            <Link
+              href="/customer"
+              className="text-[11px] font-mono px-3 py-1 rounded-lg border border-[#1CE172]/30 bg-[#1CE172]/10 text-[#1CE172] hover:bg-[#1CE172]/20 transition-all flex items-center gap-1"
+            >
+              <span>Portal Kustomer</span>
+              <ArrowRight className="h-3 w-3" />
+            </Link>
+          </div>
+        }
+      />
 
       {/* Main App Container */}
       <div className="flex-1 flex flex-col md:flex-row">
@@ -189,6 +211,8 @@ export default function OwnerControlPlanePage() {
               keys={keys}
               onCreateKey={handleCreateKey}
               onRevokeKey={handleRevokeKey}
+              onRegenerateKey={handleRegenerateKey}
+              onResetQuota={handleResetQuota}
             />
           )}
 

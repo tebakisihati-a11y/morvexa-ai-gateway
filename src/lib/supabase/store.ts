@@ -8,32 +8,61 @@ const ONE_HOUR = 3600 * 1000;
 
 let memoryApiKeys: ApiKeyItem[] = [
   {
-    id: "key-1",
-    name: "Production Gateway Agent",
+    id: "key-cust-1",
+    name: "Apex Scale — dev@acme.ai",
+    prefix: "mvx_live_",
+    maskedKey: "mvx_live_...92d1",
+    hash: "sha256_mock_hash_apex",
+    isActive: true,
+    rateLimitRpm: 300,
+    dailyTokenLimit: 1500000,
+    createdAt: new Date(now - 86400000 * 2).toISOString(),
+    lastUsedAt: "2 mins ago",
+    customerEmail: "dev@acme.ai",
+    tokensUsed: 420850,
+    totalTokenCap: 1500000,
+    planCode: "apex",
+    healthStatus: "healthy",
+  },
+  {
+    id: "key-cust-2",
+    name: "Pro Workspace — founder@startup.id",
     prefix: "mvx_live_",
     maskedKey: "mvx_live_...4f89",
-    hash: "sha256_mock_hash_1",
+    hash: "sha256_mock_hash_pro",
     isActive: true,
     rateLimitRpm: 120,
-    dailyTokenLimit: 1000000,
+    dailyTokenLimit: 300000,
     createdAt: new Date(now - 86400000 * 5).toISOString(),
     lastUsedAt: "Just now",
+    customerEmail: "founder@startup.id",
+    tokensUsed: 298400,
+    totalTokenCap: 300000,
+    planCode: "pro",
+    healthStatus: "quota_exhausted",
+    issueReason: "Daily token limit almost depleted (99.4% used). Upstream calls may reject.",
   },
   {
-    id: "key-2",
-    name: "Staging Test Proxy",
+    id: "key-cust-3",
+    name: "Developer Starter — engineer@fintech.co",
     prefix: "mvx_live_",
     maskedKey: "mvx_live_...bc21",
-    hash: "sha256_mock_hash_2",
+    hash: "sha256_mock_corrupted_hash",
     isActive: true,
-    rateLimitRpm: 60,
-    dailyTokenLimit: 250000,
-    createdAt: new Date(now - 86400000 * 2).toISOString(),
-    lastUsedAt: "12 mins ago",
+    rateLimitRpm: 30,
+    dailyTokenLimit: 50000,
+    createdAt: new Date(now - 86400000 * 1).toISOString(),
+    lastUsedAt: "35 mins ago",
+    customerEmail: "engineer@fintech.co",
+    tokensUsed: 12500,
+    totalTokenCap: 50000,
+    planCode: "developer",
+    healthStatus: "invalid_hash",
+    issueReason: "Cryptographic hash check mismatch. Client requests return 401 Unauthorized.",
   },
   {
-    id: "key-3",
-    name: "Evaluation Benchmark Suite",
+    id: "key-cust-4",
+    name: "Evaluation Benchmark — qa@agency.org",
     prefix: "mvx_test_",
     maskedKey: "mvx_test_...88a1",
     hash: "sha256_mock_hash_3",
@@ -42,6 +71,12 @@ let memoryApiKeys: ApiKeyItem[] = [
     dailyTokenLimit: 100000,
     createdAt: new Date(now - 86400000 * 10).toISOString(),
     lastUsedAt: "3 days ago",
+    customerEmail: "qa@agency.org",
+    tokensUsed: 89000,
+    totalTokenCap: 100000,
+    planCode: "developer",
+    healthStatus: "revoked",
+    issueReason: "Key revoked by platform administrator.",
   },
 ];
 
@@ -202,6 +237,8 @@ export async function revokeApiKey(id: string): Promise<boolean> {
   const item = memoryApiKeys.find((k) => k.id === id);
   if (item) {
     item.isActive = false;
+    item.healthStatus = "revoked";
+    item.issueReason = "Key revoked by platform administrator.";
 
     // Automatically record security audit trail for key revocation
     try {
@@ -225,6 +262,83 @@ export async function revokeApiKey(id: string): Promise<boolean> {
     return true;
   }
   return false;
+}
+
+/**
+ * Owner Autonomous Remediation: Regenerates key secret for customer with invalid / corrupted token.
+ */
+export async function regenerateKeySecret(id: string): Promise<{ key: ApiKeyItem; rawSecret: string } | null> {
+  const item = memoryApiKeys.find((k) => k.id === id);
+  if (!item) return null;
+
+  const generated = generateSecureApiKey(item.prefix.includes("test") ? "test" : "live");
+  item.hash = generated.keyHash;
+  item.prefix = generated.keyPrefix;
+  item.maskedKey = generated.maskedKey;
+  item.isActive = true;
+  item.healthStatus = "healthy";
+  item.issueReason = undefined;
+
+  try {
+    const { recordAuditLog } = await import("../audit/logger");
+    recordAuditLog({
+      actorType: "user",
+      actorId: "usr_active_admin",
+      action: "API_KEY_REMEDIATED",
+      resourceType: "api_key",
+      resourceId: id,
+      status: "success",
+      details: {
+        type: "REGENERATE_SECRET",
+        name: item.name,
+        newMaskedKey: generated.maskedKey,
+        customerEmail: item.customerEmail,
+      },
+    });
+  } catch {
+    // Fail-open
+  }
+
+  return { key: item, rawSecret: generated.rawSecret };
+}
+
+/**
+ * Owner Autonomous Remediation: Resets token usage or boosts quota for customer who exhausted daily limit.
+ */
+export async function resetKeyQuota(id: string, boostTokens = 0): Promise<ApiKeyItem | null> {
+  const item = memoryApiKeys.find((k) => k.id === id);
+  if (!item) return null;
+
+  item.tokensUsed = 0;
+  if (boostTokens > 0) {
+    item.dailyTokenLimit += boostTokens;
+    if (item.totalTokenCap) item.totalTokenCap += boostTokens;
+  }
+  item.isActive = true;
+  item.healthStatus = "healthy";
+  item.issueReason = undefined;
+
+  try {
+    const { recordAuditLog } = await import("../audit/logger");
+    recordAuditLog({
+      actorType: "user",
+      actorId: "usr_active_admin",
+      action: "API_KEY_REMEDIATED",
+      resourceType: "api_key",
+      resourceId: id,
+      status: "success",
+      details: {
+        type: "RESET_QUOTA_BOOST",
+        name: item.name,
+        boostTokens,
+        customerEmail: item.customerEmail,
+      },
+    });
+  } catch {
+    // Fail-open
+  }
+
+  return item;
 }
 
 export async function getRequestLogs(): Promise<RequestTraceLog[]> {

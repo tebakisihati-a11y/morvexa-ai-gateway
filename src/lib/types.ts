@@ -47,6 +47,12 @@ export interface ApiKeyItem {
   dailyTokenLimit: number;
   createdAt: string;
   lastUsedAt?: string;
+  customerEmail?: string;
+  tokensUsed?: number;
+  totalTokenCap?: number;
+  planCode?: string;
+  healthStatus?: "healthy" | "invalid_hash" | "quota_exhausted" | "revoked";
+  issueReason?: string;
 }
 
 export interface UpstreamProviderConfig {

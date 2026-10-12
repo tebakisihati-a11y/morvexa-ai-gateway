@@ -10,31 +10,38 @@ interface KeysTabProps {
   keys: ApiKeyItem[];
   onCreateKey: (name: string, rpm: number, dailyTokens: number) => Promise<{ rawSecret: string }>;
   onRevokeKey: (id: string) => void;
+  onRegenerateKey?: (id: string) => Promise<{ rawSecret: string } | null>;
+  onResetQuota?: (id: string, boostTokens?: number) => Promise<void>;
 }
 
-export function KeysTab({ keys, onCreateKey, onRevokeKey }: KeysTabProps) {
+export function KeysTab({ keys, onCreateKey, onRevokeKey, onRegenerateKey, onResetQuota }: KeysTabProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-sm font-semibold text-zinc-100 tracking-tight">API Key Management & Policy</h2>
-          <p className="text-xs text-zinc-400 mt-0.5">
-            Authenticate applications and control per-key rate limits, daily quotas, and model restrictions.
+          <h2 className="text-base font-semibold text-[#F0FEF8] tracking-tight">API Key Management & Customer Doctor</h2>
+          <p className="text-xs text-[#889e93] mt-0.5 font-mono">
+            Pantau konsumsi token per kustomer dan pulihkan token yang invalid atau habis kuota secara real-time.
           </p>
         </div>
 
         <button
           onClick={() => setIsModalOpen(true)}
-          className="px-3 py-1.5 rounded bg-orange-600 hover:bg-orange-500 text-white text-xs font-mono font-medium flex items-center gap-1.5 transition-colors cursor-pointer self-start sm:self-auto"
+          className="px-3.5 py-2 rounded-xl bg-[#1CE172] hover:bg-[#1CE172]/90 text-[#010302] text-xs font-mono font-bold flex items-center gap-1.5 transition-all shadow-[0_0_20px_rgba(28,225,114,0.3)] cursor-pointer self-start sm:self-auto"
         >
-          <Plus className="h-3.5 w-3.5" />
-          <span>generate_key</span>
+          <Plus className="h-4 w-4" />
+          <span>Buat Kunci Baru</span>
         </button>
       </div>
 
-      <ApiKeyList keys={keys} onRevoke={onRevokeKey} />
+      <ApiKeyList
+        keys={keys}
+        onRevoke={onRevokeKey}
+        onRegenerateSecret={onRegenerateKey}
+        onResetQuota={onResetQuota}
+      />
 
       {/* Security info card */}
       <div className="rounded-lg border border-white/10 bg-[#0e0e11] p-3.5 sm:p-4 flex items-start gap-3">

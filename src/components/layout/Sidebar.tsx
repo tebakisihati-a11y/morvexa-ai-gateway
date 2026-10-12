@@ -45,28 +45,28 @@ export function Sidebar({ activeTab, onTabChange, onOpenExperience }: SidebarPro
   ];
 
   return (
-    <aside className="hidden md:flex w-60 border-r border-white/10 bg-[#06040d]/95 flex-col shrink-0 min-h-[calc(100vh-3.5rem)]">
+    <aside className="hidden md:flex w-64 border-r border-[#1CE172]/15 bg-[#050806]/95 backdrop-blur-xl flex-col shrink-0 min-h-[calc(100vh-3.5rem)]">
       {/* Workspace Switcher header */}
-      <div className="p-3 border-b border-white/10">
-        <div className="flex items-center justify-between p-2 rounded-xl bg-white/[0.02] border border-white/5">
-          <div className="flex items-center gap-2">
-            <div className="h-5 w-5 rounded-md bg-gradient-to-br from-[#c03fb5] to-[#5449ab] text-white flex items-center justify-center font-mono text-[10px] font-bold">
+      <div className="p-3 border-b border-white/5">
+        <div className="flex items-center justify-between p-2.5 rounded-2xl bg-[#010302] border border-[#1CE172]/20 shadow-inner">
+          <div className="flex items-center gap-2.5">
+            <div className="h-6 w-6 rounded-lg bg-gradient-to-br from-[#1CE172] to-[#355C49] text-[#010302] flex items-center justify-center font-mono text-xs font-bold shadow-md shadow-[#1CE172]/20">
               M
             </div>
             <div>
-              <div className="text-xs font-medium text-[#f7f8fd]">Morvexa Gateway</div>
-              <div className="text-[10px] font-mono text-[#aca3e1]/60">core_prod</div>
+              <div className="text-xs font-semibold text-[#F0FEF8] tracking-tight">Morvexa Server</div>
+              <div className="text-[10px] font-mono text-[#889e93]">owner_plane</div>
             </div>
           </div>
-          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-[#c03fb5]/10 text-[#aca3e1] border border-[#c03fb5]/30">
-            PRO
+          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#1CE172]/10 text-[#1CE172] border border-[#1CE172]/30 font-bold">
+            MASTER
           </span>
         </div>
       </div>
 
       {/* Navigation List */}
       <nav className="p-3 space-y-1 flex-1">
-        <div className="px-2 pb-1.5 text-[10px] font-mono uppercase tracking-wider text-[#aca3e1]/70 font-semibold">
+        <div className="px-2.5 pb-2 text-[10px] font-mono uppercase tracking-wider text-[#889e93] font-semibold">
           Platform Controls
         </div>
 
@@ -77,32 +77,32 @@ export function Sidebar({ activeTab, onTabChange, onOpenExperience }: SidebarPro
             <button
               key={item.id}
               onClick={() => onTabChange(item.id)}
-              className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-mono transition-colors cursor-pointer ${
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-mono transition-all cursor-pointer ${
                 isActive
-                  ? "bg-[#1a0b2e] text-white font-semibold border border-[#c03fb5]/40 shadow-sm shadow-purple-500/20"
-                  : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]"
+                  ? "bg-[#355C49]/40 text-[#F0FEF8] font-bold border border-[#1CE172]/40 shadow-sm shadow-[#1CE172]/10"
+                  : "text-zinc-400 hover:text-[#F0FEF8] hover:bg-white/[0.04]"
               }`}
             >
               <div className="flex items-center gap-2.5">
                 <Icon
-                  className={`h-4 w-4 ${
-                    isActive ? "text-[#c03fb5]" : "text-zinc-500"
+                  className={`h-4 w-4 transition-colors ${
+                    isActive ? "text-[#1CE172]" : "text-zinc-500"
                   }`}
                 />
                 <span>{item.label}</span>
               </div>
-              {isActive && <span className="text-[#c03fb5] text-xs">●</span>}
+              {isActive && <span className="text-[#1CE172] text-xs">●</span>}
             </button>
           );
         })}
 
         {onOpenExperience && (
-          <div className="pt-4 mt-4 border-t border-white/10">
+          <div className="pt-4 mt-4 border-t border-white/5">
             <button
               onClick={onOpenExperience}
-              className="w-full flex items-center gap-2 px-2.5 py-2 rounded-xl text-xs font-mono text-[#aca3e1] hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-mono text-[#889e93] hover:text-[#1CE172] hover:bg-[#1CE172]/5 transition-colors cursor-pointer"
             >
-              <Sparkles className="h-4 w-4 text-[#c03fb5]" />
+              <Sparkles className="h-4 w-4 text-[#1CE172]" />
               <span>3D Showcase Scene</span>
             </button>
           </div>
@@ -110,16 +110,16 @@ export function Sidebar({ activeTab, onTabChange, onOpenExperience }: SidebarPro
       </nav>
 
       {/* Upstream Status Footer */}
-      <div className="p-3 border-t border-white/10 bg-[#030108]">
-        <div className="rounded-xl border border-white/5 bg-white/[0.01] p-2.5">
+      <div className="p-3 border-t border-white/5 bg-[#010302]/80">
+        <div className="rounded-xl border border-white/5 bg-[#050806] p-2.5">
           <div className="flex items-center justify-between text-[11px] mb-1.5 font-mono">
-            <span className="text-[#aca3e1]">Upstream Mesh</span>
-            <span className="text-emerald-400 text-[10px]">6/6 healthy</span>
+            <span className="text-[#889e93]">Upstream Mesh</span>
+            <span className="text-[#1CE172] text-[10px] font-semibold">6/6 healthy</span>
           </div>
           <div className="space-y-1 text-[10px] font-mono text-zinc-500">
             <div className="flex justify-between items-center">
               <span>Private Local (5002)</span>
-              <span className="text-purple-300 font-bold">8ms</span>
+              <span className="text-[#1CE172] font-bold">8ms</span>
             </div>
             <div className="flex justify-between items-center">
               <span>Anthropic Direct</span>

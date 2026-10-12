@@ -10,6 +10,7 @@ interface NavbarProps {
   onTabChange: (tab: NavTabId) => void;
   viewMode?: "landing" | "console";
   onToggleViewMode?: (mode: "landing" | "console") => void;
+  customBadge?: React.ReactNode;
 }
 
 export function Navbar({
@@ -17,6 +18,7 @@ export function Navbar({
   onTabChange,
   viewMode = "console",
   onToggleViewMode,
+  customBadge,
 }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -42,13 +44,13 @@ export function Navbar({
 
   return (
     <>
-      <header className="h-14 border-b border-white/10 bg-[#06040d]/90 backdrop-blur-md sticky top-0 z-40 px-3 sm:px-6 flex items-center justify-between">
+      <header className="h-14 border-b border-[#1CE172]/15 bg-[#010302]/90 backdrop-blur-xl sticky top-0 z-40 px-3 sm:px-6 flex items-center justify-between">
         {/* Brand & Mobile Hamburger */}
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-1.5 rounded-lg border border-white/10 text-[#aca3e1] hover:text-white bg-white/5 cursor-pointer"
+            className="md:hidden p-1.5 rounded-lg border border-white/10 text-zinc-400 hover:text-white bg-white/5 cursor-pointer"
             aria-label="Toggle Navigation"
           >
             {mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
@@ -58,15 +60,15 @@ export function Navbar({
             onClick={() => onToggleViewMode?.("landing")}
             className="flex items-center gap-2 cursor-pointer group"
           >
-            <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-[#c03fb5] via-[#a6085b] to-[#5449ab] flex items-center justify-center font-mono font-bold text-xs text-white shadow-md shadow-pink-500/20 group-hover:scale-105 transition-transform">
+            <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-[#1CE172] via-[#355C49] to-[#010302] flex items-center justify-center font-mono font-bold text-xs text-[#010302] shadow-md shadow-[#1CE172]/20 group-hover:scale-105 transition-transform">
               M
             </div>
             <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-1.5">
-              <span className="font-semibold tracking-tight text-sm text-[#f7f8fd]">
+              <span className="font-semibold tracking-tight text-sm text-[#F0FEF8]">
                 Morvexa
               </span>
-              <span className="text-[#aca3e1]/60 font-mono text-[11px] hidden sm:inline">
-                / ai-gateway
+              <span className="text-[#889e93] font-mono text-[11px] hidden sm:inline">
+                / master-server
               </span>
             </div>
           </div>
@@ -104,20 +106,26 @@ export function Navbar({
 
           <EdgeStatusRadar />
 
+          {customBadge && (
+            <div className="flex items-center">
+              {customBadge}
+            </div>
+          )}
+
           <a
             href="/api/v1/models"
             target="_blank"
             rel="noreferrer"
-            className="hidden lg:flex items-center gap-1.5 text-[11px] font-mono text-[#aca3e1] hover:text-white border border-white/10 px-2.5 py-1 rounded-lg transition-colors bg-white/[0.02]"
+            className="hidden lg:flex items-center gap-1.5 text-[11px] font-mono text-[#1CE172]/80 hover:text-[#1CE172] border border-[#1CE172]/20 px-2.5 py-1 rounded-lg transition-colors bg-[#1CE172]/5"
           >
-            <Terminal className="h-3 w-3 text-[#aca3e1]" />
+            <Terminal className="h-3 w-3 text-[#1CE172]" />
             <span>API Catalog</span>
             <ExternalLink className="h-2.5 w-2.5 text-zinc-500" />
           </a>
 
-          <div className="flex items-center gap-1 px-2 py-0.5 border border-white/10 rounded-lg text-[11px] font-mono text-zinc-400 bg-white/[0.02]">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-            <span className="hidden sm:inline">free_tier</span>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 border border-white/10 rounded-lg text-[11px] font-mono text-zinc-300 bg-white/[0.02]">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#1CE172]" />
+            <span className="hidden sm:inline">edge_active</span>
           </div>
         </div>
       </header>
