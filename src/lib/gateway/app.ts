@@ -409,7 +409,28 @@ app.post("/billing/webhooks/midtrans", async (c) => {
     return c.json({ error: result.message }, 401);
   }
 
-  return c.json(result, 200);
+  // Automatic Key Provisioning & Email Dispatch upon Settlement
+  let autoProvisionResult = null;
+  if (result.subscriptionActivated) {
+    const { autoProvisionCustomerKey } = await import("../billing/provisioning");
+    const customerEmail = payload.customer_email || payload.custom_field3 || "customer@morvexa.ai";
+    const customerName = payload.customer_name || "Valued Customer";
+    const planCode = payload.custom_field2 || "pro";
+
+    try {
+      autoProvisionResult = await autoProvisionCustomerKey({
+        orderId: payload.order_id,
+        customerEmail,
+        customerName,
+        planCode,
+        orgId: payload.custom_field1 || "org_default",
+      });
+    } catch (err: any) {
+      console.error("[Auto-provision Error]:", err);
+    }
+  }
+
+  return c.json({ ...result, autoProvision: autoProvisionResult }, 200);
 });
 
 // 7. Transaction Status Query: GET /api/billing/transactions/:orderId (IDOR Protected)

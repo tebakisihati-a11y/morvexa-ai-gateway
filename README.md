@@ -1,49 +1,54 @@
-# Morvexa Master Sistem ⚡ (Morvexa Nexus Control Plane & AI Gateway)
- 
-> **Enterprise SaaS Control Plane, AI Gateway & Hybrid Multi-Tenant Management**  
-> Built with Next.js 15, Hono.js Edge Router, Supabase PostgreSQL with RLS, Midtrans Payment Adapter, Tailwind CSS v4, and Zero AI-Slop Design.
+# Morvexa AI Server Master ⚡
+
+> **Universal AI Gateway, BYOK Secret Vault & Cinematic 3D Control Plane**  
+> Built with Next.js 15, Hono.js Edge Router, Supabase PostgreSQL with RLS, AES-256-GCM BYOK Vault, Midtrans Payment Adapter, Tailwind CSS v4, and Zero-Buffer SSE Streaming.
 
 ---
 
-## 🌟 Fitur Utama
+## 🌟 Fitur Utama & Arsitektur Dual-Layer
 
-1. **Nexus Centralized Control Plane**:
-   * Dashboard eksekutif memantau MRR, total tenant, volume traffic gateway, dan margin laba.
-   * Manajemen multi-organisasi & sub-tenansi proyek dengan 9-tier RBAC (`PLATFORM_OWNER` hingga `PUBLIC_USER`).
-   * Visualisasi buku besar keuangan (*Double-Entry Ledger*) dan riwayat penagihan per tenant.
+### A. Public Experience (Layer A)
+1. **Cinematic 3D Hero Experience**:
+   - Geodesic Neural Core interaktif dengan pencahayaan neon mint dan tracking kursor pengguna.
+   - Mode fallback otomatis *prefers-reduced-motion* yang ramah baterai dan mobile.
+   - Mengusung palet Obsidian (`#010302`), Forest Green (`#355C49`), Soft Mint White (`#F0FEF8`), dan Neon Mint (`#1CE172`).
+2. **Developer Ingress Quickstart**:
+   - Contoh cURL langsung untuk endpoint kompatibel Anthropic & OpenAI.
+   - Model Registry terverifikasi (Claude 3.7 Sonnet, GPT-4o, DeepSeek V3, Gemini 2.0 Flash).
+3. **Peta Keamanan Zero-Leak**:
+   - Dokumentasi transparan batas rahasia master dan mitigasi OWASP Top 10 API Security.
 
-2. **Dual Rolling Quota Engine**:
-   * **Skema Model Standar**: 5-Jam rolling request cap dengan countdown pemulihan live per detik + 7-Hari rolling window.
-   * **Skema Model Frontier**: Token cap harian (24 jam) dan mingguan (7 hari).
-
-3. **Multi-Provider Intelligent Failover**:
-   * Kompatibilitas penuh Anthropic Messages API (`/api/v1/messages`) dan OpenAI API (`/v1/chat/completions`).
-   * Failover otomatis saat upstream rate-limit (Anthropic -> DeepSeek V3 -> Groq -> Gemini -> Private Local Host).
-   * Verifikasi kunci API berbasis SHA-256 dan sliding-window rate limiter per tenant.
-
-4. **Automated Financial Reconciliation & Indonesian Payments**:
-   * Integrasi Midtrans Snap sandbox adapter dengan verifikasi tanda tangan SHA-512 dan pencegahan replay.
-   * Mesin rekonsiliasi otomatis (`runAutomatedReconciliation`) mendeteksi `UNSETTLED_CAPTURE`, `AMOUNT_MISMATCH`, dan `EXPIRED_CLEANUP`.
-   * Background cron job terjadwal di Vercel (`/api/cron/reconcile` dan `/api/cron/subscriptions`).
-
-5. **Hybrid Shared & Dedicated Infrastructure**:
-   * Mendukung alur routing Shared Edge dan Dedicated Node lokal (`localhost:5002`).
-   * Automated health probe tracking untuk mendeteksi latency dan uptime node terdedikasi.
-
-6. **Append-Only Security Audit Trail**:
-   * Pencatatan log terstruktur untuk seluruh mutasi sensitif (pembuatan/pencabutan kunci, mutasi role, transaksi, dan eksekusi cron).
-   * Live audit log viewer interaktif di UI tab Nexus.
+### B. Morvexa Control Plane (Layer B)
+1. **Universal Model Gateway Runtime (Hono Edge Engine)**:
+   - Endpoint `/api/v1/messages` (Anthropic format) & `/api/v1/chat/completions` (OpenAI format).
+   - Zero-buffer Server-Sent Events (SSE) streaming dengan latensi ultra-rendah.
+   - Intelligent multi-provider automatic failover: `Anthropic -> DeepSeek V3 -> Groq -> Gemini -> Private Server`.
+2. **Cryptographic API Key Management**:
+   - Pembuatan kunci menggunakan CSPRNG (`crypto.randomBytes(24)`).
+   - Format: `mvx_live_<hex>` dan `mvx_test_<hex>`.
+   - Penyimpanan berbasis hash **SHA-256**, plaintext hanya ditampilkan satu kali saat pembuatan.
+3. **BYOK (Bring Your Own Key) Secret Vault**:
+   - Kredensial provider milik pelanggan dienkripsi dengan standar **AES-256-GCM** (Envelope Encryption).
+   - Rahasia provider tidak pernah disimpan dalam bentuk plaintext di database atau terekspos ke browser.
+4. **Dual Rolling Quota Engine**:
+   - **Model Standar**: 5-Jam rolling request cap dengan countdown pemulihan per detik + 7-Hari rolling window.
+   - **Model Frontier**: Token cap harian (24 jam) dan mingguan (7 hari).
+5. **Billing Ledger & Automated Reconciliation**:
+   - Integrasi Midtrans Snap sandbox checkout dengan verifikasi signature SHA-512.
+   - Mesin rekonsiliasi otomatis (`runAutomatedReconciliation`) mencegah drifting status order dan tampered amounts.
+   - Endpoint cron terjadwal (`/api/cron/reconcile` dan `/api/cron/subscriptions`).
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠️ Tech Stack & Dependensi
 
 * **Frontend:** Next.js 15 (App Router, React 19)
 * **Styling:** Tailwind CSS v4 (@theme token system)
-* **Edge Proxy:** Hono.js Edge Engine (`src/app/api/[[...route]]/route.ts`)
+* **Edge Proxy:** Hono.js Engine (`src/app/api/[[...route]]/route.ts`)
+* **Encryption Vault:** Node.js Crypto (AES-256-GCM Envelope Encryption)
 * **Database & Auth:** Supabase (PostgreSQL, 9-tier RBAC, Declarative RLS)
 * **Payments:** Midtrans Gateway SDK (Sandbox & Production ready)
-* **Automated Testing:** Vitest (64 passing test cases)
+* **Automated Testing:** Vitest (**67 passing test cases**)
 
 ---
 
@@ -53,24 +58,23 @@
 # 1. Install dependensi
 npm install
 
-# 2. Jalankan unit & integration tests
+# 2. Jalankan unit & integration tests (67 passing tests)
 npm test
 
 # 3. Jalankan development server
 npm run dev
-```
 
-Buka [http://localhost:3000](http://localhost:3000) di browser Anda untuk mengakses konsol gateway dan Nexus Control Plane.
+# 4. Build untuk produksi
+npm run build
+```
 
 ---
 
-## 📖 Dokumentasi Teknis
+## 📚 Dokumentasi Arsitektur & Audit
 
-* **[Arsitektur Sistem (docs/architecture/SYSTEM_ARCHITECTURE.md)](docs/architecture/SYSTEM_ARCHITECTURE.md)**
-* **[Skema Basis Data (docs/database/SCHEMA.md)](docs/database/SCHEMA.md)**
-* **[Kontrak API (docs/api/API_CONTRACTS.md)](docs/api/API_CONTRACTS.md)**
-* **[Panduan Siklus Pembayaran (docs/billing/PAYMENT_LIFECYCLE.md)](docs/billing/PAYMENT_LIFECYCLE.md)**
-* **[Arsitektur Infrastruktur Hybrid (docs/infrastructure/HYBRID_MODEL.md)](docs/infrastructure/HYBRID_MODEL.md)**
-* **[Standar Operasional Prosedur Insiden (docs/operations/RUNBOOKS.md)](docs/operations/RUNBOOKS.md)**
-* **[Roadmap Pelaksanaan (docs/implementation/ROADMAP.md)](docs/implementation/ROADMAP.md)**
-
+Seluruh laporan audit dan arsitektur tersedia di direktori `docs/`:
+- [docs/AUDIT_REPORT.md](docs/AUDIT_REPORT.md): Laporan inventarisasi stack, keputusan KEEP/EXTEND, dan pemetaan endpoint.
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): Diagram topologi multi-layer (Experience, Gateway, Data, Operations).
+- [docs/FEATURE_MATRIX.md](docs/FEATURE_MATRIX.md): Matriks status riil fitur (Verified Working, Partially Working, Mock, Blocked).
+- [docs/SECURITY_BASELINE.md](docs/SECURITY_BASELINE.md): Threat model OWASP Top 10 dan batas secret boundaries.
+- [docs/COST_AND_HOSTING.md](docs/COST_AND_HOSTING.md): Analisis batasan Vercel Hobby & panduan free-tier infrastructure.
