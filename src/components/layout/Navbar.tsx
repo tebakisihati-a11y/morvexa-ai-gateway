@@ -2,15 +2,22 @@
 
 import React, { useState } from "react";
 import { EdgeStatusRadar } from "./EdgeStatusRadar";
-import { Cpu, Terminal, ExternalLink, Menu, X } from "lucide-react";
+import { Cpu, Terminal, ExternalLink, Menu, X, Sparkles, LayoutDashboard } from "lucide-react";
 import type { NavTabId } from "./Sidebar";
 
 interface NavbarProps {
   currentTab: NavTabId;
   onTabChange: (tab: NavTabId) => void;
+  viewMode?: "landing" | "console";
+  onToggleViewMode?: (mode: "landing" | "console") => void;
 }
 
-export function Navbar({ currentTab, onTabChange }: NavbarProps) {
+export function Navbar({
+  currentTab,
+  onTabChange,
+  viewMode = "console",
+  onToggleViewMode,
+}: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems: { id: NavTabId; label: string }[] = [
@@ -27,54 +34,88 @@ export function Navbar({ currentTab, onTabChange }: NavbarProps) {
 
   const handleSelectTab = (tab: NavTabId) => {
     onTabChange(tab);
+    if (viewMode === "landing" && onToggleViewMode) {
+      onToggleViewMode("console");
+    }
     setMobileMenuOpen(false);
   };
 
   return (
     <>
-      <header className="h-14 border-b border-white/10 bg-[#0c0c0e]/95 backdrop-blur-md sticky top-0 z-40 px-3 sm:px-6 flex items-center justify-between">
+      <header className="h-14 border-b border-white/10 bg-[#06040d]/90 backdrop-blur-md sticky top-0 z-40 px-3 sm:px-6 flex items-center justify-between">
         {/* Brand & Mobile Hamburger */}
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-1.5 rounded border border-white/10 text-zinc-400 hover:text-white bg-white/5 cursor-pointer"
+            className="md:hidden p-1.5 rounded-lg border border-white/10 text-[#aca3e1] hover:text-white bg-white/5 cursor-pointer"
             aria-label="Toggle Navigation"
           >
             {mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
           </button>
 
-          <div className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded bg-orange-600 flex items-center justify-center font-mono font-bold text-xs text-white shadow-sm">
+          <div
+            onClick={() => onToggleViewMode?.("landing")}
+            className="flex items-center gap-2 cursor-pointer group"
+          >
+            <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-[#c03fb5] via-[#a6085b] to-[#5449ab] flex items-center justify-center font-mono font-bold text-xs text-white shadow-md shadow-pink-500/20 group-hover:scale-105 transition-transform">
               M
             </div>
             <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-1.5">
-              <span className="font-semibold tracking-tight text-sm text-zinc-100">
+              <span className="font-semibold tracking-tight text-sm text-[#f7f8fd]">
                 Morvexa
               </span>
-              <span className="text-zinc-500 font-mono text-[11px] hidden sm:inline">
+              <span className="text-[#aca3e1]/60 font-mono text-[11px] hidden sm:inline">
                 / ai-gateway
               </span>
             </div>
           </div>
         </div>
 
-        {/* Global Telemetry & Status */}
+        {/* Global Telemetry & Status & View Switcher */}
         <div className="flex items-center gap-2 sm:gap-3">
+          {/* Mode Switcher Toggle */}
+          {onToggleViewMode && (
+            <div className="flex items-center p-0.5 rounded-lg bg-black/60 border border-white/10 text-xs font-mono">
+              <button
+                onClick={() => onToggleViewMode("landing")}
+                className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer flex items-center gap-1.5 ${
+                  viewMode === "landing"
+                    ? "bg-[#5449ab]/50 text-white font-medium border border-white/10"
+                    : "text-zinc-400 hover:text-zinc-200"
+                }`}
+              >
+                <Sparkles className="h-3 w-3 text-[#c03fb5]" />
+                <span className="hidden sm:inline">Experience</span>
+              </button>
+              <button
+                onClick={() => onToggleViewMode("console")}
+                className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer flex items-center gap-1.5 ${
+                  viewMode === "console"
+                    ? "bg-[#c03fb5]/40 text-white font-medium border border-white/10"
+                    : "text-zinc-400 hover:text-zinc-200"
+                }`}
+              >
+                <LayoutDashboard className="h-3 w-3 text-[#aca3e1]" />
+                <span className="hidden sm:inline">Console</span>
+              </button>
+            </div>
+          )}
+
           <EdgeStatusRadar />
 
           <a
             href="/api/v1/models"
             target="_blank"
             rel="noreferrer"
-            className="hidden lg:flex items-center gap-1.5 text-[11px] font-mono text-zinc-400 hover:text-zinc-200 border border-white/10 px-2.5 py-1 rounded transition-colors bg-black/40"
+            className="hidden lg:flex items-center gap-1.5 text-[11px] font-mono text-[#aca3e1] hover:text-white border border-white/10 px-2.5 py-1 rounded-lg transition-colors bg-white/[0.02]"
           >
-            <Terminal className="h-3 w-3 text-zinc-400" />
+            <Terminal className="h-3 w-3 text-[#aca3e1]" />
             <span>API Catalog</span>
             <ExternalLink className="h-2.5 w-2.5 text-zinc-500" />
           </a>
 
-          <div className="flex items-center gap-1 px-2 py-0.5 border border-white/10 rounded text-[11px] font-mono text-zinc-400 bg-white/[0.02]">
+          <div className="flex items-center gap-1 px-2 py-0.5 border border-white/10 rounded-lg text-[11px] font-mono text-zinc-400 bg-white/[0.02]">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
             <span className="hidden sm:inline">free_tier</span>
           </div>
@@ -83,13 +124,23 @@ export function Navbar({ currentTab, onTabChange }: NavbarProps) {
 
       {/* Mobile Drawer Navigation (Phone / Smartphone screens) */}
       {mobileMenuOpen && (
-        <div className="md:hidden fixed inset-x-0 top-14 z-50 bg-[#0c0c0e] border-b border-white/10 shadow-2xl p-4 animate-in fade-in slide-in-from-top-2 duration-150">
-          <div className="text-[10px] font-mono uppercase tracking-wider text-zinc-500 font-semibold mb-2">
+        <div className="md:hidden fixed inset-x-0 top-14 z-50 bg-[#06040d] border-b border-white/10 shadow-2xl p-4 animate-in fade-in slide-in-from-top-2 duration-150">
+          <div className="text-[10px] font-mono uppercase tracking-wider text-[#aca3e1] font-semibold mb-2">
             Navigation Menu
           </div>
           <div className="grid grid-cols-1 gap-1">
+            <button
+              onClick={() => {
+                onToggleViewMode?.("landing");
+                setMobileMenuOpen(false);
+              }}
+              className="w-full flex items-center justify-between px-3 py-2.5 rounded text-xs font-mono text-left bg-[#1a0b2e]/60 border border-purple-500/30 text-white"
+            >
+              <span>✨ 3D Experience (Landing)</span>
+            </button>
+
             {navItems.map((item) => {
-              const isActive = currentTab === item.id;
+              const isActive = currentTab === item.id && viewMode === "console";
               return (
                 <button
                   key={item.id}
@@ -101,7 +152,7 @@ export function Navbar({ currentTab, onTabChange }: NavbarProps) {
                   }`}
                 >
                   <span>{item.label}</span>
-                  {isActive && <span className="text-orange-400 text-xs">●</span>}
+                  {isActive && <span className="text-[#c03fb5] text-xs">●</span>}
                 </button>
               );
             })}
@@ -111,3 +162,4 @@ export function Navbar({ currentTab, onTabChange }: NavbarProps) {
     </>
   );
 }
+

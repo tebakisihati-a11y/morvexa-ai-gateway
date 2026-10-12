@@ -12,6 +12,7 @@ import { GuardrailsTab } from "@/components/guardrails/GuardrailsTab";
 import { BillingTab } from "@/components/billing/BillingTab";
 import { InfrastructureTab } from "@/components/infrastructure/InfrastructureTab";
 import { NexusTab } from "@/components/nexus/NexusTab";
+import { CinematicLanding } from "@/components/landing/CinematicLanding";
 import {
   getApiKeys,
   createApiKey,
@@ -31,6 +32,7 @@ const defaultQuotaConfig: QuotaConfig = {
 };
 
 export default function AppRoot() {
+  const [viewMode, setViewMode] = useState<"landing" | "console">("landing");
   const [activeTab, setActiveTab] = useState<NavTabId>("overview");
   const [keys, setKeys] = useState<ApiKeyItem[]>([]);
   const [traces, setTraces] = useState<RequestTraceLog[]>([]);
@@ -66,76 +68,103 @@ export default function AppRoot() {
     setKeys((prev) => prev.map((k) => (k.id === id ? { ...k, isActive: false } : k)));
   };
 
+  const handleOpenConsole = (targetTab?: NavTabId) => {
+    if (targetTab) {
+      setActiveTab(targetTab);
+    }
+    setViewMode("console");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   return (
-    <div className="min-h-screen bg-[#09090b] text-zinc-100 flex flex-col font-sans selection:bg-orange-500/20 selection:text-orange-200">
+    <div className="min-h-screen bg-[#020205] text-[#f7f8fd] flex flex-col font-sans selection:bg-[#c03fb5]/30 selection:text-white">
       {/* Top Navbar */}
-      <Navbar currentTab={activeTab} onTabChange={setActiveTab} />
+      <Navbar
+        currentTab={activeTab}
+        onTabChange={(t) => {
+          setActiveTab(t);
+          setViewMode("console");
+        }}
+        viewMode={viewMode}
+        onToggleViewMode={setViewMode}
+      />
 
-      {/* Mobile Horizontal Quick Navigation Bar (<md screens) */}
-      <div className="md:hidden border-b border-white/10 bg-[#0e0e11] px-3 py-2 overflow-x-auto flex gap-1.5 scrollbar-none">
-        {[
-          { id: "overview", label: "Overview" },
-          { id: "keys", label: "API Keys" },
-          { id: "billing", label: "Billing" },
-          { id: "infrastructure", label: "Infrastructure" },
-          { id: "nexus", label: "Nexus" },
-          { id: "routing", label: "Routing" },
-          { id: "playground", label: "Playground" },
-          { id: "traces", label: "Traces" },
-          { id: "guardrails", label: "Guardrails" },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id as NavTabId)}
-            className={`px-3 py-1.5 rounded text-xs font-mono whitespace-nowrap transition-colors shrink-0 cursor-pointer ${activeTab === tab.id
-              ? "bg-white/10 text-white font-semibold border border-white/10"
-              : "text-zinc-400 hover:text-zinc-200 bg-black/40 border border-white/5"
-              }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      {/* Conditionally Render Experience */}
+      {viewMode === "landing" ? (
+        <CinematicLanding onOpenConsole={handleOpenConsole} />
+      ) : (
+        <>
+          {/* Mobile Horizontal Quick Navigation Bar (<md screens) */}
+          <div className="md:hidden border-b border-white/10 bg-[#06040d] px-3 py-2 overflow-x-auto flex gap-1.5 scrollbar-none">
+            {[
+              { id: "overview", label: "Overview" },
+              { id: "keys", label: "API Keys" },
+              { id: "billing", label: "Billing" },
+              { id: "infrastructure", label: "Infrastructure" },
+              { id: "nexus", label: "Nexus" },
+              { id: "routing", label: "Routing" },
+              { id: "playground", label: "Playground" },
+              { id: "traces", label: "Traces" },
+              { id: "guardrails", label: "Guardrails" },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as NavTabId)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-mono whitespace-nowrap transition-colors shrink-0 cursor-pointer ${
+                  activeTab === tab.id
+                    ? "bg-[#1a0b2e] text-white font-semibold border border-[#c03fb5]/40"
+                    : "text-zinc-400 hover:text-zinc-200 bg-black/40 border border-white/5"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
 
-      {/* Main App Container */}
-      <div className="flex-1 flex flex-col md:flex-row">
-        {/* Left Sidebar (Desktop only) */}
-        <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
-
-        {/* Dynamic Content Panel */}
-        <main className="flex-1 p-3.5 sm:p-6 md:p-8 max-w-7xl mx-auto w-full overflow-x-hidden">
-          {activeTab === "overview" && (
-            <OverviewTab
-              quota={quota}
-              metrics={DEFAULT_SYSTEM_METRICS}
-              onNavigateToTab={setActiveTab}
+          {/* Main Console App Container */}
+          <div className="flex-1 flex flex-col md:flex-row radial-grid-bg">
+            {/* Left Sidebar (Desktop only) */}
+            <Sidebar
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              onOpenExperience={() => setViewMode("landing")}
             />
-          )}
 
-          {activeTab === "keys" && (
-            <KeysTab
-              keys={keys}
-              onCreateKey={handleCreateKey}
-              onRevokeKey={handleRevokeKey}
-            />
-          )}
+            {/* Dynamic Content Panel */}
+            <main className="flex-1 p-3.5 sm:p-6 md:p-8 max-w-7xl mx-auto w-full overflow-x-hidden">
+              {activeTab === "overview" && (
+                <OverviewTab
+                  quota={quota}
+                  metrics={DEFAULT_SYSTEM_METRICS}
+                  onNavigateToTab={setActiveTab}
+                />
+              )}
 
-          {activeTab === "billing" && <BillingTab />}
+              {activeTab === "keys" && (
+                <KeysTab
+                  keys={keys}
+                  onCreateKey={handleCreateKey}
+                  onRevokeKey={handleRevokeKey}
+                />
+              )}
 
-          {activeTab === "infrastructure" && <InfrastructureTab />}
+              {activeTab === "billing" && <BillingTab />}
 
-          {activeTab === "nexus" && <NexusTab />}
+              {activeTab === "infrastructure" && <InfrastructureTab />}
 
-          {activeTab === "routing" && <RoutingTab />}
+              {activeTab === "nexus" && <NexusTab />}
 
-          {activeTab === "playground" && <PlaygroundTab />}
+              {activeTab === "routing" && <RoutingTab />}
 
-          {activeTab === "traces" && <TracesTab traces={traces} />}
+              {activeTab === "playground" && <PlaygroundTab />}
 
-          {activeTab === "guardrails" && <GuardrailsTab />}
-        </main>
-      </div>
+              {activeTab === "traces" && <TracesTab traces={traces} />}
+
+              {activeTab === "guardrails" && <GuardrailsTab />}
+            </main>
+          </div>
+        </>
+      )}
     </div>
   );
 }
-
