@@ -93,7 +93,7 @@ export async function autoProvisionCustomerKey(params: {
     recipientEmail: customerEmail,
     planName: spec.name,
     apiKeyPrefix: creation.key.prefix,
-    rawSecret: creation.secret,
+    rawSecret: creation.rawSecret,
     rateLimitRpm: spec.rateLimitRpm,
     modelsIncluded: spec.models,
     sentAt: new Date().toISOString(),
@@ -106,7 +106,7 @@ export async function autoProvisionCustomerKey(params: {
   return {
     success: true,
     apiKey: creation.key,
-    rawSecret: creation.secret,
+    rawSecret: creation.rawSecret,
     emailSentTo: customerEmail,
     planCode,
     dispatchedAt: receipt.sentAt,
