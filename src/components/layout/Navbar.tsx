@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { EdgeStatusRadar } from "./EdgeStatusRadar";
 import { Cpu, Terminal, ExternalLink, Menu, X, Sparkles, LayoutDashboard } from "lucide-react";
 import type { NavTabId } from "./Sidebar";
@@ -112,16 +113,14 @@ export function Navbar({
             </div>
           )}
 
-          <a
-            href="/api/v1/models"
-            target="_blank"
-            rel="noreferrer"
-            className="hidden lg:flex items-center gap-1.5 text-[11px] font-mono text-[#1CE172]/80 hover:text-[#1CE172] border border-[#1CE172]/20 px-2.5 py-1 rounded-lg transition-colors bg-[#1CE172]/5"
+          <Link
+            href="/catalog"
+            className="hidden lg:flex items-center gap-1.5 text-[11px] font-mono text-[#1CE172]/90 hover:text-[#1CE172] border border-[#1CE172]/30 px-2.5 py-1 rounded-lg transition-all bg-[#1CE172]/10 hover:bg-[#1CE172]/20"
           >
             <Terminal className="h-3 w-3 text-[#1CE172]" />
             <span>API Catalog</span>
-            <ExternalLink className="h-2.5 w-2.5 text-zinc-500" />
-          </a>
+            <ExternalLink className="h-2.5 w-2.5 text-[#1CE172]/70" />
+          </Link>
 
           <div className="flex items-center gap-1.5 px-2.5 py-1 border border-white/10 rounded-lg text-[11px] font-mono text-zinc-300 bg-white/[0.02]">
             <span className="h-1.5 w-1.5 rounded-full bg-[#1CE172]" />
