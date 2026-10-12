@@ -18,6 +18,7 @@ interface CustomerAuthModalProps {
   onClose: () => void;
   onSuccess: (user: CustomerUser) => void;
   initialMode?: "login" | "register";
+  canClose?: boolean;
 }
 
 export function CustomerAuthModal({
@@ -25,6 +26,7 @@ export function CustomerAuthModal({
   onClose,
   onSuccess,
   initialMode = "login",
+  canClose = true,
 }: CustomerAuthModalProps) {
   const [mode, setMode] = useState<"login" | "register">(initialMode);
   const [email, setEmail] = useState("");
@@ -34,10 +36,36 @@ export function CustomerAuthModal({
 
   if (!isOpen) return null;
 
-  const handleQuickOAuth = (provider: "gmail" | "yahoo") => {
+  const handleQuickOAuth = async (provider: "gmail" | "yahoo") => {
+    setLoading(true);
+    setError(null);
     const domain = provider === "gmail" ? "@gmail.com" : "@yahoo.com";
-    const samplePrefix = name ? name.toLowerCase().replace(/\s+/g, ".") : "customer";
-    setEmail(`${samplePrefix}${domain}`);
+    const samplePrefix = name ? name.toLowerCase().replace(/[^a-z0-9]/g, ".") : (provider === "gmail" ? "user.google" : "user.yahoo");
+    const autoEmail = email && email.includes(domain) ? email : `${samplePrefix}${domain}`;
+
+    try {
+      const res = await fetch("/api/customer/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: autoEmail.trim(),
+          name: name.trim() || (provider === "gmail" ? "Google User" : "Yahoo User"),
+          provider,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Gagal autentikasi");
+      }
+
+      onSuccess(data.user);
+      onClose();
+    } catch (err: any) {
+      setError(err.message || "Gagal menghubungkan akun.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -77,13 +105,15 @@ export function CustomerAuthModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
       <div className="w-full max-w-md rounded-3xl bg-[#0a0f0d] border border-[#1CE172]/30 p-6 sm:p-8 shadow-[0_0_50px_rgba(28,225,114,0.15)] relative text-[#F0FEF8]">
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-5 right-5 p-2 rounded-xl text-[#889e93] hover:text-[#F0FEF8] hover:bg-white/5 transition-colors cursor-pointer"
-        >
-          <X className="h-4 w-4" />
-        </button>
+        {/* Close Button (Hidden if login is mandatory) */}
+        {canClose && (
+          <button
+            onClick={onClose}
+            className="absolute top-5 right-5 p-2 rounded-xl text-[#889e93] hover:text-[#F0FEF8] hover:bg-white/5 transition-colors cursor-pointer"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
 
         {/* Modal Header */}
         <div className="flex items-center gap-3 mb-6">

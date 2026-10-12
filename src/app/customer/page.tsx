@@ -25,6 +25,7 @@ export default function CustomerPortalPage() {
   const [authModalMode, setAuthModalMode] = useState<"login" | "register">("login");
 
   const [activeCustomer, setActiveCustomer] = useState<CustomerUser | null>(null);
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
 
   const [dispatchedNotification, setDispatchedNotification] = useState<{
     email: string;
@@ -37,19 +38,33 @@ export default function CustomerPortalPage() {
     const saved = localStorage.getItem("morvexa_customer_session");
     if (saved) {
       try {
-        setActiveCustomer(JSON.parse(saved));
-      } catch {}
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.email) {
+          setActiveCustomer(parsed);
+          setAuthModalOpen(false);
+        } else {
+          setAuthModalOpen(true);
+        }
+      } catch {
+        setAuthModalOpen(true);
+      }
+    } else {
+      setAuthModalOpen(true);
     }
+    setIsCheckingSession(false);
   }, []);
 
   const handleAuthSuccess = (user: CustomerUser) => {
     setActiveCustomer(user);
     localStorage.setItem("morvexa_customer_session", JSON.stringify(user));
+    setAuthModalOpen(false);
   };
 
   const handleLogout = () => {
     setActiveCustomer(null);
     localStorage.removeItem("morvexa_customer_session");
+    setAuthModalOpen(true);
+    setAuthModalMode("login");
   };
 
   const handlePlanPaymentSettled = (res: any) => {
@@ -199,7 +214,12 @@ export default function CustomerPortalPage() {
       <CustomerAuthModal
         isOpen={authModalOpen}
         initialMode={authModalMode}
-        onClose={() => setAuthModalOpen(false)}
+        canClose={Boolean(activeCustomer)}
+        onClose={() => {
+          if (activeCustomer) {
+            setAuthModalOpen(false);
+          }
+        }}
         onSuccess={handleAuthSuccess}
       />
     </div>
