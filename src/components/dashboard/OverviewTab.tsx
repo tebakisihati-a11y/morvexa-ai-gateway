@@ -5,7 +5,7 @@ import type { QuotaStatus, SystemMetrics } from "@/lib/types";
 import { TelemetryMetrics } from "./TelemetryMetrics";
 import { DualQuotaCard } from "./DualQuotaCard";
 import { ThroughputChart } from "./ThroughputChart";
-import { Terminal, Copy, Check, Play, KeyRound } from "lucide-react";
+import { Terminal, Copy, Check, Play, KeyRound, Sparkles } from "lucide-react";
 
 interface OverviewTabProps {
   quota: QuotaStatus;
@@ -32,22 +32,22 @@ export function OverviewTab({ quota, metrics, onNavigateToTab }: OverviewTabProp
 
   return (
     <div className="space-y-6">
-      {/* Overview Top Command Bar - Realistic & High-density */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-lg border border-white/10 bg-[#0e0e11]">
+      {/* Overview Top Command Bar - High-density & Futuristic */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl border border-white/10 bg-[#0a0714]/80 backdrop-blur-md">
         <div>
           <div className="flex flex-wrap items-center gap-2.5">
-            <h1 className="text-sm font-semibold tracking-tight text-zinc-100">
+            <h1 className="text-sm font-semibold tracking-tight text-[#f7f8fd]">
               Gateway Command Center
             </h1>
-            <span className="flex items-center gap-1.5 text-[11px] font-mono text-zinc-400 border border-white/5 bg-black/40 px-2 py-0.5 rounded">
+            <span className="flex items-center gap-1.5 text-[11px] font-mono text-zinc-400 border border-white/10 bg-black/40 px-2.5 py-0.5 rounded-full">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span>edge-cluster: healthy</span>
+              <span>edge-cluster: operational</span>
             </span>
-            <span className="text-[11px] font-mono text-zinc-500 hidden md:inline">
+            <span className="text-[11px] font-mono text-[#aca3e1]/60 hidden md:inline">
               [rev: 2026.10]
             </span>
           </div>
-          <p className="text-xs text-zinc-400 mt-1 max-w-2xl">
+          <p className="text-xs text-[#aca3e1] mt-1.5 max-w-2xl leading-relaxed">
             Universal reverse proxy routing Anthropic and OpenAI protocols with multi-provider failover, PII sanitization, and rolling quota recovery.
           </p>
         </div>
@@ -55,16 +55,16 @@ export function OverviewTab({ quota, metrics, onNavigateToTab }: OverviewTabProp
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={() => onNavigateToTab("playground")}
-            className="px-3 py-1.5 rounded-md bg-orange-600 hover:bg-orange-500 text-white text-xs font-mono font-medium transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm"
+            className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#c03fb5] via-[#a6085b] to-[#5449ab] hover:opacity-95 text-white text-xs font-mono font-medium transition-all flex items-center gap-1.5 cursor-pointer shadow-md shadow-pink-500/20"
           >
             <Play className="h-3 w-3 fill-white" />
             <span>Open Playground</span>
           </button>
           <button
             onClick={() => onNavigateToTab("keys")}
-            className="px-3 py-1.5 rounded-md bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-300 text-xs font-mono transition-colors flex items-center gap-1.5 cursor-pointer"
+            className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-200 text-xs font-mono transition-colors flex items-center gap-1.5 cursor-pointer"
           >
-            <KeyRound className="h-3 w-3 text-zinc-400" />
+            <KeyRound className="h-3 w-3 text-[#aca3e1]" />
             <span>API Keys</span>
           </button>
         </div>
@@ -80,10 +80,10 @@ export function OverviewTab({ quota, metrics, onNavigateToTab }: OverviewTabProp
       <ThroughputChart />
 
       {/* Quick Developer Integration cURL Snippet */}
-      <div className="rounded-lg border border-white/10 bg-[#0e0e11] p-4 sm:p-5">
+      <div className="rounded-2xl border border-white/10 bg-[#0a0714]/80 backdrop-blur-md p-5">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <Terminal className="h-3.5 w-3.5 text-zinc-400" />
+            <Terminal className="h-3.5 w-3.5 text-[#aca3e1]" />
             <span className="text-xs font-mono font-medium text-zinc-200">
               Quick Proxy Integration · Anthropic Compatible
             </span>
@@ -91,7 +91,7 @@ export function OverviewTab({ quota, metrics, onNavigateToTab }: OverviewTabProp
 
           <button
             onClick={handleCopy}
-            className="flex items-center gap-1.5 text-xs font-mono text-zinc-400 hover:text-zinc-200 border border-white/10 bg-black/40 px-2.5 py-1 rounded transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 text-xs font-mono text-zinc-400 hover:text-zinc-200 border border-white/10 bg-black/40 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
           >
             {copied ? (
               <>
@@ -107,10 +107,11 @@ export function OverviewTab({ quota, metrics, onNavigateToTab }: OverviewTabProp
           </button>
         </div>
 
-        <div className="rounded bg-black/70 border border-white/5 p-3.5 font-mono text-xs text-zinc-300 overflow-x-auto leading-relaxed">
+        <div className="rounded-xl bg-black/70 border border-white/5 p-4 font-mono text-xs text-zinc-300 overflow-x-auto leading-relaxed">
           <pre>{curlSnippet}</pre>
         </div>
       </div>
     </div>
   );
 }
+
