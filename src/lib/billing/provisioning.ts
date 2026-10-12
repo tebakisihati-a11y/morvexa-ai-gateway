@@ -101,6 +101,32 @@ export async function autoProvisionCustomerKey(params: {
 
   dispatchedReceipts.unshift(receipt);
 
+  // 3. Directly integrate into customer orders and owner monitoring database
+  try {
+    const { recordCustomerOrder } = await import("../customer/store");
+    const priceCatalog: Record<string, number> = {
+      developer: 0,
+      pro: 750000,
+      apex: 2500000,
+      zenith: 10000000,
+    };
+    recordCustomerOrder({
+      customerId: orgId,
+      customerEmail,
+      customerName,
+      orderType: "plan_subscription",
+      productCode: planCode,
+      productName: spec.name,
+      amountIdr: priceCatalog[planCode.toLowerCase()] ?? 750000,
+      tokensGranted: spec.dailyTokens,
+      paymentMethod: "payment_gateway",
+      status: "settled",
+      apiKeyDispatched: creation.key.maskedKey,
+    });
+  } catch (err) {
+    // Fail-open for external logging
+  }
+
   console.log(`[Morvexa Automated Dispatch] API Key generated for ${customerEmail} (${spec.name}): ${creation.key.maskedKey}`);
 
   return {

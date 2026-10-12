@@ -25,6 +25,7 @@ export function Navbar({
 
   const navItems: { id: NavTabId; label: string }[] = [
     { id: "overview", label: "Overview & Quota" },
+    { id: "customers", label: "Database Kustomer & Aktivitas" },
     { id: "keys", label: "API Keys & Policies" },
     { id: "billing", label: "Billing & Subscriptions" },
     { id: "infrastructure", label: "Hybrid Infrastructure" },

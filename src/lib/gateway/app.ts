@@ -592,5 +592,92 @@ app.get("/audit/logs", async (c) => {
   return c.json({ count: logs.length, logs }, 200);
 });
 
+// 18. Customer Auth / Session: POST /api/customer/auth
+app.post("/customer/auth", async (c) => {
+  const body = await c.req.json().catch(() => ({}));
+  const email = body.email;
+  if (!email || typeof email !== "string" || !email.includes("@")) {
+    return c.json({ error: "Email pribadi tidak valid (contoh: user@gmail.com atau user@yahoo.com)" }, 400);
+  }
+
+  const { registerOrLoginCustomer } = await import("../customer/store");
+  const result = registerOrLoginCustomer({
+    email,
+    name: body.name,
+    provider: body.provider,
+  });
+
+  return c.json({
+    success: true,
+    user: result.user,
+    isNew: result.isNew,
+    message: result.isNew ? "Pendaftaran akun baru kustomer berhasil!" : "Login kustomer berhasil!",
+  }, 200);
+});
+
+// 19. Customer Data & Activity Feed for Owner: GET /api/customer/dashboard-data
+app.get("/customer/dashboard-data", async (c) => {
+  const {
+    getRegisteredCustomers,
+    getCustomerOrders,
+    getCustomerActivities,
+    MODEL_PRODUCTS,
+  } = await import("../customer/store");
+
+  return c.json({
+    customers: getRegisteredCustomers(),
+    orders: getCustomerOrders(),
+    activities: getCustomerActivities(),
+    modelProducts: MODEL_PRODUCTS,
+  }, 200);
+});
+
+// 20. Customer Model Product Token Purchase: POST /api/customer/purchase-model
+app.post("/customer/purchase-model", async (c) => {
+  const body = await c.req.json().catch(() => ({}));
+  const { customerEmail, customerName, modelId, paymentMethod = "qris" } = body;
+
+  if (!customerEmail || !modelId) {
+    return c.json({ error: "customerEmail and modelId are required" }, 400);
+  }
+
+  const { MODEL_PRODUCTS, recordCustomerOrder } = await import("../customer/store");
+  const product = MODEL_PRODUCTS.find((p) => p.id === modelId);
+  if (!product) {
+    return c.json({ error: "Model product not found" }, 404);
+  }
+
+  // Provision an API key specifically for model token access
+  const { createApiKey } = await import("../supabase/store");
+  const keyName = `${product.name} Key`;
+  const keyCreation = await createApiKey(keyName, 180, product.bundleTokensGranted);
+
+  const order = recordCustomerOrder({
+    customerId: `cust_${Date.now().toString().slice(-6)}`,
+    customerEmail,
+    customerName: customerName || customerEmail.split("@")[0],
+    orderType: "model_token_purchase",
+    productCode: product.id,
+    productName: product.name,
+    amountIdr: product.bundlePriceIdr,
+    tokensGranted: product.bundleTokensGranted,
+    paymentMethod,
+    status: "settled",
+    apiKeyDispatched: keyCreation.key.maskedKey,
+  });
+
+  return c.json({
+    success: true,
+    order,
+    apiKey: {
+      rawSecret: keyCreation.rawSecret,
+      maskedKey: keyCreation.key.maskedKey,
+      name: keyName,
+    },
+    message: `Pembelian ${product.name} sebesar Rp ${product.bundlePriceIdr.toLocaleString("id-ID")} berhasil diproses! API Key otomatis diterbitkan.`,
+  }, 200);
+});
+
+
 
 

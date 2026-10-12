@@ -1,25 +1,73 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { CustomerBentoPortal } from "@/components/customer/CustomerBentoPortal";
 import { CustomerCheckoutModal } from "@/components/customer/CustomerCheckoutModal";
-import { CheckCircle2, ArrowLeft, KeyRound, Sparkles } from "lucide-react";
+import { CustomerModelCheckoutModal } from "@/components/customer/CustomerModelCheckoutModal";
+import { CustomerAuthModal } from "@/components/customer/CustomerAuthModal";
+import {
+  CheckCircle2,
+  ArrowLeft,
+  KeyRound,
+  Sparkles,
+  User,
+  LogOut,
+  Coins,
+  ShieldCheck,
+} from "lucide-react";
 import Link from "next/link";
+import type { ModelProduct, CustomerUser } from "@/lib/customer/store";
 
 export default function CustomerPortalPage() {
   const [selectedCheckoutPlan, setSelectedCheckoutPlan] = useState<string | null>(null);
+  const [selectedModelProduct, setSelectedModelProduct] = useState<ModelProduct | null>(null);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<"login" | "register">("login");
+
+  const [activeCustomer, setActiveCustomer] = useState<CustomerUser | null>(null);
+
   const [dispatchedNotification, setDispatchedNotification] = useState<{
     email: string;
     keySecret: string;
-    planName: string;
+    title: string;
   } | null>(null);
 
-  const handlePaymentSettled = (res: any) => {
+  useEffect(() => {
+    // Check local session
+    const saved = localStorage.getItem("morvexa_customer_session");
+    if (saved) {
+      try {
+        setActiveCustomer(JSON.parse(saved));
+      } catch {}
+    }
+  }, []);
+
+  const handleAuthSuccess = (user: CustomerUser) => {
+    setActiveCustomer(user);
+    localStorage.setItem("morvexa_customer_session", JSON.stringify(user));
+  };
+
+  const handleLogout = () => {
+    setActiveCustomer(null);
+    localStorage.removeItem("morvexa_customer_session");
+  };
+
+  const handlePlanPaymentSettled = (res: any) => {
     if (res.autoProvision) {
       setDispatchedNotification({
         email: res.autoProvision.emailSentTo,
         keySecret: res.autoProvision.rawSecret,
-        planName: res.autoProvision.apiKey.name,
+        title: `PAKET ${res.autoProvision.apiKey.name} BERHASIL DITERBITKAN!`,
+      });
+    }
+  };
+
+  const handleModelPaymentSuccess = (res: any) => {
+    if (res.apiKey) {
+      setDispatchedNotification({
+        email: res.order.customerEmail,
+        keySecret: res.apiKey.rawSecret,
+        title: `TOKEN ${res.order.productName} BERHASIL DITERBITKAN!`,
       });
     }
   };
@@ -43,16 +91,47 @@ export default function CustomerPortalPage() {
           </div>
         </div>
 
+        {/* Customer Auth Profile / Login / Register */}
         <div className="flex items-center gap-3">
-          <span className="text-[11px] font-mono text-[#889e93] hidden sm:inline">
-            Akses Otomatis API Key Langganan
-          </span>
-          <button
-            onClick={() => setSelectedCheckoutPlan("pro")}
-            className="px-3.5 py-1.5 rounded-lg bg-[#1CE172] text-[#010302] text-xs font-mono font-bold hover:bg-[#1CE172]/90 transition-all cursor-pointer"
-          >
-            Beli Paket
-          </button>
+          {activeCustomer ? (
+            <div className="flex items-center gap-2.5">
+              <div className="hidden sm:flex flex-col items-end text-right">
+                <span className="text-xs font-bold text-[#F0FEF8]">{activeCustomer.name}</span>
+                <span className="text-[10px] font-mono text-[#1CE172]">{activeCustomer.email}</span>
+              </div>
+              <div className="h-8 w-8 rounded-full bg-[#1CE172]/20 border border-[#1CE172]/40 flex items-center justify-center text-[#1CE172] text-xs font-bold font-mono">
+                {activeCustomer.name.slice(0, 2).toUpperCase()}
+              </div>
+              <button
+                onClick={handleLogout}
+                title="Keluar Akun"
+                className="p-1.5 rounded-lg border border-white/10 hover:bg-white/10 text-zinc-400 hover:text-red-400 transition-colors cursor-pointer"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  setAuthModalMode("login");
+                  setAuthModalOpen(true);
+                }}
+                className="px-3 py-1.5 rounded-lg border border-[#F0FEF8]/20 text-[#F0FEF8] hover:bg-white/5 text-xs font-mono transition-all cursor-pointer"
+              >
+                Masuk Email
+              </button>
+              <button
+                onClick={() => {
+                  setAuthModalMode("register");
+                  setAuthModalOpen(true);
+                }}
+                className="px-3.5 py-1.5 rounded-lg bg-[#1CE172] text-[#010302] text-xs font-mono font-bold hover:bg-[#1CE172]/90 shadow-[0_0_15px_rgba(28,225,114,0.3)] transition-all cursor-pointer"
+              >
+                Daftar Akun Baru
+              </button>
+            </div>
+          )}
         </div>
       </header>
 
@@ -64,10 +143,10 @@ export default function CustomerPortalPage() {
             <div className="space-y-1">
               <div className="flex items-center gap-2 text-[#1CE172] text-xs font-mono font-bold">
                 <CheckCircle2 className="h-4 w-4" />
-                <span>PEMBAYARAN SETTLED — KUNCI BERHASIL DITERBITKAN!</span>
+                <span>{dispatchedNotification.title}</span>
               </div>
               <h4 className="font-bold text-base text-[#F0FEF8]">
-                API Key Siap Pakai Telah Dikirim ke:{" "}
+                API Key Siap Pakai Telah Dikirimkan ke Email:{" "}
                 <span className="text-[#1CE172]">{dispatchedNotification.email}</span>
               </h4>
               <p className="text-xs text-[#889e93]">
@@ -89,17 +168,39 @@ export default function CustomerPortalPage() {
 
         <CustomerBentoPortal
           onOpenCheckoutModal={(plan) => setSelectedCheckoutPlan(plan)}
-          onSwitchToOwnerDashboard={() => {
-            window.location.href = "/owner";
+          onOpenModelCheckoutModal={(model) => setSelectedModelProduct(model)}
+          activeCustomer={activeCustomer}
+          onOpenAuthModal={() => {
+            setAuthModalMode("login");
+            setAuthModalOpen(true);
           }}
         />
       </main>
 
+      {/* Modal 1: Plan Subscription Checkout */}
       <CustomerCheckoutModal
         planCode={selectedCheckoutPlan || "pro"}
         isOpen={Boolean(selectedCheckoutPlan)}
         onClose={() => setSelectedCheckoutPlan(null)}
-        onPaymentSettled={handlePaymentSettled}
+        onPaymentSettled={handlePlanPaymentSettled}
+      />
+
+      {/* Modal 2: Model Token Checkout (DeepSeek etc.) */}
+      <CustomerModelCheckoutModal
+        product={selectedModelProduct}
+        isOpen={Boolean(selectedModelProduct)}
+        onClose={() => setSelectedModelProduct(null)}
+        onSuccess={handleModelPaymentSuccess}
+        defaultEmail={activeCustomer?.email || ""}
+        defaultName={activeCustomer?.name || ""}
+      />
+
+      {/* Modal 3: Customer Login / Register with Gmail or Yahoo */}
+      <CustomerAuthModal
+        isOpen={authModalOpen}
+        initialMode={authModalMode}
+        onClose={() => setAuthModalOpen(false)}
+        onSuccess={handleAuthSuccess}
       />
     </div>
   );

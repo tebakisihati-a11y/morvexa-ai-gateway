@@ -16,6 +16,7 @@ import {
 
 export type NavTabId =
   | "overview"
+  | "customers"
   | "keys"
   | "billing"
   | "infrastructure"
@@ -34,10 +35,11 @@ interface SidebarProps {
 export function Sidebar({ activeTab, onTabChange, onOpenExperience }: SidebarProps) {
   const navItems: { id: NavTabId; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
     { id: "overview", label: "Command Center", icon: LayoutDashboard },
+    { id: "customers", label: "Database Kustomer & Aktivitas", icon: Building2 },
     { id: "keys", label: "API Keys & Policies", icon: KeyRound },
     { id: "billing", label: "Billing & Subscriptions", icon: CreditCard },
     { id: "infrastructure", label: "Hybrid Infrastructure", icon: Server },
-    { id: "nexus", label: "Nexus Control Plane", icon: Building2 },
+    { id: "nexus", label: "Nexus Control Plane", icon: Sparkles },
     { id: "routing", label: "Routing & Failover", icon: GitBranch },
     { id: "playground", label: "Live SSE Playground", icon: PlaySquare },
     { id: "traces", label: "Audit Traces & Logs", icon: Activity },

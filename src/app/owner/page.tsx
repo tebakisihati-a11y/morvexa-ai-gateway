@@ -12,6 +12,7 @@ import { GuardrailsTab } from "@/components/guardrails/GuardrailsTab";
 import { BillingTab } from "@/components/billing/BillingTab";
 import { InfrastructureTab } from "@/components/infrastructure/InfrastructureTab";
 import { NexusTab } from "@/components/nexus/NexusTab";
+import { CustomersManagementTab } from "@/components/owner/CustomersManagementTab";
 import {
   getApiKeys,
   createApiKey,
@@ -205,6 +206,8 @@ export default function OwnerControlPlanePage() {
               onNavigateToTab={setActiveTab}
             />
           )}
+
+          {activeTab === "customers" && <CustomersManagementTab />}
 
           {activeTab === "keys" && (
             <KeysTab
