@@ -105,27 +105,27 @@ export default function OwnerControlPlanePage() {
   // If not authenticated, display Dedicated Owner Gate
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-[#06070F] text-[#E9EDFB] flex flex-col justify-center items-center p-4 font-sans selection:bg-[#5B8DEF]/20 selection:text-[#5B8DEF]">
-        <div className="w-full max-w-md rounded-3xl bg-[#0B0D1A] border border-[#5B8DEF]/30 p-8 shadow-2xl relative">
+      <div className="min-h-screen bg-[#08080a] text-[#f4f4f5] flex flex-col justify-center items-center p-4 font-sans selection:bg-[#f97316]/20 selection:text-[#f97316]">
+        <div className="w-full max-w-md rounded-lg bg-[#0e0e11] border border-[#f97316]/30 p-8 shadow-2xl relative">
           <div className="flex items-center gap-3 mb-6">
-            <div className="h-12 w-12 rounded-2xl bg-[#5B8DEF]/10 border border-[#5B8DEF]/30 flex items-center justify-center text-[#5B8DEF]">
+            <div className="h-12 w-12 rounded-lg bg-[#f97316]/10 border border-[#f97316]/30 flex items-center justify-center text-[#f97316]">
               <Lock className="h-6 w-6" />
             </div>
             <div>
-              <div className="text-[10px] font-mono text-[#5B8DEF] uppercase tracking-wider">
+              <div className="text-[10px] font-mono text-[#f97316] uppercase tracking-wider">
                 SISTEM KHUSUS OWNER
               </div>
-              <h2 className="text-xl font-bold text-[#E9EDFB]">Morvexa Server Master</h2>
+              <h2 className="text-xl font-bold text-[#f4f4f5]">Morvexa Server Master</h2>
             </div>
           </div>
 
           <form onSubmit={handleLogin} method="post" className="space-y-4">
-            <p className="text-xs text-[#8E97BC] leading-relaxed font-mono">
+            <p className="text-xs text-[#a1a1aa] leading-relaxed font-mono">
               Portal ini ditujukan eksklusif bagi Pemilik Server (Owner) untuk memantau infrastruktur edge, MRR, log rekonsiliasi finansial, dan seluruh tenant.
             </p>
 
             <div>
-              <label className="block text-xs font-mono text-[#8E97BC] mb-1.5">
+              <label className="block text-xs font-mono text-[#a1a1aa] mb-1.5">
                 Owner Access Passcode
               </label>
               <input
@@ -137,10 +137,10 @@ export default function OwnerControlPlanePage() {
                   setError(false);
                 }}
                 placeholder="Masukkan passcode (e.g. admin)"
-                className="w-full px-3.5 py-2.5 rounded-xl bg-[#06070F] border border-[#E9EDFB]/15 text-[#E9EDFB] font-mono text-xs focus:border-[#5B8DEF] focus:outline-none"
+                className="w-full px-3.5 py-2.5 rounded-lg bg-[#08080a] border border-[#f4f4f5]/15 text-[#f4f4f5] font-mono text-xs focus:border-[#f97316] focus:outline-none"
               />
               {error && (
-                <p className="text-[11px] text-red-400 mt-1 font-mono">
+                <p className="text-[11px] text-[#ef4444] mt-1 font-mono">
                   Passcode tidak valid. Minimal 4 karakter.
                 </p>
               )}
@@ -149,7 +149,7 @@ export default function OwnerControlPlanePage() {
             <div className="pt-2 space-y-3">
               <button
                 type="submit"
-                className="w-full py-3 rounded-xl bg-[#5B8DEF] text-[#06070F] font-mono font-bold text-xs hover:bg-[#5B8DEF]/90 shadow-[0_0_20px_rgba(91, 141, 239,0.3)] transition-all flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full py-3 rounded-lg bg-[#f97316] text-[#08080a] font-mono font-bold text-xs hover:bg-[#f97316]/90 transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 <span>Buka Control Plane Owner</span>
                 <ArrowRight className="h-4 w-4" />
@@ -157,7 +157,7 @@ export default function OwnerControlPlanePage() {
 
               <Link
                 href="/"
-                className="block text-center text-xs font-mono text-[#8E97BC] hover:text-[#E9EDFB] py-1 transition-colors"
+                className="block text-center text-xs font-mono text-[#a1a1aa] hover:text-[#f4f4f5] py-1 transition-colors"
               >
                 ← Kembali ke Beranda Publik
               </Link>
@@ -170,20 +170,20 @@ export default function OwnerControlPlanePage() {
 
   // Once authenticated, render complete Owner Command Center
   return (
-    <div className="min-h-screen bg-[#06070F] text-[#E9EDFB] flex flex-col font-sans selection:bg-[#5B8DEF]/20 selection:text-[#5B8DEF]">
+    <div className="min-h-screen bg-[#08080a] text-[#f4f4f5] flex flex-col font-sans selection:bg-[#f97316]/20 selection:text-[#f97316]">
       {/* Top Navbar with integrated Owner Badge & Customer Navigation */}
       <Navbar
         currentTab={activeTab}
         onTabChange={setActiveTab}
         customBadge={
           <div className="flex items-center gap-2">
-            <span className="hidden xl:inline-flex items-center gap-1.5 text-[10px] font-mono px-2.5 py-1 rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/30">
-              <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
+            <span className="hidden xl:inline-flex items-center gap-1.5 text-[10px] font-mono px-2.5 py-1 rounded bg-[#eab308]/10 text-[#eab308] border border-[#eab308]/30">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#eab308] animate-pulse" />
               <span>OWNER MASTER PLANE</span>
             </span>
             <Link
               href="/customer"
-              className="text-[11px] font-mono px-3 py-1 rounded-lg border border-[#5B8DEF]/30 bg-[#5B8DEF]/10 text-[#5B8DEF] hover:bg-[#5B8DEF]/20 transition-all flex items-center gap-1"
+              className="text-[11px] font-mono px-3 py-1 rounded-lg border border-[#f97316]/30 bg-[#f97316]/10 text-[#f97316] hover:bg-[#f97316]/20 transition-all flex items-center gap-1"
             >
               <span>Portal Kustomer</span>
               <ArrowRight className="h-3 w-3" />

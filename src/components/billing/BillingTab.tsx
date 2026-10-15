@@ -232,9 +232,9 @@ export function BillingTab() {
         <div>
           <div className="flex items-center gap-2">
             <CreditCard className="h-4 w-4 text-orange-400" />
-            <h2 className="text-sm font-semibold text-zinc-100 tracking-tight">Subscriptions & Billing Control</h2>
+            <h2 className="text-sm font-semibold text-[#f4f4f5] tracking-tight">Subscriptions & Billing Control</h2>
           </div>
-          <p className="text-xs text-zinc-400 mt-0.5">
+          <p className="text-xs text-[#a1a1aa] mt-0.5">
             Manage your workspace subscription tier, Indonesian payment gateway (QRIS/VA), and billing invoices.
           </p>
         </div>
@@ -248,30 +248,30 @@ export function BillingTab() {
       </div>
 
       {/* Active Subscription Banner */}
-      <div className="rounded-lg border border-white/10 bg-[#0E1019] p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="rounded-lg border border-white/10 bg-[#0e0e11] p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-start gap-3.5">
           <div className="h-10 w-10 rounded-lg bg-orange-500/10 border border-orange-500/20 flex items-center justify-center shrink-0">
             <Zap className="h-5 w-5 text-orange-400" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-medium text-zinc-100">
+              <h3 className="text-sm font-medium text-[#f4f4f5]">
                 {CATALOG_PLANS.find((p) => p.code === activePlan)?.name}
               </h3>
-              <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-[#10b981]/10 text-[#10b981] border border-[#10b981]/20">
                 STATUS: ACTIVE
               </span>
             </div>
-            <p className="text-xs text-zinc-400 mt-1">
+            <p className="text-xs text-[#a1a1aa] mt-1">
               Billing renewal: <strong>30 hari berikutnya</strong> via Midtrans Sandbox. Transaksi dicatat secara double-entry pada buku besar.
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 font-mono text-xs text-zinc-300">
+        <div className="flex items-center gap-2 font-mono text-xs text-[#f4f4f5]">
           <div className="text-right">
-            <div className="text-zinc-500 text-[10px] uppercase">Harga Aktif</div>
-            <div className="font-semibold text-zinc-200">
+            <div className="text-[#71717a] text-[10px] uppercase">Harga Aktif</div>
+            <div className="font-semibold text-[#f4f4f5]">
               {CATALOG_PLANS.find((p) => p.code === activePlan)?.formattedPrice}
             </div>
           </div>
@@ -280,7 +280,7 @@ export function BillingTab() {
 
       {/* Plans Catalog Grid */}
       <div>
-        <div className="text-xs font-mono uppercase tracking-wider text-zinc-400 mb-3 font-semibold">
+        <div className="text-xs font-mono uppercase tracking-wider text-[#a1a1aa] mb-3 font-semibold">
           Katalog Paket Langganan Tersedia
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -290,33 +290,33 @@ export function BillingTab() {
               <div
                 key={plan.code}
                 className={`rounded-lg border p-4 flex flex-col justify-between transition-all ${
-                  isCurrent
-                    ? "border-orange-500/40 bg-orange-950/[0.08] shadow-lg shadow-orange-950/20 ring-1 ring-orange-500/20"
-                    : "border-white/10 bg-[#0E1019] hover:border-white/20"
-                }`}
+ isCurrent
+ ? "border-orange-500/40 bg-orange-950/[0.08] shadow-lg shadow-orange-950/20 ring-1 ring-orange-500/20"
+ : "border-white/10 bg-[#0e0e11] hover:border-white/20"
+ }`}
               >
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-zinc-200">{plan.name}</span>
+                    <span className="text-xs font-semibold text-[#f4f4f5]">{plan.name}</span>
                     {isCurrent && (
                       <span className="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-300 font-semibold">
                         Current
                       </span>
                     )}
                   </div>
-                  <p className="text-[11px] text-zinc-400 leading-snug">{plan.tagline}</p>
+                  <p className="text-[11px] text-[#a1a1aa] leading-snug">{plan.tagline}</p>
                   <div className="pt-1">
-                    <div className="text-base font-semibold font-mono text-zinc-100">{plan.formattedPrice}</div>
-                    <div className="text-[10px] font-mono text-zinc-500">Rate limit: {plan.rateLimitRpm} RPM</div>
+                    <div className="text-base font-semibold font-mono text-[#f4f4f5]">{plan.formattedPrice}</div>
+                    <div className="text-[10px] font-mono text-[#71717a]">Rate limit: {plan.rateLimitRpm} RPM</div>
                   </div>
 
                   <hr className="border-white/5 my-2" />
 
-                  <ul className="space-y-1.5 text-[11px] text-zinc-300">
+                  <ul className="space-y-1.5 text-[11px] text-[#f4f4f5]">
                     {plan.features.map((feat, idx) => (
                       <li key={idx} className="flex items-start gap-1.5">
                         <CheckCircle2 className="h-3.5 w-3.5 text-orange-400 shrink-0 mt-0.5" />
-                        <span className="leading-tight text-zinc-400">{feat}</span>
+                        <span className="leading-tight text-[#a1a1aa]">{feat}</span>
                       </li>
                     ))}
                   </ul>
@@ -326,7 +326,7 @@ export function BillingTab() {
                   {isCurrent ? (
                     <button
                       disabled
-                      className="w-full py-1.5 rounded bg-white/5 text-zinc-500 text-xs font-mono cursor-not-allowed"
+                      className="w-full py-1.5 rounded bg-white/5 text-[#71717a] text-xs font-mono cursor-not-allowed"
                     >
                       Paket Aktif
                     </button>
@@ -347,22 +347,22 @@ export function BillingTab() {
       </div>
 
       {/* Transaction & Invoices Table */}
-      <div className="rounded-lg border border-white/10 bg-[#0E1019] overflow-hidden">
+      <div className="rounded-lg border border-white/10 bg-[#0e0e11] overflow-hidden">
         <div className="p-3.5 sm:p-4 border-b border-white/5 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-zinc-400" />
-            <h3 className="text-xs font-mono font-semibold uppercase tracking-wider text-zinc-200">
+            <Clock className="h-4 w-4 text-[#a1a1aa]" />
+            <h3 className="text-xs font-mono font-semibold uppercase tracking-wider text-[#f4f4f5]">
               Riwayat Pembayaran & Faktur (Invoices)
             </h3>
           </div>
-          <span className="text-[10px] font-mono text-zinc-500">
+          <span className="text-[10px] font-mono text-[#71717a]">
             {transactions.length} transaksi tercatat
           </span>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs font-mono">
-            <thead className="bg-white/[0.02] border-b border-white/5 text-zinc-400 text-[10px] uppercase">
+            <thead className="bg-white/[0.02] border-b border-white/5 text-[#a1a1aa] text-[10px] uppercase">
               <tr>
                 <th className="py-2.5 px-4 font-semibold">No. Faktur</th>
                 <th className="py-2.5 px-4 font-semibold">Order ID</th>
@@ -373,25 +373,25 @@ export function BillingTab() {
                 <th className="py-2.5 px-4 font-semibold text-right">Aksi</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5 text-zinc-300">
+            <tbody className="divide-y divide-white/5 text-[#f4f4f5]">
               {transactions.map((tx) => (
                 <tr key={tx.orderId} className="hover:bg-white/[0.01]">
                   <td className="py-3 px-4 font-medium text-orange-400">{tx.invoiceNumber}</td>
-                  <td className="py-3 px-4 text-zinc-400">{tx.orderId}</td>
-                  <td className="py-3 px-4 text-zinc-200">{tx.planName}</td>
-                  <td className="py-3 px-4 text-zinc-400">{tx.paymentMethod}</td>
-                  <td className="py-3 px-4 font-semibold text-zinc-100">
+                  <td className="py-3 px-4 text-[#a1a1aa]">{tx.orderId}</td>
+                  <td className="py-3 px-4 text-[#f4f4f5]">{tx.planName}</td>
+                  <td className="py-3 px-4 text-[#a1a1aa]">{tx.paymentMethod}</td>
+                  <td className="py-3 px-4 font-semibold text-[#f4f4f5]">
                     Rp {tx.amount.toLocaleString("id-ID")}
                   </td>
                   <td className="py-3 px-4">
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold uppercase">
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-[#10b981]/10 text-[#10b981] border border-[#10b981]/20 font-semibold uppercase">
                       {tx.status}
                     </span>
                   </td>
                   <td className="py-3 px-4 text-right">
                     <button
                       onClick={() => alert(`Mengunduh faktur PDF untuk ${tx.invoiceNumber}`)}
-                      className="inline-flex items-center gap-1 text-[11px] text-zinc-400 hover:text-zinc-100 p-1 rounded hover:bg-white/5 transition-colors cursor-pointer"
+                      className="inline-flex items-center gap-1 text-[11px] text-[#a1a1aa] hover:text-[#f4f4f5] p-1 rounded hover:bg-white/5 transition-colors cursor-pointer"
                     >
                       <Download className="h-3 w-3" />
                       <span>Faktur</span>
@@ -406,18 +406,18 @@ export function BillingTab() {
 
       {/* Midtrans Snap Simulation Modal */}
       {isCheckoutOpen && selectedPlanForCheckout && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4">
-          <div className="w-full max-w-lg rounded-lg border border-white/10 bg-[#0E1019] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+          <div className="w-full max-w-lg rounded-lg border border-white/10 bg-[#0e0e11] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
             <div className="p-4 border-b border-white/10 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <CreditCard className="h-4 w-4 text-orange-400" />
-                <h3 className="text-xs font-mono font-semibold uppercase text-zinc-100">
+                <h3 className="text-xs font-mono font-semibold uppercase text-[#f4f4f5]">
                   Midtrans Sandbox Checkout
                 </h3>
               </div>
               <button
                 onClick={() => setIsCheckoutOpen(false)}
-                className="text-zinc-400 hover:text-zinc-200 text-xs font-mono cursor-pointer"
+                className="text-[#a1a1aa] hover:text-[#f4f4f5] text-xs font-mono cursor-pointer"
               >
                 ✕
               </button>
@@ -425,15 +425,15 @@ export function BillingTab() {
 
             <div className="p-5 space-y-4">
               {paymentSuccessMessage ? (
-                <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-center space-y-2">
-                  <CheckCircle2 className="h-8 w-8 text-emerald-400 mx-auto" />
-                  <div className="font-semibold text-emerald-300 text-xs">{paymentSuccessMessage}</div>
-                  <p className="text-[11px] text-zinc-400 font-mono">
+                <div className="p-4 bg-[#10b981]/10 border border-[#10b981]/20 rounded-lg text-center space-y-2">
+                  <CheckCircle2 className="h-8 w-8 text-[#10b981] mx-auto" />
+                  <div className="font-semibold text-[#10b981] text-xs">{paymentSuccessMessage}</div>
+                  <p className="text-[11px] text-[#a1a1aa] font-mono">
                     Tanda tangan webhook SHA-512 terverifikasi. Transaksi disimpan di ledger.
                   </p>
                   <button
                     onClick={() => setIsCheckoutOpen(false)}
-                    className="mt-3 px-4 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-mono cursor-pointer"
+                    className="mt-3 px-4 py-1.5 rounded bg-[#10b981] hover:bg-[#10b981] text-white text-xs font-mono cursor-pointer"
                   >
                     Tutup Dialog
                   </button>
@@ -441,14 +441,14 @@ export function BillingTab() {
               ) : !checkoutSession ? (
                 <div className="space-y-4">
                   <div className="p-3 bg-white/[0.02] border border-white/5 rounded space-y-1">
-                    <div className="text-xs text-zinc-400">Ringkasan Pesanan:</div>
-                    <div className="text-sm font-semibold text-zinc-100">{selectedPlanForCheckout.name}</div>
+                    <div className="text-xs text-[#a1a1aa]">Ringkasan Pesanan:</div>
+                    <div className="text-sm font-semibold text-[#f4f4f5]">{selectedPlanForCheckout.name}</div>
                     <div className="text-xs font-mono text-orange-400">
                       Total: {selectedPlanForCheckout.formattedPrice}
                     </div>
                   </div>
 
-                  <p className="text-xs text-zinc-400 leading-relaxed">
+                  <p className="text-xs text-[#a1a1aa] leading-relaxed">
                     Sistem akan membuat checkout session di server dan memproses simulasi pembayaran Midtrans Sandbox (Snap).
                   </p>
 
@@ -462,19 +462,19 @@ export function BillingTab() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="p-3 bg-zinc-900 border border-white/10 rounded font-mono text-xs space-y-1">
+                  <div className="p-3 bg-[#71717a] border border-white/10 rounded font-mono text-xs space-y-1">
                     <div className="flex justify-between">
-                      <span className="text-zinc-500">Order ID:</span>
-                      <span className="text-zinc-200">{checkoutSession.orderId}</span>
+                      <span className="text-[#71717a]">Order ID:</span>
+                      <span className="text-[#f4f4f5]">{checkoutSession.orderId}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-zinc-500">Gross Amount:</span>
-                      <span className="text-emerald-400">Rp {checkoutSession.amount.toLocaleString("id-ID")}</span>
+                      <span className="text-[#71717a]">Gross Amount:</span>
+                      <span className="text-[#10b981]">Rp {checkoutSession.amount.toLocaleString("id-ID")}</span>
                     </div>
                   </div>
 
                   <div>
-                    <label className="text-xs font-mono text-zinc-400 block mb-2">
+                    <label className="text-xs font-mono text-[#a1a1aa] block mb-2">
                       Pilih Metode Pembayaran Sandbox:
                     </label>
                     <div className="grid grid-cols-2 gap-2 text-xs font-mono">
@@ -491,10 +491,10 @@ export function BillingTab() {
                             key={m.id}
                             onClick={() => setSelectedPaymentMethod(m.id as any)}
                             className={`p-2.5 rounded border text-left flex items-center gap-2 cursor-pointer transition-colors ${
-                              isSel
-                                ? "border-orange-500/50 bg-orange-500/10 text-orange-300 font-semibold"
-                                : "border-white/10 bg-white/[0.02] text-zinc-400 hover:border-white/20"
-                            }`}
+ isSel
+ ? "border-orange-500/50 bg-orange-500/10 text-orange-300 font-semibold"
+ : "border-white/10 bg-white/[0.02] text-[#a1a1aa] hover:border-white/20"
+ }`}
                           >
                             <Icon className="h-3.5 w-3.5 shrink-0" />
                             <span className="text-[11px] truncate">{m.label}</span>
@@ -504,14 +504,14 @@ export function BillingTab() {
                     </div>
                   </div>
 
-                  <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded text-[11px] text-amber-300 font-mono">
+                  <div className="p-3 bg-[#eab308]/10 border border-[#eab308]/20 rounded text-[11px] text-[#eab308] font-mono">
                     ℹ️ Mengklik "Simulasikan Pembayaran Berhasil" akan mengirimkan notifikasi HTTP POST webhook nyata ke <code>/api/billing/webhooks/midtrans</code> dengan tanda tangan SHA-512 resmi.
                   </div>
 
                   <button
                     onClick={handleSimulatePaymentSettlement}
                     disabled={isProcessingPayment}
-                    className="w-full py-2.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-mono font-medium transition-colors cursor-pointer flex items-center justify-center gap-2"
+                    className="w-full py-2.5 rounded bg-[#10b981] hover:bg-[#10b981] text-white text-xs font-mono font-medium transition-colors cursor-pointer flex items-center justify-center gap-2"
                   >
                     {isProcessingPayment ? "Memverifikasi Webhook SHA-512..." : "Simulasikan Pembayaran Berhasil (Settlement)"}
                   </button>

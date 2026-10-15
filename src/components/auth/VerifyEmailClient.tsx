@@ -126,13 +126,13 @@ export function VerifyEmailClient() {
       }
       highlights={HIGHLIGHTS}
       footer={
-        <p className="text-[13.5px] text-[#8e97bc]">
+        <p className="text-[13.5px] text-[#a1a1aa]">
           {phase === "verified" ? (
             <>
               Siap mulai?{" "}
               <Link
                 href="/customer"
-                className="font-medium text-[#9db9f5] underline-offset-4 transition-colors hover:text-[#e9edfb] hover:underline"
+                className="font-medium text-[#fdba74] underline-offset-4 transition-colors hover:text-[#f4f4f5] hover:underline"
               >
                 Buka portal pelanggan
               </Link>
@@ -142,7 +142,7 @@ export function VerifyEmailClient() {
               Sudah terverifikasi?{" "}
               <Link
                 href="/login"
-                className="font-medium text-[#9db9f5] underline-offset-4 transition-colors hover:text-[#e9edfb] hover:underline"
+                className="font-medium text-[#fdba74] underline-offset-4 transition-colors hover:text-[#f4f4f5] hover:underline"
               >
                 Masuk di sini
               </Link>
@@ -152,21 +152,21 @@ export function VerifyEmailClient() {
       }
     >
       {phase === "checking" && (
-        <div className="flex items-center gap-3 rounded-xl border border-[#e9edfb]/10 bg-[#0b0d1a]/70 px-4 py-3.5">
-          <Spinner className="h-4 w-4 text-[#5b8def]" />
-          <p className="text-[13.5px] text-[#8e97bc]">Memeriksa tautan verifikasi…</p>
+        <div className="flex items-center gap-3 rounded-lg border border-[#f4f4f5]/10 bg-[#0e0e11]/70 px-4 py-3.5">
+          <Spinner className="h-4 w-4 text-[#f97316]" />
+          <p className="text-[13.5px] text-[#a1a1aa]">Memeriksa tautan verifikasi…</p>
         </div>
       )}
 
       {phase === "verified" && (
         <div className="space-y-4">
-          <div className="flex items-start gap-3 rounded-xl border border-[#10b981]/25 bg-[#10b981]/8 px-4 py-3.5">
+          <div className="flex items-start gap-3 rounded-lg border border-[#10b981]/25 bg-[#10b981]/8 px-4 py-3.5">
             <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#10b981]" />
             <div>
-              <p className="text-[13.5px] font-medium text-[#e9edfb]">
+              <p className="text-[13.5px] font-medium text-[#f4f4f5]">
                 {email ? `${email} sudah terverifikasi.` : "Email Anda sudah terverifikasi."}
               </p>
-              <p className="mt-1 text-[13px] leading-relaxed text-[#8e97bc]">
+              <p className="mt-1 text-[13px] leading-relaxed text-[#a1a1aa]">
                 API key akan dikirim ke alamat ini setelah pembayaran paket Anda dikonfirmasi.
               </p>
             </div>
@@ -174,7 +174,7 @@ export function VerifyEmailClient() {
 
           <Link
             href="/customer"
-            className="inline-flex h-[52px] w-full items-center justify-center gap-2.5 rounded-xl bg-[#5b8def] px-7 text-[15px] font-semibold text-[#04050c] shadow-[0_10px_34px_-12px_rgba(91,141,239,0.85)] transition-[background-color,box-shadow] duration-200 hover:bg-[#6f9bf3]"
+            className="inline-flex h-[52px] w-full items-center justify-center gap-2.5 rounded-lg bg-[#f97316] px-7 text-[15px] font-semibold text-[#08080a] transition-[background-color,box-shadow] duration-200 hover:bg-[#fb923c]"
           >
             Buka portal pelanggan
             <ArrowRight className="h-4 w-4" />
@@ -185,7 +185,7 @@ export function VerifyEmailClient() {
       {phase === "failed" && (
         <div className="space-y-4">
           <FormError>{error}</FormError>
-          <p className="text-[13px] leading-relaxed text-[#8e97bc]">
+          <p className="text-[13px] leading-relaxed text-[#a1a1aa]">
             Tautan verifikasi berlaku terbatas dan hanya bisa dipakai sekali. Masukkan email Anda
             untuk mendapat tautan baru.
           </p>
@@ -204,22 +204,22 @@ export function VerifyEmailClient() {
       {phase === "awaiting" && (
         <div className="space-y-4">
           {deliveryFailed && !message && (
-            <div className="rounded-xl border border-[#eab308]/25 bg-[#eab308]/8 px-4 py-3.5">
-              <p className="text-[13px] leading-relaxed text-[#e9edfb]">
+            <div className="rounded-lg border border-[#eab308]/25 bg-[#eab308]/8 px-4 py-3.5">
+              <p className="text-[13px] leading-relaxed text-[#f4f4f5]">
                 Akun Anda sudah dibuat, tetapi email verifikasi belum berhasil terkirim dari server
                 kami. Gunakan tombol di bawah untuk mencoba lagi.
               </p>
             </div>
           )}
 
-          <div className="flex items-start gap-3 rounded-xl border border-[#e9edfb]/10 bg-[#0b0d1a]/70 px-4 py-3.5">
-            <MailCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#5b8def]" />
-            <p className="text-[13px] leading-relaxed text-[#8e97bc]">
+          <div className="flex items-start gap-3 rounded-lg border border-[#f4f4f5]/10 bg-[#0e0e11]/70 px-4 py-3.5">
+            <MailCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#f97316]" />
+            <p className="text-[13px] leading-relaxed text-[#a1a1aa]">
               Kami mengirim tautan verifikasi
               {initialEmail ? (
                 <>
                   {" "}
-                  ke <span className="font-medium text-[#e9edfb]">{initialEmail}</span>
+                  ke <span className="font-medium text-[#f4f4f5]">{initialEmail}</span>
                 </>
               ) : (
                 " ke email pendaftaran Anda"
@@ -263,7 +263,7 @@ function ResendBlock({
   onResend: () => void;
 }) {
   return (
-    <div className="space-y-3 border-t border-[#e9edfb]/8 pt-5">
+    <div className="space-y-3 border-t border-[#f4f4f5]/8 pt-5">
       <TextField
         label="Kirim ulang tautan verifikasi"
         type="email"

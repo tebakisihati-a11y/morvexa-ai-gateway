@@ -186,18 +186,18 @@ export function NexusTab() {
         <div>
           <div className="flex items-center gap-2">
             <Building2 className="h-4 w-4 text-orange-400" />
-            <h2 className="text-sm font-semibold text-zinc-100 tracking-tight">
+            <h2 className="text-sm font-semibold text-[#f4f4f5] tracking-tight">
               Nexus Master SaaS Control Plane
             </h2>
           </div>
-          <p className="text-xs text-zinc-400 mt-0.5">
+          <p className="text-xs text-[#a1a1aa] mt-0.5">
             Manajemen terpusat seluruh organisasi pelanggan, transaksi gateway, rekonsiliasi keuangan, dan node dedicated.
           </p>
         </div>
 
         <div className="flex items-center gap-2 self-start sm:self-auto">
-          <span className="text-[11px] font-mono px-2 py-1 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="text-[11px] font-mono px-2 py-1 rounded bg-[#10b981]/10 text-[#10b981] border border-[#10b981]/20 flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#10b981] animate-pulse" />
             PLATFORM OWNER ACCESS
           </span>
         </div>
@@ -205,62 +205,62 @@ export function NexusTab() {
 
       {/* Executive Metrics Overview */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="rounded-lg border border-white/10 bg-[#0E1019] p-4 space-y-1">
-          <div className="text-[10px] font-mono uppercase text-zinc-500 flex items-center justify-between">
+        <div className="rounded-lg border border-white/10 bg-[#0e0e11] p-4 space-y-1">
+          <div className="text-[10px] font-mono uppercase text-[#71717a] flex items-center justify-between">
             <span>Monthly Recurring Revenue</span>
-            <DollarSign className="h-3.5 w-3.5 text-emerald-400" />
+            <DollarSign className="h-3.5 w-3.5 text-[#10b981]" />
           </div>
-          <div className="text-xl font-bold font-mono text-zinc-100">Rp 23.250.000</div>
-          <div className="text-[11px] font-mono text-emerald-400 flex items-center gap-1">
+          <div className="text-xl font-bold font-mono text-[#f4f4f5]">Rp 23.250.000</div>
+          <div className="text-[11px] font-mono text-[#10b981] flex items-center gap-1">
             <ArrowUpRight className="h-3 w-3" />
             <span>+18.4% bulan ini</span>
           </div>
         </div>
 
-        <div className="rounded-lg border border-white/10 bg-[#0E1019] p-4 space-y-1">
-          <div className="text-[10px] font-mono uppercase text-zinc-500 flex items-center justify-between">
+        <div className="rounded-lg border border-white/10 bg-[#0e0e11] p-4 space-y-1">
+          <div className="text-[10px] font-mono uppercase text-[#71717a] flex items-center justify-between">
             <span>Total Organisasi Aktif</span>
             <Layers className="h-3.5 w-3.5 text-orange-400" />
           </div>
-          <div className="text-xl font-bold font-mono text-zinc-100">14 Tenants</div>
-          <div className="text-[11px] font-mono text-zinc-400">92 pengguna terdaftar</div>
+          <div className="text-xl font-bold font-mono text-[#f4f4f5]">14 Tenants</div>
+          <div className="text-[11px] font-mono text-[#a1a1aa]">92 pengguna terdaftar</div>
         </div>
 
-        <div className="rounded-lg border border-white/10 bg-[#0E1019] p-4 space-y-1">
-          <div className="text-[10px] font-mono uppercase text-zinc-500 flex items-center justify-between">
+        <div className="rounded-lg border border-white/10 bg-[#0e0e11] p-4 space-y-1">
+          <div className="text-[10px] font-mono uppercase text-[#71717a] flex items-center justify-between">
             <span>24h Gateway Requests</span>
-            <Activity className="h-3.5 w-3.5 text-blue-400" />
+            <Activity className="h-3.5 w-3.5 text-[#f97316]" />
           </div>
-          <div className="text-xl font-bold font-mono text-zinc-100">128.940</div>
-          <div className="text-[11px] font-mono text-zinc-400">Avg TTFT: 142ms</div>
+          <div className="text-xl font-bold font-mono text-[#f4f4f5]">128.940</div>
+          <div className="text-[11px] font-mono text-[#a1a1aa]">Avg TTFT: 142ms</div>
         </div>
 
-        <div className="rounded-lg border border-white/10 bg-[#0E1019] p-4 space-y-1">
-          <div className="text-[10px] font-mono uppercase text-zinc-500 flex items-center justify-between">
+        <div className="rounded-lg border border-white/10 bg-[#0e0e11] p-4 space-y-1">
+          <div className="text-[10px] font-mono uppercase text-[#71717a] flex items-center justify-between">
             <span>Dedicated Clusters</span>
-            <Server className="h-3.5 w-3.5 text-purple-400" />
+            <Server className="h-3.5 w-3.5 text-[#f97316]" />
           </div>
-          <div className="text-xl font-bold font-mono text-zinc-100">2 Active Nodes</div>
-          <div className="text-[11px] font-mono text-purple-300">100% Probes Healthy</div>
+          <div className="text-xl font-bold font-mono text-[#f4f4f5]">2 Active Nodes</div>
+          <div className="text-[11px] font-mono text-[#f97316]">100% Probes Healthy</div>
         </div>
       </div>
 
       {/* Tenant Directory */}
-      <div className="rounded-lg border border-white/10 bg-[#0E1019] overflow-hidden">
+      <div className="rounded-lg border border-white/10 bg-[#0e0e11] overflow-hidden">
         <div className="p-3.5 sm:p-4 border-b border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <Building2 className="h-4 w-4 text-zinc-400" />
-            <h3 className="text-xs font-mono font-semibold uppercase tracking-wider text-zinc-200">
+            <Building2 className="h-4 w-4 text-[#a1a1aa]" />
+            <h3 className="text-xs font-mono font-semibold uppercase tracking-wider text-[#f4f4f5]">
               Daftar Organisasi Pelanggan (Tenants)
             </h3>
           </div>
 
           <div className="flex items-center gap-2 text-xs font-mono">
-            <span className="text-zinc-500">Filter:</span>
+            <span className="text-[#71717a]">Filter:</span>
             <select
               value={filterPlan}
               onChange={(e) => setFilterPlan(e.target.value)}
-              className="rounded bg-black/40 border border-white/10 px-2 py-1 text-zinc-300 cursor-pointer text-xs"
+              className="rounded bg-black/40 border border-white/10 px-2 py-1 text-[#f4f4f5] cursor-pointer text-xs"
             >
               <option value="all">Semua Organisasi</option>
               <option value="dedicated">Hanya Dedicated Node</option>
@@ -271,7 +271,7 @@ export function NexusTab() {
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs font-mono">
-            <thead className="bg-white/[0.02] border-b border-white/5 text-zinc-400 text-[10px] uppercase">
+            <thead className="bg-white/[0.02] border-b border-white/5 text-[#a1a1aa] text-[10px] uppercase">
               <tr>
                 <th className="py-2.5 px-4 font-semibold">Organisasi</th>
                 <th className="py-2.5 px-4 font-semibold">Paket</th>
@@ -281,29 +281,29 @@ export function NexusTab() {
                 <th className="py-2.5 px-4 font-semibold">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5 text-zinc-300">
+            <tbody className="divide-y divide-white/5 text-[#f4f4f5]">
               {filteredOrgs.map((org) => (
                 <tr key={org.id} className="hover:bg-white/[0.01]">
                   <td className="py-3 px-4">
-                    <div className="font-semibold text-zinc-200">{org.name}</div>
-                    <div className="text-[10px] text-zinc-500">{org.slug}</div>
+                    <div className="font-semibold text-[#f4f4f5]">{org.name}</div>
+                    <div className="text-[10px] text-[#71717a]">{org.slug}</div>
                   </td>
                   <td className="py-3 px-4 text-orange-400">{org.plan}</td>
                   <td className="py-3 px-4">
                     <span
                       className={`text-[10px] px-2 py-0.5 rounded font-mono uppercase ${
-                        org.infraMode === "dedicated"
-                          ? "bg-purple-500/10 text-purple-400 border border-purple-500/20"
-                          : "bg-white/5 text-zinc-400 border border-white/10"
-                      }`}
+ org.infraMode === "dedicated"
+ ? "bg-[#f97316]/10 text-[#f97316] border border-[#f97316]/20"
+ : "bg-white/5 text-[#a1a1aa] border border-white/10"
+ }`}
                     >
                       {org.infraMode === "dedicated" ? "Dedicated Node" : "Shared Edge"}
                     </span>
                   </td>
-                  <td className="py-3 px-4 text-zinc-400">{org.membersCount} users</td>
-                  <td className="py-3 px-4 text-zinc-200">{org.monthlyVolumeReqs.toLocaleString()}</td>
+                  <td className="py-3 px-4 text-[#a1a1aa]">{org.membersCount} users</td>
+                  <td className="py-3 px-4 text-[#f4f4f5]">{org.monthlyVolumeReqs.toLocaleString()}</td>
                   <td className="py-3 px-4">
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase font-semibold">
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-[#10b981]/10 text-[#10b981] border border-[#10b981]/20 uppercase font-semibold">
                       {org.status}
                     </span>
                   </td>
@@ -315,20 +315,20 @@ export function NexusTab() {
       </div>
 
       {/* Financial Ledger & Audit Trail */}
-      <div className="rounded-lg border border-white/10 bg-[#0E1019] overflow-hidden">
+      <div className="rounded-lg border border-white/10 bg-[#0e0e11] overflow-hidden">
         <div className="p-3.5 sm:p-4 border-b border-white/5 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <DollarSign className="h-4 w-4 text-emerald-400" />
-            <h3 className="text-xs font-mono font-semibold uppercase tracking-wider text-zinc-200">
+            <DollarSign className="h-4 w-4 text-[#10b981]" />
+            <h3 className="text-xs font-mono font-semibold uppercase tracking-wider text-[#f4f4f5]">
               Buku Besar Keuangan (Double-Entry Ledger)
             </h3>
           </div>
-          <span className="text-[10px] font-mono text-zinc-500">Append-Only Audit Trail</span>
+          <span className="text-[10px] font-mono text-[#71717a]">Append-Only Audit Trail</span>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs font-mono">
-            <thead className="bg-white/[0.02] border-b border-white/5 text-zinc-400 text-[10px] uppercase">
+            <thead className="bg-white/[0.02] border-b border-white/5 text-[#a1a1aa] text-[10px] uppercase">
               <tr>
                 <th className="py-2.5 px-4 font-semibold">Ledger ID</th>
                 <th className="py-2.5 px-4 font-semibold">Timestamp</th>
@@ -339,23 +339,23 @@ export function NexusTab() {
                 <th className="py-2.5 px-4 font-semibold">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5 text-zinc-300">
+            <tbody className="divide-y divide-white/5 text-[#f4f4f5]">
               {MOCK_LEDGER.map((entry) => (
                 <tr key={entry.id} className="hover:bg-white/[0.01]">
-                  <td className="py-3 px-4 font-semibold text-zinc-400">{entry.id}</td>
-                  <td className="py-3 px-4 text-zinc-500">{entry.timestamp}</td>
-                  <td className="py-3 px-4 text-zinc-200">{entry.orgName}</td>
-                  <td className="py-3 px-4 text-zinc-400">{entry.category}</td>
+                  <td className="py-3 px-4 font-semibold text-[#a1a1aa]">{entry.id}</td>
+                  <td className="py-3 px-4 text-[#71717a]">{entry.timestamp}</td>
+                  <td className="py-3 px-4 text-[#f4f4f5]">{entry.orgName}</td>
+                  <td className="py-3 px-4 text-[#a1a1aa]">{entry.category}</td>
                   <td className="py-3 px-4">
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 uppercase font-semibold">
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#10b981]/10 text-[#10b981] uppercase font-semibold">
                       {entry.type}
                     </span>
                   </td>
-                  <td className="py-3 px-4 font-semibold text-emerald-400">
+                  <td className="py-3 px-4 font-semibold text-[#10b981]">
                     +Rp {entry.amount.toLocaleString("id-ID")}
                   </td>
                   <td className="py-3 px-4">
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase font-semibold">
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-[#10b981]/10 text-[#10b981] border border-[#10b981]/20 uppercase font-semibold">
                       {entry.status}
                     </span>
                   </td>
@@ -367,15 +367,15 @@ export function NexusTab() {
       </div>
 
       {/* Live System Audit Trail & Cron Automation Trigger */}
-      <div className="rounded-lg border border-white/10 bg-[#0E1019] overflow-hidden space-y-4 p-4">
+      <div className="rounded-lg border border-white/10 bg-[#0e0e11] overflow-hidden space-y-4 p-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/5 pb-3">
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4 text-orange-400" />
             <div>
-              <h3 className="text-xs font-mono font-semibold uppercase tracking-wider text-zinc-200">
+              <h3 className="text-xs font-mono font-semibold uppercase tracking-wider text-[#f4f4f5]">
                 Live Audit Logs & Scheduled Automation
               </h3>
-              <p className="text-[11px] font-mono text-zinc-500 mt-0.5">
+              <p className="text-[11px] font-mono text-[#71717a] mt-0.5">
                 Log aktivitas administratif dan trigger manual cron rekonsiliasi Vercel
               </p>
             </div>
@@ -385,7 +385,7 @@ export function NexusTab() {
             <button
               onClick={fetchLogs}
               disabled={isLoadingLogs}
-              className="px-2.5 py-1.5 rounded bg-white/5 hover:bg-white/10 text-zinc-300 text-xs font-mono border border-white/10 flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="px-2.5 py-1.5 rounded bg-white/5 hover:bg-white/10 text-[#f4f4f5] text-xs font-mono border border-white/10 flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <RotateCw className={`h-3 w-3 ${isLoadingLogs ? "animate-spin" : ""}`} />
               Segarkan Log
@@ -402,14 +402,14 @@ export function NexusTab() {
         </div>
 
         {cronMessage && (
-          <div className="text-xs font-mono p-2.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+          <div className="text-xs font-mono p-2.5 rounded bg-[#10b981]/10 border border-[#10b981]/20 text-[#10b981]">
             {cronMessage}
           </div>
         )}
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs font-mono">
-            <thead className="bg-white/[0.02] border-b border-white/5 text-zinc-400 text-[10px] uppercase">
+            <thead className="bg-white/[0.02] border-b border-white/5 text-[#a1a1aa] text-[10px] uppercase">
               <tr>
                 <th className="py-2.5 px-3 font-semibold">Log ID</th>
                 <th className="py-2.5 px-3 font-semibold">Timestamp</th>
@@ -419,27 +419,27 @@ export function NexusTab() {
                 <th className="py-2.5 px-3 font-semibold">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5 text-zinc-300">
+            <tbody className="divide-y divide-white/5 text-[#f4f4f5]">
               {auditLogs.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-6 text-center text-zinc-500 italic">
+                  <td colSpan={6} className="py-6 text-center text-[#71717a] italic">
                     Belum ada event audit log tercatat dalam sesi ini.
                   </td>
                 </tr>
               ) : (
                 auditLogs.map((log) => (
                   <tr key={log.id} className="hover:bg-white/[0.01]">
-                    <td className="py-2.5 px-3 text-zinc-500">{log.id}</td>
-                    <td className="py-2.5 px-3 text-zinc-400">{new Date(log.timestamp).toLocaleTimeString()}</td>
-                    <td className="py-2.5 px-3 text-zinc-300">{log.actorId}</td>
+                    <td className="py-2.5 px-3 text-[#71717a]">{log.id}</td>
+                    <td className="py-2.5 px-3 text-[#a1a1aa]">{new Date(log.timestamp).toLocaleTimeString()}</td>
+                    <td className="py-2.5 px-3 text-[#f4f4f5]">{log.actorId}</td>
                     <td className="py-2.5 px-3 font-semibold text-orange-400">{log.action}</td>
-                    <td className="py-2.5 px-3 text-zinc-400">{log.resourceType}:{log.resourceId}</td>
+                    <td className="py-2.5 px-3 text-[#a1a1aa]">{log.resourceType}:{log.resourceId}</td>
                     <td className="py-2.5 px-3">
                       <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold uppercase ${
-                        log.status === "success"
-                          ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                          : "bg-red-500/10 text-red-400 border border-red-500/20"
-                      }`}>
+ log.status === "success"
+ ? "bg-[#10b981]/10 text-[#10b981] border border-[#10b981]/20"
+ : "bg-[#ef4444]/10 text-[#ef4444] border border-[#ef4444]/20"
+ }`}>
                         {log.status}
                       </span>
                     </td>

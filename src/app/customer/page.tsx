@@ -7,7 +7,7 @@ import { ArrowLeft, CheckCircle2, Coins, LogOut, User } from "lucide-react";
 import { CustomerBentoPortal } from "@/components/customer/CustomerBentoPortal";
 import { CustomerCheckoutModal } from "@/components/customer/CustomerCheckoutModal";
 import { CustomerModelCheckoutModal } from "@/components/customer/CustomerModelCheckoutModal";
-import { AmbientField } from "@/components/visual/AmbientField";
+import { GridBackdrop } from "@/components/visual/GridBackdrop";
 import { Button, Spinner } from "@/components/ui/primitives";
 import { useSession } from "@/lib/hooks/useSession";
 import { providerLabel } from "@/lib/validation/auth";
@@ -60,9 +60,9 @@ export default function CustomerPortalPage() {
   // localStorage. Signed-out visitors are sent to /login and returned here.
   if (loading) {
     return (
-      <div className="grid min-h-screen place-items-center bg-[#06070f]">
-        <div className="flex items-center gap-3 text-sm text-[#8e97bc]">
-          <Spinner className="text-[#5b8def]" />
+      <div className="grid min-h-screen place-items-center bg-[#08080a]">
+        <div className="flex items-center gap-3 text-sm text-[#a1a1aa]">
+          <Spinner className="text-[#f97316]" />
           Memeriksa sesi…
         </div>
       </div>
@@ -71,11 +71,11 @@ export default function CustomerPortalPage() {
 
   if (!authenticated || !user) {
     return (
-      <div className="grain relative grid min-h-screen place-items-center overflow-hidden bg-[#06070f] px-5">
-        <AmbientField variant="hero" />
-        <div className="panel relative z-10 w-full max-w-md rounded-2xl p-8 text-center">
-          <h1 className="text-xl font-semibold text-[#e9edfb]">Sesi Anda sudah berakhir</h1>
-          <p className="mt-2 text-sm leading-relaxed text-[#8e97bc]">
+      <div className="relative grid min-h-screen place-items-center overflow-hidden bg-[#08080a] px-5">
+        <GridBackdrop />
+        <div className="panel relative z-10 w-full max-w-md rounded-lg p-8 text-center">
+          <h1 className="text-xl font-semibold text-[#f4f4f5]">Sesi Anda sudah berakhir</h1>
+          <p className="mt-2 text-sm leading-relaxed text-[#a1a1aa]">
             Masuk kembali untuk melanjutkan ke portal kustomer.
           </p>
           <div className="mt-6 flex flex-col gap-2.5 sm:flex-row sm:justify-center">
@@ -96,23 +96,23 @@ export default function CustomerPortalPage() {
     .join("");
 
   return (
-    <div className="grain relative min-h-screen overflow-hidden bg-[#06070f]">
-      <AmbientField variant="quiet" />
+    <div className="relative min-h-screen overflow-hidden bg-[#08080a]">
+      <GridBackdrop />
 
       <div className="relative z-10 flex min-h-screen flex-col">
-        <header className="sticky top-0 z-40 border-b border-[#e9edfb]/8 bg-[#06070f]/85 backdrop-blur-xl">
+        <header className="sticky top-0 z-40 border-b border-[#f4f4f5]/8 bg-[#08080a]/85">
           <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-5 sm:px-8">
             <div className="flex items-center gap-3">
               <Link
                 href="/"
-                className="flex items-center gap-1.5 text-[12.5px] text-[#8e97bc] transition-colors hover:text-[#e9edfb]"
+                className="flex items-center gap-1.5 text-[12.5px] text-[#a1a1aa] transition-colors hover:text-[#f4f4f5]"
               >
                 <ArrowLeft className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">Beranda</span>
               </Link>
-              <span className="text-[#5a6390]">/</span>
-              <span className="flex items-center gap-2 text-[13.5px] font-medium text-[#e9edfb]">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#5b8def]" />
+              <span className="text-[#71717a]">/</span>
+              <span className="flex items-center gap-2 text-[13.5px] font-medium text-[#f4f4f5]">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#f97316]" />
                 Portal Kustomer
               </span>
             </div>
@@ -120,10 +120,10 @@ export default function CustomerPortalPage() {
             <div className="flex items-center gap-2.5">
               <div className="hidden items-center gap-2.5 sm:flex">
                 <div className="text-right">
-                  <div className="text-[12.5px] font-medium text-[#e9edfb]">{user.name}</div>
-                  <div className="font-mono text-[10.5px] text-[#8e97bc]">{user.email}</div>
+                  <div className="text-[12.5px] font-medium text-[#f4f4f5]">{user.name}</div>
+                  <div className="font-mono text-[10.5px] text-[#a1a1aa]">{user.email}</div>
                 </div>
-                <div className="grid h-9 w-9 place-items-center rounded-full border border-[#5b8def]/35 bg-[#5b8def]/12 font-mono text-[12px] font-bold text-[#9db9f5]">
+                <div className="grid h-9 w-9 place-items-center rounded-full border border-[#f97316]/35 bg-[#f97316]/12 font-mono text-[12px] font-bold text-[#fdba74]">
                   {initials}
                 </div>
               </div>
@@ -138,31 +138,31 @@ export default function CustomerPortalPage() {
 
         <main className="mx-auto w-full max-w-6xl flex-1 px-5 py-8 sm:px-8 sm:py-10">
           {issuedKey && (
-            <div className="mb-8 flex flex-col gap-5 rounded-2xl border border-[#5b8def]/30 bg-[#5b8def]/[0.06] p-6 sm:flex-row sm:items-start sm:justify-between">
+            <div className="mb-8 flex flex-col gap-5 rounded-lg border border-[#f97316]/30 bg-[#f97316]/[0.06] p-6 sm:flex-row sm:items-start sm:justify-between">
               <div className="space-y-2">
-                <div className="flex items-center gap-2 text-[12.5px] font-medium text-[#9db9f5]">
+                <div className="flex items-center gap-2 text-[12.5px] font-medium text-[#fdba74]">
                   <CheckCircle2 className="h-4 w-4" />
                   {issuedKey.title}
                 </div>
-                <p className="text-sm text-[#e9edfb]">
+                <p className="text-sm text-[#f4f4f5]">
                   {issuedKey.emailDelivered ? (
                     <>
                       API key dikirim ke{" "}
-                      <span className="font-medium text-[#9db9f5]">{issuedKey.email}</span>
+                      <span className="font-medium text-[#fdba74]">{issuedKey.email}</span>
                     </>
                   ) : (
                     <>
                       API key diterbitkan untuk{" "}
-                      <span className="font-medium text-[#9db9f5]">{issuedKey.email}</span>
+                      <span className="font-medium text-[#fdba74]">{issuedKey.email}</span>
                     </>
                   )}
                 </p>
-                <p className="text-[12.5px] text-[#8e97bc]">
+                <p className="text-[12.5px] text-[#a1a1aa]">
                   {issuedKey.emailDelivered
                     ? "Kunci ini juga hanya ditampilkan sekali di sini. Simpan di secret manager Anda sekarang."
                     : "Pengiriman email belum aktif di lingkungan ini, jadi salin kunci dari sini. Kunci hanya ditampilkan sekali."}
                 </p>
-                <code className="block break-all rounded-lg border border-[#e9edfb]/10 bg-[#06070f] px-3 py-2 font-mono text-[12.5px] text-[#9db9f5]">
+                <code className="block break-all rounded-lg border border-[#f4f4f5]/10 bg-[#08080a] px-3 py-2 font-mono text-[12.5px] text-[#fdba74]">
                   {issuedKey.keySecret}
                 </code>
               </div>
@@ -185,8 +185,8 @@ export default function CustomerPortalPage() {
           />
         </main>
 
-        <footer className="border-t border-[#e9edfb]/8 py-6">
-          <div className="mx-auto flex w-full max-w-6xl flex-col gap-2 px-5 text-[11.5px] text-[#5a6390] sm:flex-row sm:items-center sm:justify-between sm:px-8">
+        <footer className="border-t border-[#f4f4f5]/8 py-6">
+          <div className="mx-auto flex w-full max-w-6xl flex-col gap-2 px-5 text-[11.5px] text-[#71717a] sm:flex-row sm:items-center sm:justify-between sm:px-8">
             <span className="flex items-center gap-2 font-mono">
               <User className="h-3.5 w-3.5" />
               {providerLabel(user.provider)} · {user.currentPlan}

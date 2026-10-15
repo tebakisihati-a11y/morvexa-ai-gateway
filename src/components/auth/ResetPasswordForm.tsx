@@ -99,11 +99,11 @@ export function ResetPasswordForm() {
       subtitle="Buat password baru untuk akun Morvexa Anda. Setelah tersimpan, Anda langsung masuk ke portal."
       highlights={HIGHLIGHTS}
       footer={
-        <p className="text-[13.5px] text-[#8e97bc]">
+        <p className="text-[13.5px] text-[#a1a1aa]">
           Tautan sudah kedaluwarsa?{" "}
           <Link
             href="/forgot-password"
-            className="font-medium text-[#9db9f5] underline-offset-4 transition-colors hover:text-[#e9edfb] hover:underline"
+            className="font-medium text-[#fdba74] underline-offset-4 transition-colors hover:text-[#f4f4f5] hover:underline"
           >
             Minta tautan baru
           </Link>
@@ -116,7 +116,7 @@ export function ResetPasswordForm() {
         <div className="space-y-4">
           <div
             role="alert"
-            className="flex items-start gap-2.5 rounded-xl border border-amber-400/30 bg-amber-500/[0.08] px-3.5 py-3 text-[13px] leading-relaxed text-amber-200"
+            className="flex items-start gap-2.5 rounded-lg border border-[#eab308]/30 bg-[#eab308]/[0.08] px-3.5 py-3 text-[13px] leading-relaxed text-[#eab308]"
           >
             <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
             <span>

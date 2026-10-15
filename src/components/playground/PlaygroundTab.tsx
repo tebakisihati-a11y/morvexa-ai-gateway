@@ -111,11 +111,11 @@ export function PlaygroundTab() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-sm font-semibold text-zinc-100 tracking-tight flex items-center gap-2">
-          <Play className="h-3.5 w-3.5 text-zinc-400" />
+        <h2 className="text-sm font-semibold text-[#f4f4f5] tracking-tight flex items-center gap-2">
+          <Play className="h-3.5 w-3.5 text-[#a1a1aa]" />
           <span>Inference Playground & SSE Streaming</span>
         </h2>
-        <p className="text-xs text-zinc-400 mt-0.5">
+        <p className="text-xs text-[#a1a1aa] mt-0.5">
           Benchmark model inferences through the edge proxy with live Time-To-First-Token and chunk telemetry.
         </p>
       </div>
@@ -123,14 +123,14 @@ export function PlaygroundTab() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Prompt Controls */}
         <div className="lg:col-span-5 space-y-4">
-          <div className="rounded-lg border border-white/10 bg-[#0E1019] p-4 sm:p-5 space-y-4">
+          <div className="rounded-lg border border-white/10 bg-[#0e0e11] p-4 sm:p-5 space-y-4">
             {/* Model Selector */}
             <div className="space-y-1.5">
-              <label className="text-xs font-mono font-medium text-zinc-300">Model Selection</label>
+              <label className="text-xs font-mono font-medium text-[#f4f4f5]">Model Selection</label>
               <select
                 value={model}
                 onChange={(e) => setModel(e.target.value)}
-                className="w-full rounded border border-white/10 bg-black/50 px-3 py-2 text-xs font-mono text-zinc-200 focus:outline-none focus:border-zinc-400 cursor-pointer"
+                className="w-full rounded border border-white/10 bg-black/50 px-3 py-2 text-xs font-mono text-[#f4f4f5] focus:outline-none focus:border-[#a1a1aa] cursor-pointer"
               >
                 <option value="private-server-5002">[Node 01] Private Server (localhost:5002)</option>
                 <option value="claude-3-7-sonnet">Claude 3.7 Sonnet (Anthropic - Hybrid)</option>
@@ -145,8 +145,8 @@ export function PlaygroundTab() {
             {/* Temperature Slider */}
             <div className="space-y-1.5">
               <div className="flex justify-between items-center text-xs">
-                <span className="font-medium text-zinc-300">Temperature</span>
-                <span className="font-mono text-zinc-400">{temperature}</span>
+                <span className="font-medium text-[#f4f4f5]">Temperature</span>
+                <span className="font-mono text-[#a1a1aa]">{temperature}</span>
               </div>
               <input
                 type="range"
@@ -161,23 +161,23 @@ export function PlaygroundTab() {
 
             {/* System Prompt */}
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-zinc-300">System Directive</label>
+              <label className="text-xs font-medium text-[#f4f4f5]">System Directive</label>
               <textarea
                 rows={2}
                 value={systemPrompt}
                 onChange={(e) => setSystemPrompt(e.target.value)}
-                className="w-full rounded-lg border border-white/10 bg-black/50 p-2.5 text-xs text-zinc-200 focus:outline-none focus:border-orange-500 resize-none font-sans"
+                className="w-full rounded-lg border border-white/10 bg-black/50 p-2.5 text-xs text-[#f4f4f5] focus:outline-none focus:border-orange-500 resize-none font-sans"
               />
             </div>
 
             {/* User Prompt */}
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-zinc-300">User Prompt</label>
+              <label className="text-xs font-medium text-[#f4f4f5]">User Prompt</label>
               <textarea
                 rows={4}
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                className="w-full rounded-lg border border-white/10 bg-black/50 p-2.5 text-xs text-zinc-200 focus:outline-none focus:border-orange-500 resize-none font-sans"
+                className="w-full rounded-lg border border-white/10 bg-black/50 p-2.5 text-xs text-[#f4f4f5] focus:outline-none focus:border-orange-500 resize-none font-sans"
               />
             </div>
 
@@ -195,7 +195,7 @@ export function PlaygroundTab() {
               <button
                 onClick={handleReset}
                 disabled={isStreaming}
-                className="p-2 rounded bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer"
+                className="p-2 rounded bg-white/5 hover:bg-white/10 border border-white/10 text-[#a1a1aa] hover:text-[#f4f4f5] transition-colors cursor-pointer"
                 title="Reset Prompt"
               >
                 <RotateCcw className="h-3.5 w-3.5" />

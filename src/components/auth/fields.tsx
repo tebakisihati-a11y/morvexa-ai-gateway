@@ -21,7 +21,7 @@ function FieldShell({ label, htmlFor, hint, error, children }: FieldShellProps) 
   return (
     <div className="space-y-1.5">
       <div className="flex items-baseline justify-between gap-3">
-        <label htmlFor={htmlFor} className="text-[13px] font-medium text-[#e9edfb]">
+        <label htmlFor={htmlFor} className="text-[13px] font-medium text-[#f4f4f5]">
           {label}
         </label>
         {hint}
@@ -31,7 +31,7 @@ function FieldShell({ label, htmlFor, hint, error, children }: FieldShellProps) 
         <p
           id={`${htmlFor}-error`}
           role="alert"
-          className="flex items-center gap-1.5 text-[12.5px] text-rose-300"
+          className="flex items-center gap-1.5 text-[12.5px] text-[#ef4444]"
         >
           <AlertCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
           {error}
@@ -42,12 +42,12 @@ function FieldShell({ label, htmlFor, hint, error, children }: FieldShellProps) 
 }
 
 const inputBase =
-  "w-full rounded-xl border bg-[#06070f] px-3.5 py-3 text-sm text-[#e9edfb] placeholder:text-[#5a6390] transition-colors duration-150 outline-none";
+  "w-full rounded border bg-[#08080a] px-3.5 py-3 text-sm text-[#f4f4f5] placeholder:text-[#71717a] transition-colors duration-150 outline-none";
 
 function inputTone(hasError: boolean, valid: boolean) {
-  if (hasError) return "border-rose-400/55 focus:border-rose-400";
-  if (valid) return "border-emerald-400/40 focus:border-emerald-400/70";
-  return "border-[#e9edfb]/12 focus:border-[#5b8def]";
+  if (hasError) return "border-[#ef4444]/55 focus:border-[#ef4444]";
+  if (valid) return "border-[#10b981]/40 focus:border-[#10b981]/70";
+  return "border-[#f4f4f5]/12 focus:border-[#f97316]";
 }
 
 interface TextFieldProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange"> {
@@ -122,11 +122,11 @@ export function PasswordField({
 
   // The meter reflects how many rules are satisfied rather than a vague gradient.
   const meterTone = [
-    "bg-[#e9edfb]/10",
-    "bg-rose-400",
-    "bg-amber-400",
-    "bg-[#5b8def]",
-    "bg-emerald-400",
+    "bg-[#f4f4f5]/10",
+    "bg-[#ef4444]",
+    "bg-[#eab308]",
+    "bg-[#f97316]",
+    "bg-[#10b981]",
   ];
 
   return (
@@ -145,9 +145,10 @@ export function PasswordField({
         />
         <button
           type="button"
+          tabIndex={-1}
           onClick={() => setVisible((current) => !current)}
           aria-label={visible ? "Sembunyikan password" : "Tampilkan password"}
-          className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-lg p-2 text-[#5a6390] transition-colors hover:text-[#e9edfb]"
+          className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-2 text-[#71717a] transition-colors hover:text-[#f4f4f5]"
         >
           {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
         </button>
@@ -155,17 +156,24 @@ export function PasswordField({
 
       {showStrength && value.length > 0 && (
         <div className="flex items-center gap-2.5 pt-0.5">
-          <div className="flex flex-1 gap-1" aria-hidden="true">
+          <div
+            className="flex flex-1 gap-1"
+            role="meter"
+            aria-valuemin={0}
+            aria-valuemax={4}
+            aria-valuenow={strengthScore}
+            aria-label={`Kekuatan password: ${strengthLabel}`}
+          >
             {[1, 2, 3, 4].map((step) => (
               <span
                 key={step}
                 className={`h-1 flex-1 rounded-full transition-colors duration-300 ${
-                  strengthScore >= step ? meterTone[strengthScore] : "bg-[#e9edfb]/10"
-                }`}
+ strengthScore >= step ? meterTone[strengthScore] : "bg-[#f4f4f5]/10"
+ }`}
               />
             ))}
           </div>
-          <span className="w-20 text-right font-mono text-[11px] text-[#8e97bc]">
+          <span className="w-20 text-right font-mono text-[11px] text-[#a1a1aa]">
             {strengthLabel}
           </span>
         </div>
@@ -182,7 +190,7 @@ export function FormError({ children }: { children: React.ReactNode }) {
   return (
     <div
       role="alert"
-      className="flex items-start gap-2.5 rounded-xl border border-rose-400/30 bg-rose-500/[0.08] px-3.5 py-3 text-[13px] leading-relaxed text-rose-200"
+      className="flex items-start gap-2.5 rounded-lg border border-[#ef4444]/30 bg-[#ef4444]/[0.08] px-3.5 py-3 text-[13px] leading-relaxed text-[#ef4444]"
     >
       <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
       <span>{children}</span>
@@ -194,7 +202,7 @@ export function FormSuccess({ children }: { children: React.ReactNode }) {
   return (
     <div
       role="status"
-      className="flex items-start gap-2.5 rounded-xl border border-emerald-400/30 bg-emerald-500/[0.08] px-3.5 py-3 text-[13px] leading-relaxed text-emerald-200"
+      className="flex items-start gap-2.5 rounded-lg border border-[#10b981]/30 bg-[#10b981]/[0.08] px-3.5 py-3 text-[13px] leading-relaxed text-[#10b981]"
     >
       <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
       <span>{children}</span>

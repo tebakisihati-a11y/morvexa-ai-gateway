@@ -90,19 +90,19 @@ export function ApiKeyList({
     <div className="space-y-4">
       {/* Remediation Success Banner */}
       {remediatedKey && (
-        <div className="rounded-2xl border border-[#5B8DEF]/40 bg-[#5B8DEF]/10 p-4 sm:p-5 text-[#E9EDFB] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-[0_0_30px_rgba(91, 141, 239,0.15)] animate-in fade-in slide-in-from-top-2">
+        <div className="rounded-lg border border-[#f97316]/40 bg-[#f97316]/10 p-4 sm:p-5 text-[#f4f4f5] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2">
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-[#5B8DEF]/20 border border-[#5B8DEF]/40 flex items-center justify-center text-[#5B8DEF]">
+            <div className="h-9 w-9 rounded-lg bg-[#f97316]/20 border border-[#f97316]/40 flex items-center justify-center text-[#f97316]">
               <CheckCircle2 className="h-5 w-5" />
             </div>
             <div>
-              <div className="text-xs font-mono font-bold text-[#5B8DEF]">
+              <div className="text-xs font-mono font-bold text-[#f97316]">
                 TOKEN REMEDIATION SUCCESSFUL
               </div>
-              <p className="text-xs text-[#8E97BC] mt-0.5">
+              <p className="text-xs text-[#a1a1aa] mt-0.5">
                 Kunci kustomer telah diperbaiki secara instan. Kunci mentah baru siap disalin:
               </p>
-              <div className="font-mono text-xs text-[#E9EDFB] bg-[#06070F] border border-[#5B8DEF]/30 px-3 py-1.5 rounded-lg mt-2 inline-block select-all">
+              <div className="font-mono text-xs text-[#f4f4f5] bg-[#08080a] border border-[#f97316]/30 px-3 py-1.5 rounded-lg mt-2 inline-block select-all">
                 {remediatedKey.rawSecret}
               </div>
             </div>
@@ -110,14 +110,14 @@ export function ApiKeyList({
           <div className="flex items-center gap-2 self-end sm:self-auto">
             <button
               onClick={() => handleCopy("remediated", remediatedKey.rawSecret)}
-              className="px-3 py-1.5 rounded-lg bg-[#5B8DEF] text-[#06070F] font-mono text-xs font-bold hover:bg-[#5B8DEF]/90 flex items-center gap-1.5 cursor-pointer"
+              className="px-3 py-1.5 rounded-lg bg-[#f97316] text-[#08080a] font-mono text-xs font-bold hover:bg-[#f97316]/90 flex items-center gap-1.5 cursor-pointer"
             >
               {copiedId === "remediated" ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
               <span>{copiedId === "remediated" ? "Disalin!" : "Salin Kunci"}</span>
             </button>
             <button
               onClick={() => setRemediatedKey(null)}
-              className="px-2.5 py-1.5 rounded-lg border border-white/10 text-xs font-mono text-zinc-400 hover:text-white cursor-pointer"
+              className="px-2.5 py-1.5 rounded-lg border border-white/10 text-xs font-mono text-[#a1a1aa] hover:text-white cursor-pointer"
             >
               Tutup
             </button>
@@ -126,7 +126,7 @@ export function ApiKeyList({
       )}
 
       {/* Control & Filter Strip */}
-      <div className="rounded-2xl border border-white/10 bg-[#0B0D1A]/80 backdrop-blur-md p-3.5 sm:p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+      <div className="rounded-lg border border-white/10 bg-[#0e0e11]/80 p-3.5 sm:p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
         {/* Search Input */}
         <div className="relative flex-1">
           <input
@@ -134,7 +134,7 @@ export function ApiKeyList({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Cari token, email kustomer (e.g. dev@acme.ai), atau plan..."
-            className="w-full bg-[#06070F] border border-white/10 rounded-xl px-3.5 py-2 text-xs font-mono text-[#E9EDFB] placeholder:text-zinc-600 focus:outline-none focus:border-[#5B8DEF]/50"
+            className="w-full bg-[#08080a] border border-white/10 rounded-lg px-3.5 py-2 text-xs font-mono text-[#f4f4f5] placeholder:text-[#71717a] focus:outline-none focus:border-[#f97316]/50"
           />
         </div>
 
@@ -142,42 +142,42 @@ export function ApiKeyList({
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
           <button
             onClick={() => setFilter("all")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-mono transition-colors cursor-pointer shrink-0 ${
-              filter === "all"
-                ? "bg-[#5B8DEF]/20 text-[#5B8DEF] border border-[#5B8DEF]/40"
-                : "text-zinc-400 hover:text-white bg-white/5 border border-transparent"
-            }`}
+            className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-colors cursor-pointer shrink-0 ${
+ filter === "all"
+ ? "bg-[#f97316]/20 text-[#f97316] border border-[#f97316]/40"
+ : "text-[#a1a1aa] hover:text-white bg-white/5 border border-transparent"
+ }`}
           >
             Semua ({keys.length})
           </button>
           <button
             onClick={() => setFilter("healthy")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-mono transition-colors cursor-pointer shrink-0 ${
-              filter === "healthy"
-                ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
-                : "text-zinc-400 hover:text-white bg-white/5 border border-transparent"
-            }`}
+            className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-colors cursor-pointer shrink-0 ${
+ filter === "healthy"
+ ? "bg-[#10b981]/20 text-[#10b981] border border-[#10b981]/40"
+ : "text-[#a1a1aa] hover:text-white bg-white/5 border border-transparent"
+ }`}
           >
             Sehat
           </button>
           <button
             onClick={() => setFilter("issues")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-mono transition-colors cursor-pointer shrink-0 flex items-center gap-1.5 ${
-              filter === "issues"
-                ? "bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold"
-                : "text-amber-400/80 hover:text-amber-300 bg-amber-500/10 border border-amber-500/20"
-            }`}
+            className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-colors cursor-pointer shrink-0 flex items-center gap-1.5 ${
+ filter === "issues"
+ ? "bg-[#eab308]/20 text-[#eab308] border border-[#eab308]/40 font-bold"
+ : "text-[#eab308]/80 hover:text-[#eab308] bg-[#eab308]/10 border border-[#eab308]/20"
+ }`}
           >
             <AlertTriangle className="h-3 w-3" />
             <span>Kendala ({issueCount})</span>
           </button>
           <button
             onClick={() => setFilter("revoked")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-mono transition-colors cursor-pointer shrink-0 ${
-              filter === "revoked"
-                ? "bg-red-500/20 text-red-400 border border-red-500/40"
-                : "text-zinc-400 hover:text-white bg-white/5 border border-transparent"
-            }`}
+            className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-colors cursor-pointer shrink-0 ${
+ filter === "revoked"
+ ? "bg-[#ef4444]/20 text-[#ef4444] border border-[#ef4444]/40"
+ : "text-[#a1a1aa] hover:text-white bg-white/5 border border-transparent"
+ }`}
           >
             Revoked
           </button>
@@ -185,20 +185,20 @@ export function ApiKeyList({
       </div>
 
       {/* Main Keys & Token Telemetry Table */}
-      <div className="rounded-2xl border border-white/10 bg-[#0B0D1A]/80 backdrop-blur-md overflow-hidden shadow-2xl">
+      <div className="rounded-lg border border-white/10 bg-[#0e0e11]/80 overflow-hidden shadow-2xl">
         <div className="p-4 border-b border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
-            <h3 className="text-xs font-mono uppercase tracking-wider font-semibold text-[#E9EDFB] flex items-center gap-2">
+            <h3 className="text-xs font-mono uppercase tracking-wider font-semibold text-[#f4f4f5] flex items-center gap-2">
               <span>Token Telemetry & Customer Health Inspector</span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#5B8DEF]/10 text-[#5B8DEF] border border-[#5B8DEF]/20">
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#f97316]/10 text-[#f97316] border border-[#f97316]/20">
                 Autonomous Doctor Active
               </span>
             </h3>
-            <p className="text-xs text-[#8E97BC] mt-0.5">
+            <p className="text-xs text-[#a1a1aa] mt-0.5">
               Pantau konsumsi token real-time per kustomer dan atasi kegagalan token (Invalid Hash / Kuota Habis) secara instan.
             </p>
           </div>
-          <div className="flex items-center gap-2 text-[11px] font-mono text-zinc-400">
+          <div className="flex items-center gap-2 text-[11px] font-mono text-[#a1a1aa]">
             <span>{filteredKeys.length} ditampilkan</span>
           </div>
         </div>
@@ -206,7 +206,7 @@ export function ApiKeyList({
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[840px]">
             <thead>
-              <tr className="border-b border-white/5 bg-[#06070F]/60 text-[10px] font-mono uppercase text-zinc-500">
+              <tr className="border-b border-white/5 bg-[#08080a]/60 text-[10px] font-mono uppercase text-[#71717a]">
                 <th className="py-3 px-4 font-semibold">Kustomer & Token</th>
                 <th className="py-3 px-4 font-semibold">Prefix Key</th>
                 <th className="py-3 px-4 font-semibold">Konsumsi Token Hari Ini</th>
@@ -217,7 +217,7 @@ export function ApiKeyList({
             <tbody className="divide-y divide-white/5 text-xs font-mono">
               {filteredKeys.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-8 text-center text-zinc-500 font-mono text-xs">
+                  <td colSpan={5} className="py-8 text-center text-[#71717a] font-mono text-xs">
                     Tidak ada kunci yang cocok dengan kriteria pencarian / filter.
                   </td>
                 </tr>
@@ -235,27 +235,27 @@ export function ApiKeyList({
                     <tr
                       key={item.id}
                       className={`hover:bg-white/[0.02] transition-colors ${
-                        isInvalid
-                          ? "bg-red-500/[0.03]"
-                          : isDepleted
-                          ? "bg-amber-500/[0.03]"
-                          : ""
-                      }`}
+ isInvalid
+ ? "bg-[#ef4444]/[0.03]"
+ : isDepleted
+ ? "bg-[#eab308]/[0.03]"
+ : ""
+ }`}
                     >
                       {/* Customer & Token Ident */}
                       <td className="py-3.5 px-4">
-                        <div className="font-sans font-semibold text-[#E9EDFB] flex items-center gap-2">
+                        <div className="font-sans font-semibold text-[#f4f4f5] flex items-center gap-2">
                           <span>{item.name}</span>
                           {item.planCode && (
-                            <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-[#8E97BC]">
+                            <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-[#a1a1aa]">
                               {item.planCode}
                             </span>
                           )}
                         </div>
-                        <div className="flex items-center gap-2 mt-1 text-[11px] text-[#8E97BC]">
+                        <div className="flex items-center gap-2 mt-1 text-[11px] text-[#a1a1aa]">
                           {item.customerEmail && (
-                            <span className="flex items-center gap-1 text-zinc-400">
-                              <Mail className="h-3 w-3 text-[#5B8DEF]" />
+                            <span className="flex items-center gap-1 text-[#a1a1aa]">
+                              <Mail className="h-3 w-3 text-[#f97316]" />
                               <span>{item.customerEmail}</span>
                             </span>
                           )}
@@ -267,16 +267,16 @@ export function ApiKeyList({
                       {/* Token Masked */}
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-1.5">
-                          <span className="text-zinc-300 bg-[#06070F] border border-white/10 px-2.5 py-1 rounded-lg font-mono text-[11px]">
+                          <span className="text-[#f4f4f5] bg-[#08080a] border border-white/10 px-2.5 py-1 rounded-lg font-mono text-[11px]">
                             {item.maskedKey}
                           </span>
                           <button
                             onClick={() => handleCopy(item.id, item.maskedKey)}
-                            className="text-zinc-500 hover:text-zinc-300 p-1 rounded hover:bg-white/5 transition-colors cursor-pointer"
+                            className="text-[#71717a] hover:text-[#f4f4f5] p-1 rounded hover:bg-white/5 transition-colors cursor-pointer"
                             title="Salin identifier"
                           >
                             {copiedId === item.id ? (
-                              <Check className="h-3.5 w-3.5 text-emerald-400" />
+                              <Check className="h-3.5 w-3.5 text-[#10b981]" />
                             ) : (
                               <Copy className="h-3.5 w-3.5" />
                             )}
@@ -288,17 +288,17 @@ export function ApiKeyList({
                       <td className="py-3.5 px-4">
                         <div className="w-48 space-y-1.5">
                           <div className="flex items-center justify-between text-[11px]">
-                            <span className="text-zinc-400">
+                            <span className="text-[#a1a1aa]">
                               {(usedTokens / 1000).toFixed(1)}k / {(capTokens / 1000).toFixed(0)}k
                             </span>
                             <span
                               className={`font-bold ${
-                                usagePercent > 90
-                                  ? "text-red-400"
-                                  : usagePercent > 70
-                                  ? "text-amber-400"
-                                  : "text-[#5B8DEF]"
-                              }`}
+ usagePercent > 90
+ ? "text-[#ef4444]"
+ : usagePercent > 70
+ ? "text-[#eab308]"
+ : "text-[#f97316]"
+ }`}
                             >
                               {usagePercent}%
                             </span>
@@ -306,16 +306,16 @@ export function ApiKeyList({
                           <div className="w-full h-1.5 rounded-full bg-white/10 overflow-hidden">
                             <div
                               className={`h-full rounded-full transition-all ${
-                                usagePercent > 90
-                                  ? "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]"
-                                  : usagePercent > 70
-                                  ? "bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.5)]"
-                                  : "bg-[#5B8DEF] shadow-[0_0_8px_rgba(91, 141, 239,0.5)]"
-                              }`}
+ usagePercent > 90
+ ? "bg-[#ef4444] "
+ : usagePercent > 70
+ ? "bg-[#eab308] "
+ : "bg-[#f97316] "
+ }`}
                               style={{ width: `${usagePercent}%` }}
                             />
                           </div>
-                          <div className="text-[10px] text-zinc-500">
+                          <div className="text-[10px] text-[#71717a]">
                             Limit: {item.rateLimitRpm} RPM
                           </div>
                         </div>
@@ -325,32 +325,32 @@ export function ApiKeyList({
                       <td className="py-3.5 px-4">
                         {isInvalid ? (
                           <div className="space-y-1">
-                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-red-500/10 text-red-400 border border-red-500/30 text-[11px] font-semibold">
+                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#ef4444]/10 text-[#ef4444] border border-[#ef4444]/30 text-[11px] font-semibold">
                               <XCircle className="h-3 w-3" />
                               <span>TOKEN CORRUPTED / 401</span>
                             </span>
-                            <p className="text-[10px] text-red-300/80 leading-tight max-w-[200px]">
+                            <p className="text-[10px] text-[#ef4444]/80 leading-tight max-w-[200px]">
                               {item.issueReason || "Hash SHA-256 tidak valid. Request kustomer ditolak."}
                             </p>
                           </div>
                         ) : isDepleted ? (
                           <div className="space-y-1">
-                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/30 text-[11px] font-semibold">
+                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#eab308]/10 text-[#eab308] border border-[#eab308]/30 text-[11px] font-semibold">
                               <AlertTriangle className="h-3 w-3" />
                               <span>KUOTA EXHAUSTED</span>
                             </span>
-                            <p className="text-[10px] text-amber-300/80 leading-tight max-w-[200px]">
+                            <p className="text-[10px] text-[#eab308]/80 leading-tight max-w-[200px]">
                               {item.issueReason || "Token cap harian habis. Memerlukan reset / top-up."}
                             </p>
                           </div>
                         ) : item.isActive ? (
-                          <span className="inline-flex items-center gap-1.5 text-xs font-mono text-[#5B8DEF]">
-                            <span className="h-2 w-2 rounded-full bg-[#5B8DEF] animate-pulse" />
+                          <span className="inline-flex items-center gap-1.5 text-xs font-mono text-[#f97316]">
+                            <span className="h-2 w-2 rounded-full bg-[#f97316] animate-pulse" />
                             <span>Normal & Serving</span>
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1.5 text-xs font-mono text-zinc-500">
-                            <span className="h-2 w-2 rounded-full bg-zinc-600" />
+                          <span className="inline-flex items-center gap-1.5 text-xs font-mono text-[#71717a]">
+                            <span className="h-2 w-2 rounded-full bg-[#71717a]" />
                             <span>Revoked</span>
                           </span>
                         )}
@@ -363,7 +363,7 @@ export function ApiKeyList({
                             <button
                               onClick={() => handleRegenerate(item.id)}
                               disabled={processingId === item.id}
-                              className="px-2.5 py-1.5 rounded-lg bg-red-500 text-white font-mono text-[11px] font-bold hover:bg-red-400 transition-all flex items-center gap-1.5 shadow-[0_0_12px_rgba(239,68,68,0.3)] cursor-pointer disabled:opacity-50"
+                              className="px-2.5 py-1.5 rounded-lg bg-[#ef4444] text-white font-mono text-[11px] font-bold hover:bg-[#ef4444] transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                               title="Terbitkan token kriptografi baru yang valid"
                             >
                               <RefreshCw className={`h-3 w-3 ${processingId === item.id ? "animate-spin" : ""}`} />
@@ -373,7 +373,7 @@ export function ApiKeyList({
                             <button
                               onClick={() => handleReset(item.id, 250000)}
                               disabled={processingId === item.id}
-                              className="px-2.5 py-1.5 rounded-lg bg-amber-500 text-black font-mono text-[11px] font-bold hover:bg-amber-400 transition-all flex items-center gap-1.5 shadow-[0_0_12px_rgba(245,158,11,0.3)] cursor-pointer disabled:opacity-50"
+                              className="px-2.5 py-1.5 rounded-lg bg-[#eab308] text-black font-mono text-[11px] font-bold hover:bg-[#eab308] transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                               title="Reset pemakaian token dan berikan kuota tambahan"
                             >
                               <Zap className="h-3 w-3" />
@@ -384,20 +384,20 @@ export function ApiKeyList({
                               <button
                                 onClick={() => handleRegenerate(item.id)}
                                 disabled={processingId === item.id}
-                                className="px-2 py-1 rounded border border-white/10 hover:border-[#5B8DEF]/40 text-zinc-400 hover:text-[#5B8DEF] text-[10px] font-mono transition-colors cursor-pointer"
+                                className="px-2 py-1 rounded border border-white/10 hover:border-[#f97316]/40 text-[#a1a1aa] hover:text-[#f97316] text-[10px] font-mono transition-colors cursor-pointer"
                                 title="Regenerate kunci"
                               >
                                 Roll Key
                               </button>
                               <button
                                 onClick={() => onRevoke(item.id)}
-                                className="px-2 py-1 rounded border border-red-500/20 text-red-400 hover:bg-red-500/10 text-[10px] font-mono transition-colors cursor-pointer"
+                                className="px-2 py-1 rounded border border-[#ef4444]/20 text-[#ef4444] hover:bg-[#ef4444]/10 text-[10px] font-mono transition-colors cursor-pointer"
                               >
                                 Revoke
                               </button>
                             </div>
                           ) : (
-                            <span className="text-[11px] text-zinc-600">No Action</span>
+                            <span className="text-[11px] text-[#71717a]">No Action</span>
                           )}
                         </div>
                       </td>

@@ -32,14 +32,14 @@ function layout(params: { heading: string; bodyHtml: string; footnote: string })
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>${escapeHtml(params.heading)}</title>
   </head>
-  <body style="margin:0;padding:28px 14px;background:#070810;font-family:${FONT};color:#e9edfb;">
+  <body style="margin:0;padding:28px 14px;background:#08080a;font-family:${FONT};color:#f4f4f5;">
     <div style="max-width:560px;margin:0 auto;">
-      <div style="padding:0 4px 18px;font-size:15px;font-weight:600;letter-spacing:-0.01em;color:#e9edfb;">Morvexa</div>
-      <div style="border:1px solid rgba(233,237,251,0.10);border-radius:14px;background:#0b0d16;padding:28px 24px;">
-        <h1 style="margin:0 0 16px;font-size:21px;line-height:1.3;font-weight:600;color:#e9edfb;">${escapeHtml(params.heading)}</h1>
+      <div style="padding:0 4px 18px;font-size:15px;font-weight:600;letter-spacing:-0.01em;color:#f4f4f5;">Morvexa</div>
+      <div style="border:1px solid rgba(255,255,255,0.10);border-radius:14px;background:#08080a;padding:28px 24px;">
+        <h1 style="margin:0 0 16px;font-size:21px;line-height:1.3;font-weight:600;color:#f4f4f5;">${escapeHtml(params.heading)}</h1>
         ${params.bodyHtml}
       </div>
-      <p style="margin:18px 4px 0;font-size:12px;line-height:1.65;color:#8e97bc;">
+      <p style="margin:18px 4px 0;font-size:12px;line-height:1.65;color:#a1a1aa;">
         ${escapeHtml(params.footnote)}<br />
         Email ini dikirim otomatis oleh sistem Morvexa. Jangan balas pesan ini.
       </p>
@@ -49,19 +49,19 @@ function layout(params: { heading: string; bodyHtml: string; footnote: string })
 }
 
 function paragraph(html: string): string {
-  return `<p style="margin:0 0 14px;font-size:14px;line-height:1.65;color:#c3c9e0;">${html}</p>`;
+  return `<p style="margin:0 0 14px;font-size:14px;line-height:1.65;color:#a1a1aa;">${html}</p>`;
 }
 
 function codeBlock(value: string): string {
-  return `<div style="margin:0 0 18px;padding:12px 14px;border:1px solid rgba(233,237,251,0.14);border-radius:10px;background:#06070f;font-family:${MONO};font-size:13px;line-height:1.5;color:#9db9f5;word-break:break-all;">${escapeHtml(value)}</div>`;
+  return `<div style="margin:0 0 18px;padding:12px 14px;border:1px solid rgba(255,255,255,0.14);border-radius:10px;background:#08080a;font-family:${MONO};font-size:13px;line-height:1.5;color:#fdba74;word-break:break-all;">${escapeHtml(value)}</div>`;
 }
 
 function button(href: string, label: string): string {
-  return `<div style="margin:0 0 18px;"><a href="${escapeHtml(href)}" style="display:inline-block;padding:11px 18px;border-radius:10px;background:#5b8def;color:#04050c;font-size:14px;font-weight:600;text-decoration:none;">${escapeHtml(label)}</a></div>`;
+  return `<div style="margin:0 0 18px;"><a href="${escapeHtml(href)}" style="display:inline-block;padding:11px 18px;border-radius:10px;background:#f97316;color:#08080a;font-size:14px;font-weight:600;text-decoration:none;">${escapeHtml(label)}</a></div>`;
 }
 
 function detailRow(label: string, value: string): string {
-  return `<tr><td style="padding:5px 0;font-size:13px;color:#8e97bc;width:150px;vertical-align:top;">${escapeHtml(label)}</td><td style="padding:5px 0;font-size:13px;color:#e9edfb;">${escapeHtml(value)}</td></tr>`;
+  return `<tr><td style="padding:5px 0;font-size:13px;color:#a1a1aa;width:150px;vertical-align:top;">${escapeHtml(label)}</td><td style="padding:5px 0;font-size:13px;color:#f4f4f5;">${escapeHtml(value)}</td></tr>`;
 }
 
 export function welcomeEmail(params: { name: string; portalUrl: string }): RenderedEmail {
@@ -107,7 +107,7 @@ export function apiKeyDeliveryEmail(params: {
     heading: "API key Anda siap dipakai",
     bodyHtml:
       paragraph(
-        `Halo ${escapeHtml(params.name)}, pembayaran Anda untuk paket <strong style="color:#e9edfb;">${escapeHtml(params.planName)}</strong> sudah kami terima. Berikut API key Anda.`
+        `Halo ${escapeHtml(params.name)}, pembayaran Anda untuk paket <strong style="color:#f4f4f5;">${escapeHtml(params.planName)}</strong> sudah kami terima. Berikut API key Anda.`
       ) +
       codeBlock(params.apiKey) +
       `<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;margin:0 0 18px;border-collapse:collapse;">

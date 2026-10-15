@@ -11,11 +11,11 @@ interface TracesTableProps {
 
 export function TracesTable({ traces, onSelectTrace }: TracesTableProps) {
   return (
-    <div className="rounded-lg border border-white/10 bg-[#0E1019] overflow-hidden">
+    <div className="rounded-lg border border-white/10 bg-[#0e0e11] overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse min-w-[720px]">
           <thead>
-            <tr className="border-b border-white/5 bg-white/[0.01] text-[10px] font-mono uppercase text-zinc-500">
+            <tr className="border-b border-white/5 bg-white/[0.01] text-[10px] font-mono uppercase text-[#71717a]">
               <th className="py-2.5 px-4 font-semibold">Status</th>
               <th className="py-2.5 px-4 font-semibold">Endpoint</th>
               <th className="py-2.5 px-4 font-semibold">Model</th>
@@ -35,28 +35,28 @@ export function TracesTable({ traces, onSelectTrace }: TracesTableProps) {
               >
                 <td className="py-2.5 px-4">
                   {trace.statusCode === 200 ? (
-                    <span className="inline-flex items-center gap-1.5 text-xs font-mono text-emerald-400">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                    <span className="inline-flex items-center gap-1.5 text-xs font-mono text-[#10b981]">
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#10b981]" />
                       200 OK
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1.5 text-xs font-mono text-red-400">
-                      <span className="h-1.5 w-1.5 rounded-full bg-red-400" />
+                    <span className="inline-flex items-center gap-1.5 text-xs font-mono text-[#ef4444]">
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#ef4444]" />
                       {trace.statusCode} ERR
                     </span>
                   )}
                 </td>
 
-                <td className="py-2.5 px-4 text-zinc-300">
-                  <span className="text-zinc-400">{trace.endpoint}</span>
+                <td className="py-2.5 px-4 text-[#f4f4f5]">
+                  <span className="text-[#a1a1aa]">{trace.endpoint}</span>
                 </td>
 
                 <td className="py-2.5 px-4">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-zinc-200">{trace.modelRequested}</span>
+                    <span className="text-[#f4f4f5]">{trace.modelRequested}</span>
                     {trace.failoverOccurred && (
                       <span
-                        className="text-[10px] font-mono text-amber-400 bg-amber-400/10 px-1 py-0.5 rounded border border-amber-400/20"
+                        className="text-[10px] font-mono text-[#eab308] bg-[#eab308]/10 px-1 py-0.5 rounded border border-[#eab308]/20"
                         title="Failover Occurred"
                       >
                         [failover]
@@ -73,23 +73,23 @@ export function TracesTable({ traces, onSelectTrace }: TracesTableProps) {
                   </div>
                 </td>
 
-                <td className="py-2.5 px-4 text-zinc-400">
+                <td className="py-2.5 px-4 text-[#a1a1aa]">
                   {trace.provider}
                 </td>
 
-                <td className="py-2.5 px-4 text-emerald-400 font-medium">
+                <td className="py-2.5 px-4 text-[#10b981] font-medium">
                   {trace.ttftMs}ms
                 </td>
 
-                <td className="py-2.5 px-4 text-zinc-300">
+                <td className="py-2.5 px-4 text-[#f4f4f5]">
                   {trace.totalDurationMs}ms
                 </td>
 
-                <td className="py-2.5 px-4 text-zinc-400">
+                <td className="py-2.5 px-4 text-[#a1a1aa]">
                   {trace.promptTokens + trace.completionTokens}
                 </td>
 
-                <td className="py-2.5 px-4 text-right text-zinc-500 text-[11px] group-hover:text-zinc-300 transition-colors">
+                <td className="py-2.5 px-4 text-right text-[#71717a] text-[11px] group-hover:text-[#f4f4f5] transition-colors">
                   {new Date(trace.timestamp).toLocaleTimeString()}
                 </td>
               </tr>

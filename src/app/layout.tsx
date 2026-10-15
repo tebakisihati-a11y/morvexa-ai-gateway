@@ -1,14 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Bricolage_Grotesque, Instrument_Sans, JetBrains_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const display = Bricolage_Grotesque({
-  subsets: ["latin"],
-  variable: "--font-display",
-  display: "swap",
-});
-
-const body = Instrument_Sans({
+// Brief section 3B: Inter for interface text, JetBrains Mono for every number,
+// model id, log line and token counter so figures stay tabular.
+const body = Inter({
   subsets: ["latin"],
   variable: "--font-body",
   display: "swap",
@@ -33,7 +29,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#06070f",
+  themeColor: "#08080a",
   colorScheme: "dark",
 };
 
@@ -43,10 +39,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${display.variable} ${body.variable} ${mono.variable}`}
-    >
+    <html lang="id" className={`${body.variable} ${mono.variable}`}>
       <body className="antialiased">{children}</body>
     </html>
   );

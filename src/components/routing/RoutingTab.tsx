@@ -25,10 +25,10 @@ export function RoutingTab() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-bold text-zinc-100 tracking-tight">
+        <h2 className="text-lg font-bold text-[#f4f4f5] tracking-tight">
           Universal Model Routing & Failover Architecture
         </h2>
-        <p className="text-xs text-zinc-400 mt-0.5">
+        <p className="text-xs text-[#a1a1aa] mt-0.5">
           Configure upstream API credentials and visualize how Morvexa automatically reroutes traffic when rate limits or provider outages occur.
         </p>
       </div>

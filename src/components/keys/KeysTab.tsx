@@ -21,15 +21,15 @@ export function KeysTab({ keys, onCreateKey, onRevokeKey, onRegenerateKey, onRes
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-base font-semibold text-[#E9EDFB] tracking-tight">API Key Management & Customer Doctor</h2>
-          <p className="text-xs text-[#8E97BC] mt-0.5 font-mono">
+          <h2 className="text-base font-semibold text-[#f4f4f5] tracking-tight">API Key Management & Customer Doctor</h2>
+          <p className="text-xs text-[#a1a1aa] mt-0.5 font-mono">
             Pantau konsumsi token per kustomer dan pulihkan token yang invalid atau habis kuota secara real-time.
           </p>
         </div>
 
         <button
           onClick={() => setIsModalOpen(true)}
-          className="px-3.5 py-2 rounded-xl bg-[#5B8DEF] hover:bg-[#5B8DEF]/90 text-[#06070F] text-xs font-mono font-bold flex items-center gap-1.5 transition-all shadow-[0_0_20px_rgba(91, 141, 239,0.3)] cursor-pointer self-start sm:self-auto"
+          className="px-3.5 py-2 rounded-lg bg-[#f97316] hover:bg-[#f97316]/90 text-[#08080a] text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer self-start sm:self-auto"
         >
           <Plus className="h-4 w-4" />
           <span>Buat Kunci Baru</span>
@@ -44,11 +44,11 @@ export function KeysTab({ keys, onCreateKey, onRevokeKey, onRegenerateKey, onRes
       />
 
       {/* Security info card */}
-      <div className="rounded-lg border border-white/10 bg-[#0E1019] p-3.5 sm:p-4 flex items-start gap-3">
-        <ShieldCheck className="h-4 w-4 text-zinc-400 shrink-0 mt-0.5" />
+      <div className="rounded-lg border border-white/10 bg-[#0e0e11] p-3.5 sm:p-4 flex items-start gap-3">
+        <ShieldCheck className="h-4 w-4 text-[#a1a1aa] shrink-0 mt-0.5" />
         <div className="space-y-0.5 text-xs">
-          <div className="font-mono text-xs font-semibold text-zinc-200">Zero-Plaintext Security Architecture</div>
-          <p className="text-zinc-400 text-[11px] leading-relaxed">
+          <div className="font-mono text-xs font-semibold text-[#f4f4f5]">Zero-Plaintext Security Architecture</div>
+          <p className="text-[#a1a1aa] text-[11px] leading-relaxed">
             All secret keys are generated with high-entropy cryptographic primitives. Morvexa stores only the salted SHA-256 hash. Once created, keys cannot be reverse-engineered or recovered from the database.
           </p>
         </div>

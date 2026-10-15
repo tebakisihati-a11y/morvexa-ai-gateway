@@ -13,26 +13,26 @@ export function ThroughputChart() {
   const maxVal = Math.max(...hourlyData);
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-[#0A0C1E]/80 backdrop-blur-md p-5 sm:p-6">
+    <div className="rounded-lg border border-white/10 bg-[#0e0e11]/80 p-5 sm:p-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 pb-3 border-b border-white/5">
         <div>
-          <h3 className="text-xs font-mono uppercase tracking-wider font-semibold text-[#E9EDFB] flex items-center gap-2">
-            <BarChart2 className="h-3.5 w-3.5 text-[#A5AFDD]" />
+          <h3 className="text-xs font-mono uppercase tracking-wider font-semibold text-[#f4f4f5] flex items-center gap-2">
+            <BarChart2 className="h-3.5 w-3.5 text-[#a1a1aa]" />
             <span>24-Hour Gateway Traffic Ingestion</span>
           </h3>
-          <p className="text-xs text-[#A5AFDD] mt-0.5">
+          <p className="text-xs text-[#a1a1aa] mt-0.5">
             Throughput telemetry aggregated across edge workers
           </p>
         </div>
 
-        <div className="flex items-center gap-3 text-xs font-mono text-zinc-400 self-start sm:self-auto">
+        <div className="flex items-center gap-3 text-xs font-mono text-[#a1a1aa] self-start sm:self-auto">
           <div className="flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#C0549F]" />
-            <span className="text-zinc-300">peak: {maxVal} req/m</span>
+            <span className="h-1.5 w-1.5 rounded-full bg-[#f97316]" />
+            <span className="text-[#f4f4f5]">peak: {maxVal} req/m</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-            <span className="text-emerald-400">success_rate: 99.8%</span>
+            <span className="h-1.5 w-1.5 rounded-full bg-[#10b981]" />
+            <span className="text-[#10b981]">success_rate: 99.8%</span>
           </div>
         </div>
       </div>
@@ -47,11 +47,11 @@ export function ThroughputChart() {
               className="flex-1 flex flex-col items-center group relative h-full justify-end"
             >
               <div
-                className="w-full bg-[#4A57B8]/40 hover:bg-gradient-to-t hover:from-[#9E3D7A] hover:to-[#C0549F] rounded-t-sm transition-all duration-200"
+                className="w-full bg-[#c2410c]/40 hover:bg-surface hover:from-[#ea580c] hover:to-[#f97316] rounded-t-sm transition-all duration-200"
                 style={{ height: `${heightPercent}%` }}
               />
               {/* Tooltip on hover */}
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-8 bg-[#191D3D] border border-[#C0549F]/40 text-[10px] font-mono text-zinc-100 px-1.5 py-0.5 rounded shadow pointer-events-none whitespace-nowrap z-20">
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-8 bg-[#16161b] border border-[#f97316]/40 text-[10px] font-mono text-[#f4f4f5] px-1.5 py-0.5 rounded shadow pointer-events-none whitespace-nowrap z-20">
                 {val} req/m
               </div>
             </div>
@@ -59,12 +59,12 @@ export function ThroughputChart() {
         })}
       </div>
 
-      <div className="flex justify-between items-center text-[10px] font-mono text-zinc-500 mt-2">
+      <div className="flex justify-between items-center text-[10px] font-mono text-[#71717a] mt-2">
         <span>24h ago</span>
         <span>18h ago</span>
         <span>12h ago</span>
         <span>6h ago</span>
-        <span className="text-[#C0549F] font-bold">Now</span>
+        <span className="text-[#f97316] font-bold">Now</span>
       </div>
     </div>
   );

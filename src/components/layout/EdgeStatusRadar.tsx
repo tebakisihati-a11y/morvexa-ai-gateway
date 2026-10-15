@@ -33,19 +33,19 @@ export function EdgeStatusRadar() {
   }, []);
 
   return (
-    <div className="flex items-center gap-2.5 text-xs border border-white/10 bg-[#0E1019] px-2.5 py-1 rounded">
-      <div className="flex items-center gap-1.5 text-emerald-400 font-mono text-[11px]">
-        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-        <span className="text-zinc-300">mesh: operational</span>
+    <div className="flex items-center gap-2.5 text-xs border border-white/10 bg-[#0e0e11] px-2.5 py-1 rounded">
+      <div className="flex items-center gap-1.5 text-[#10b981] font-mono text-[11px]">
+        <span className="h-1.5 w-1.5 rounded-full bg-[#10b981]" />
+        <span className="text-[#f4f4f5]">mesh: operational</span>
       </div>
 
       <div className="h-3 w-[1px] bg-white/10 hidden sm:block" />
 
       <div className="hidden sm:flex items-center gap-2.5">
         {regions.map((reg) => (
-          <div key={reg.code} className="flex items-center gap-1 font-mono text-[10px] text-zinc-400">
-            <span className="text-zinc-500">{reg.code}:</span>
-            <span className="text-zinc-300">{reg.currentLatency}ms</span>
+          <div key={reg.code} className="flex items-center gap-1 font-mono text-[10px] text-[#a1a1aa]">
+            <span className="text-[#71717a]">{reg.code}:</span>
+            <span className="text-[#f4f4f5]">{reg.currentLatency}ms</span>
           </div>
         ))}
       </div>

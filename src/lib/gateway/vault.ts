@@ -13,14 +13,45 @@ export interface EncryptedVaultPayload {
   keyVersion: string;
 }
 
-// Fallback static master key derivation for local sandbox / test environment
+let ephemeralMasterKey: Buffer | null = null;
+
+/**
+ * Resolves the AES-256 master key that wraps every stored provider secret.
+ *
+ * There is deliberately no hardcoded fallback. A constant such as
+ * "morvexa_master_vault_key_32bytes" is public knowledge, so anyone who read
+ * the repository could decrypt the tenant keys in any deployment that forgot
+ * to set ENCRYPTION_MASTER_KEY.
+ *
+ * Instead:
+ *   - a configured ENCRYPTION_MASTER_KEY always wins;
+ *   - outside production, a random per-process key is generated so local
+ *     development and the test suite keep working, but it is unguessable and
+ *     dies with the process (so sandbox ciphertext is not portable, which is
+ *     the correct trade-off);
+ *   - in production with no key configured, this throws, so a misconfigured
+ *     deployment fails loudly instead of silently writing weakly-wrapped
+ *     secrets to durable storage.
+ */
 function getMasterKey(): Buffer {
   const envKey = process.env.ENCRYPTION_MASTER_KEY;
   if (envKey && envKey.length >= 32) {
     return Buffer.from(envKey.slice(0, 32), "utf-8");
   }
-  // Deterministic 32-byte key for consistent test sandbox runs
-  return Buffer.from("morvexa_master_vault_key_32bytes", "utf-8");
+
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "Missing ENCRYPTION_MASTER_KEY (min 32 chars). Set it before storing provider credentials."
+    );
+  }
+
+  ephemeralMasterKey ??= randomBytes(32);
+  return ephemeralMasterKey;
+}
+
+/** Test helper: forces a new random master key. */
+export function resetEphemeralMasterKey(): void {
+  ephemeralMasterKey = null;
 }
 
 /**

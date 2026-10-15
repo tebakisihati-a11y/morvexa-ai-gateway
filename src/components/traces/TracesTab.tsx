@@ -24,11 +24,11 @@ export function TracesTab({ traces }: TracesTabProps) {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-sm font-semibold text-zinc-100 tracking-tight flex items-center gap-2">
-            <Activity className="h-3.5 w-3.5 text-zinc-400" />
+          <h2 className="text-sm font-semibold text-[#f4f4f5] tracking-tight flex items-center gap-2">
+            <Activity className="h-3.5 w-3.5 text-[#a1a1aa]" />
             <span>Request Traces & Telemetry</span>
           </h2>
-          <p className="text-xs text-zinc-400 mt-0.5">
+          <p className="text-xs text-[#a1a1aa] mt-0.5">
             Real-time observability stream logging latency, TTFT, token consumption, and auto-failovers.
           </p>
         </div>
@@ -38,24 +38,24 @@ export function TracesTab({ traces }: TracesTabProps) {
           <button
             onClick={() => setFilter("all")}
             className={`px-2.5 py-1 rounded text-xs transition-colors cursor-pointer ${
-              filter === "all" ? "bg-white/10 text-white font-medium" : "text-zinc-500 hover:text-zinc-300"
-            }`}
+ filter === "all" ? "bg-white/10 text-white font-medium" : "text-[#71717a] hover:text-[#f4f4f5]"
+ }`}
           >
             All ({traces.length})
           </button>
           <button
             onClick={() => setFilter("failover")}
             className={`px-2.5 py-1 rounded text-xs transition-colors cursor-pointer ${
-              filter === "failover" ? "bg-white/10 text-amber-300 font-medium" : "text-zinc-500 hover:text-zinc-300"
-            }`}
+ filter === "failover" ? "bg-white/10 text-[#eab308] font-medium" : "text-[#71717a] hover:text-[#f4f4f5]"
+ }`}
           >
             Failovers ({traces.filter((t) => t.failoverOccurred).length})
           </button>
           <button
             onClick={() => setFilter("cached")}
             className={`px-2.5 py-1 rounded text-xs transition-colors cursor-pointer ${
-              filter === "cached" ? "bg-white/10 text-cyan-300 font-medium" : "text-zinc-500 hover:text-zinc-300"
-            }`}
+ filter === "cached" ? "bg-white/10 text-cyan-300 font-medium" : "text-[#71717a] hover:text-[#f4f4f5]"
+ }`}
           >
             Cached ({traces.filter((t) => t.cached).length})
           </button>

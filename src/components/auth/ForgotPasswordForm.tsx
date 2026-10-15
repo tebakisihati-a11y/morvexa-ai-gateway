@@ -69,11 +69,11 @@ export function ForgotPasswordForm() {
       subtitle="Masukkan email akun Morvexa Anda. Kami akan mengirim tautan untuk membuat password baru."
       highlights={HIGHLIGHTS}
       footer={
-        <p className="text-[13.5px] text-[#8e97bc]">
+        <p className="text-[13.5px] text-[#a1a1aa]">
           Ingat password Anda?{" "}
           <Link
             href="/login"
-            className="font-medium text-[#9db9f5] underline-offset-4 transition-colors hover:text-[#e9edfb] hover:underline"
+            className="font-medium text-[#fdba74] underline-offset-4 transition-colors hover:text-[#f4f4f5] hover:underline"
           >
             Kembali ke halaman masuk
           </Link>
@@ -82,18 +82,18 @@ export function ForgotPasswordForm() {
     >
       {sentTo ? (
         <div className="space-y-5">
-          <div className="flex items-start gap-3 rounded-xl border border-[#5b8def]/30 bg-[#5b8def]/[0.07] px-4 py-4">
-            <MailCheck className="mt-0.5 h-5 w-5 shrink-0 text-[#9db9f5]" aria-hidden="true" />
+          <div className="flex items-start gap-3 rounded-lg border border-[#f97316]/30 bg-[#f97316]/[0.07] px-4 py-4">
+            <MailCheck className="mt-0.5 h-5 w-5 shrink-0 text-[#fdba74]" aria-hidden="true" />
             <div className="space-y-1.5">
-              <p className="text-[14px] font-medium text-[#e9edfb]">Periksa kotak masuk Anda</p>
-              <p className="text-[13px] leading-relaxed text-[#8e97bc]">
-                Jika <span className="font-medium text-[#c3c9e0]">{sentTo}</span> terdaftar,
+              <p className="text-[14px] font-medium text-[#f4f4f5]">Periksa kotak masuk Anda</p>
+              <p className="text-[13px] leading-relaxed text-[#a1a1aa]">
+                Jika <span className="font-medium text-[#a1a1aa]">{sentTo}</span> terdaftar,
                 tautan reset sudah kami kirim ke alamat itu. Tautan berlaku 30 menit.
               </p>
             </div>
           </div>
 
-          <p className="text-[12.5px] leading-relaxed text-[#5a6390]">
+          <p className="text-[12.5px] leading-relaxed text-[#71717a]">
             Tidak menerima email? Periksa folder spam atau promosi, lalu coba lagi dengan alamat
             yang benar.
           </p>

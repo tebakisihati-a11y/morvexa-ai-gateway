@@ -48,8 +48,10 @@ export function SignupForm() {
   const nameError = name.length > 0 ? validateName(name) : null;
   const emailError = email.length > 0 ? validateEmail(email) : null;
   const passwordError = password.length > 0 ? validatePassword(password) : null;
+  // Compare only once the user has finished the field; mid-typing mismatches are
+  // noise, and the submit handler re-checks anyway.
   const confirmError =
-    confirmPassword.length > 0 && confirmPassword !== password
+    confirmPassword.length > 0 && confirmPassword !== password && password.length > 0
       ? "Konfirmasi password tidak sama."
       : null;
 
@@ -108,11 +110,11 @@ export function SignupForm() {
       subtitle="Satu akun untuk mengelola API key, kuota, dan tagihan seluruh model AI Anda."
       highlights={HIGHLIGHTS}
       footer={
-        <p className="text-[13.5px] text-[#8e97bc]">
+        <p className="text-[13.5px] text-[#a1a1aa]">
           Sudah punya akun?{" "}
           <Link
             href="/login"
-            className="font-medium text-[#9db9f5] underline-offset-4 transition-colors hover:text-[#e9edfb] hover:underline"
+            className="font-medium text-[#fdba74] underline-offset-4 transition-colors hover:text-[#f4f4f5] hover:underline"
           >
             Masuk di sini
           </Link>
@@ -170,21 +172,22 @@ export function SignupForm() {
           valid={Boolean(confirmPassword) && !confirmError}
         />
 
-        <label className="flex cursor-pointer items-start gap-2.5 pt-1 text-[12.5px] leading-relaxed text-[#8e97bc]">
+        <label className="flex cursor-pointer items-start gap-2.5 pt-1 text-[12.5px] leading-relaxed text-[#a1a1aa]">
           <span className="relative mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center">
             <input
               type="checkbox"
               checked={acceptedTerms}
               onChange={(event) => setAcceptedTerms(event.target.checked)}
-              className="peer h-4 w-4 cursor-pointer appearance-none rounded border border-[#e9edfb]/20 bg-[#06070f] transition-colors checked:border-[#5b8def] checked:bg-[#5b8def]"
+              aria-describedby="terms-text"
+              className="peer h-4 w-4 cursor-pointer appearance-none rounded border border-[#f4f4f5]/20 bg-[#08080a] transition-colors checked:border-[#f97316] checked:bg-[#f97316]"
             />
             <Check
-              className="pointer-events-none absolute h-3 w-3 text-[#04050c] opacity-0 transition-opacity peer-checked:opacity-100"
+              className="pointer-events-none absolute h-3 w-3 text-[#08080a] opacity-0 transition-opacity peer-checked:opacity-100"
               strokeWidth={3}
               aria-hidden="true"
             />
           </span>
-          <span>
+          <span id="terms-text">
             Saya menyetujui ketentuan layanan dan kebijakan privasi Morvexa, termasuk pemrosesan
             data pemakaian untuk penagihan.
           </span>

@@ -1,44 +1,49 @@
 @import "tailwindcss";
 
 /* =============================================================================
-   Morvexa — Cinematic Agent Core Design System
-   Deep-space indigo canvas, molten blue accent, iris + plum light bloom.
-   Type: Bricolage Grotesque (display) / Instrument Sans (body) / JetBrains Mono.
+   Morvexa - Tactical Obsidian Design System
+   Implements docs/DESIGN_BRIEF.md v1.0.0 (Approved Specification).
+
+   Flat matte obsidian canvas, one functional orange accent, monospace
+   telemetry. No gradients, no decorative glow, no glassmorphism blur: the brief
+   bans all three, because they cost render FPS and legibility on the dense
+   data screens operators read all day.
    ========================================================================== */
 
 @theme inline {
   --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-display), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-mono-code), ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  --color-canvas: #06070f;
-  --color-surface: #0b0d1a;
-  --color-elevated: #11142a;
-  --color-ink: #e9edfb;
-  --color-muted: #8e97bc;
-  --color-dim: #5a6390;
-  --color-accent: #5b8def;
-  --color-iris: #6c63ff;
-  --color-plum: #c0549f;
-  --color-void: #04050c;
+  /* Surfaces (brief section 3A) */
+  --color-canvas: #08080a;
+  --color-surface: #0e0e11;
+  --color-elevated: #16161b;
 
-  --animate-aurora: aurora 22s ease-in-out infinite;
-  --animate-drift: drift 9s ease-in-out infinite;
-  --animate-rise: rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
-  --animate-sheen: sheen 3.4s ease-in-out infinite;
+  /* Text (brief section 3A) */
+  --color-ink: #f4f4f5;
+  --color-muted: #a1a1aa;
+  --color-dim: #71717a;
+
+  /* Brand accent */
+  --color-accent: #f97316;
+
+  /* Status semantics (brief section 3A) */
+  --color-healthy: #10b981;
+  --color-warning: #eab308;
+  --color-danger: #ef4444;
+  --color-info: #38bdf8;
 }
 
 @layer base {
   :root {
-    --line-subtle: rgba(233, 237, 251, 0.07);
-    --line: rgba(233, 237, 251, 0.12);
-    --line-strong: rgba(233, 237, 251, 0.2);
-    --glow-accent: rgba(91, 141, 239, 0.28);
+    --line-subtle: rgba(255, 255, 255, 0.06);
+    --line: rgba(255, 255, 255, 0.1);
+    --line-strong: rgba(255, 255, 255, 0.15);
   }
 
   html {
     scroll-behavior: smooth;
-    scroll-padding-top: 6rem;
+    scroll-padding-top: 5rem;
     background-color: var(--color-canvas);
     -webkit-text-size-adjust: 100%;
   }
@@ -53,132 +58,59 @@
     overflow-x: hidden;
   }
 
+  /* The brief specifies Inter for headings too, distinguished by weight and
+     tight tracking rather than a separate display face. */
   h1,
   h2,
   h3 {
-    font-family: var(--font-display);
     font-weight: 600;
-    letter-spacing: -0.028em;
+    letter-spacing: -0.02em;
   }
 
   ::selection {
-    background: rgba(91, 141, 239, 0.28);
+    background: rgba(249, 115, 22, 0.3);
     color: #ffffff;
   }
 
+  /* Brief section 10: explicit, consistent focus ring on every interactive
+     element. Orange is the control accent, so focus uses it too. */
   :focus-visible {
-    outline: 2px solid var(--color-accent);
+    outline: 2px solid rgba(249, 115, 22, 0.7);
     outline-offset: 2px;
     border-radius: 4px;
   }
 
   [id] {
-    scroll-margin-top: 6rem;
+    scroll-margin-top: 5rem;
   }
 }
 
 /* ---------------------------------------------------------------------------
-   Surfaces & texture
+   Surfaces
    ------------------------------------------------------------------------- */
 
-/* Film-grain overlay: breaks up flat gradients so large dark areas read as
-   photographic depth instead of a flat fill. */
-.grain::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0.42;
-  mix-blend-mode: soft-light;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
-}
-
+/* Brief section 3D: no heavy drop shadows. Elevation is a 1px inner hairline. */
 .hairline-top {
-  box-shadow: inset 0 1px 0 rgba(233, 237, 251, 0.07);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .panel {
-  background: linear-gradient(160deg, rgba(17, 20, 42, 0.86), rgba(11, 13, 26, 0.92));
+  background: var(--color-surface);
   border: 1px solid var(--line-subtle);
-  backdrop-filter: blur(14px);
-}
-
-.text-gradient {
-  background: linear-gradient(104deg, #ffffff 8%, #9db9f5 46%, #c0549f 96%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
 }
 
 /* ---------------------------------------------------------------------------
    Motion
    ------------------------------------------------------------------------- */
 
-@keyframes aurora {
-  0%,
-  100% {
-    transform: translate3d(0, 0, 0) scale(1);
-    opacity: 0.55;
-  }
-  33% {
-    transform: translate3d(3%, -4%, 0) scale(1.12);
-    opacity: 0.8;
-  }
-  66% {
-    transform: translate3d(-3%, 3%, 0) scale(1.04);
-    opacity: 0.65;
-  }
-}
-
-@keyframes drift {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-}
-
-@keyframes rise {
-  from {
-    opacity: 0;
-    transform: translateY(18px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes sheen {
-  0% {
-    transform: translateX(-120%);
-  }
-  60%,
-  100% {
-    transform: translateX(220%);
-  }
-}
-
-/* Sequential reveal for hero copy. */
-.stagger > * {
-  animation: rise 0.75s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-.stagger > *:nth-child(1) { animation-delay: 0.05s; }
-.stagger > *:nth-child(2) { animation-delay: 0.13s; }
-.stagger > *:nth-child(3) { animation-delay: 0.21s; }
-.stagger > *:nth-child(4) { animation-delay: 0.29s; }
-.stagger > *:nth-child(5) { animation-delay: 0.37s; }
-.stagger > *:nth-child(6) { animation-delay: 0.45s; }
-
-/* Reveal on scroll, toggled by IntersectionObserver. */
+/* Scroll reveal only: brief section 1 bans slow decorative animation, so this
+   is a short opacity/offset transition with no stagger choreography. */
 .reveal {
   opacity: 0;
-  transform: translateY(22px);
+  transform: translateY(8px);
   transition:
-    opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
-    transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    opacity 0.3s ease-out,
+    transform 0.3s ease-out;
 }
 .reveal.is-visible {
   opacity: 1;
@@ -210,13 +142,13 @@
   height: 10px;
 }
 ::-webkit-scrollbar-track {
-  background: #06070f;
+  background: #08080a;
 }
 ::-webkit-scrollbar-thumb {
-  background: #232c63;
-  border: 3px solid #06070f;
+  background: rgba(255, 255, 255, 0.12);
+  border: 3px solid #08080a;
   border-radius: 999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #3b4694;
+  background: rgba(255, 255, 255, 0.22);
 }

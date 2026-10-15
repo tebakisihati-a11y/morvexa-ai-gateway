@@ -33,6 +33,9 @@ export function LoginForm() {
   const [submitting, setSubmitting] = useState(false);
 
   const emailError = validateEmail(email);
+  // Only the non-emptiness of the password is knowable here: the stored hash is
+  // never sent to the browser, so any local "valid" styling would be a guess.
+  const canSubmit = !emailError && password.length > 0;
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -85,11 +88,11 @@ export function LoginForm() {
       subtitle="Gunakan email dan password yang Anda daftarkan untuk membuka portal kustomer Morvexa."
       highlights={HIGHLIGHTS}
       footer={
-        <p className="text-[13.5px] text-[#8e97bc]">
+        <p className="text-[13.5px] text-[#a1a1aa]">
           Belum punya akun?{" "}
           <Link
             href="/signup"
-            className="font-medium text-[#9db9f5] underline-offset-4 transition-colors hover:text-[#e9edfb] hover:underline"
+            className="font-medium text-[#fdba74] underline-offset-4 transition-colors hover:text-[#f4f4f5] hover:underline"
           >
             Daftar sekarang
           </Link>
@@ -118,11 +121,10 @@ export function LoginForm() {
           placeholder="Masukkan password Anda"
           value={password}
           onValueChange={setPassword}
-          valid={password.length >= 8}
           hint={
             <Link
               href="/forgot-password"
-              className="text-[12px] text-[#8e97bc] underline-offset-4 transition-colors hover:text-[#9db9f5] hover:underline"
+              className="text-[12px] text-[#a1a1aa] underline-offset-4 transition-colors hover:text-[#fdba74] hover:underline"
             >
               Lupa password?
             </Link>
@@ -131,7 +133,13 @@ export function LoginForm() {
 
         {formError && <FormError>{formError}</FormError>}
 
-        <Button type="submit" size="lg" loading={submitting} className="w-full">
+        <Button
+          type="submit"
+          size="lg"
+          loading={submitting}
+          disabled={!canSubmit}
+          className="w-full"
+        >
           {submitting ? "Memverifikasi…" : "Masuk"}
           {!submitting && <ArrowRight className="h-4 w-4" />}
         </Button>
