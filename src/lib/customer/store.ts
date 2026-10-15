@@ -11,6 +11,7 @@
 
 import { isSupabaseConfigured, supabase } from "../supabase/client";
 import { hashPassword, verifyPassword } from "../auth/password";
+import { readCollection, writeCollection } from "../persistence/jsonStore";
 
 export interface CustomerCredential {
   customerId: string;
@@ -78,7 +79,8 @@ export interface CustomerActivityLog {
 export { MODEL_PRODUCTS, type ModelProduct } from "./catalog";
 
 // In-Memory Seeded Customers Data (Shared to Owner Plane)
-let memoryCustomers: CustomerUser[] = [
+// Seeds act as the fallback when the persisted collection is absent.
+const SEED_CUSTOMERS: CustomerUser[] = [
   {
     id: "cust-001",
     email: "dev@acme.ai",
@@ -137,8 +139,10 @@ let memoryCustomers: CustomerUser[] = [
     totalSpentIdr: 0,
   },
 ];
+let memoryCustomers: CustomerUser[] = readCollection("customers", SEED_CUSTOMERS);
 
-let memoryCustomerOrders: CustomerOrder[] = [
+// Seeds act as the fallback when the persisted collection is absent.
+const SEED_ORDERS: CustomerOrder[] = [
   {
     id: "ORD-9021",
     customerId: "cust-001",
@@ -170,8 +174,10 @@ let memoryCustomerOrders: CustomerOrder[] = [
     apiKeyDispatched: "mvx_live_...bc21",
   },
 ];
+let memoryCustomerOrders: CustomerOrder[] = readCollection("orders", SEED_ORDERS);
 
-let memoryCustomerActivities: CustomerActivityLog[] = [
+// Seeds act as the fallback when the persisted collection is absent.
+const SEED_ACTIVITIES: CustomerActivityLog[] = [
   {
     id: "act-001",
     timestamp: new Date(Date.now() - 15000).toISOString(),
@@ -207,12 +213,21 @@ let memoryCustomerActivities: CustomerActivityLog[] = [
     description: "Pendaftaran akun baru customer menggunakan Yahoo Mail",
   },
 ];
+let memoryCustomerActivities: CustomerActivityLog[] = readCollection("activities", SEED_ACTIVITIES);
 
 // Active Customer Session In Memory (or LocalStorage on client)
 let currentCustomerSession: CustomerUser | null = memoryCustomers[0];
 
 // Credential records (password hashes) kept apart from the public user shape.
-const memoryCredentials: CustomerCredential[] = [];
+// Rehydrated lazily so importing this module never performs blocking disk I/O.
+let memoryCredentials: CustomerCredential[] | null = null;
+
+function credentials(): CustomerCredential[] {
+  if (memoryCredentials === null) {
+    memoryCredentials = readCollection<CustomerCredential>("credentials", []);
+  }
+  return memoryCredentials;
+}
 
 // API Functions
 export function getRegisteredCustomers(): CustomerUser[] {
@@ -270,6 +285,7 @@ function logCustomerActivity(
     description,
     details,
   });
+  void writeCollection("activities", memoryCustomerActivities);
 }
 
 /* ---------------------------------------------------------------------------
@@ -299,7 +315,7 @@ async function loadCredential(email: string): Promise<CustomerCredential | undef
     }
   }
 
-  return memoryCredentials.find((c) => c.email === normalized);
+  return credentials().find((c) => c.email === normalized);
 }
 
 async function persistCredential(credential: CustomerCredential): Promise<void> {
@@ -318,9 +334,12 @@ async function persistCredential(credential: CustomerCredential): Promise<void> 
     );
   }
 
-  const existingIndex = memoryCredentials.findIndex((c) => c.email === credential.email);
-  if (existingIndex === -1) memoryCredentials.push(credential);
-  else memoryCredentials[existingIndex] = credential;
+  const list = credentials();
+  const existingIndex = list.findIndex((c) => c.email === credential.email);
+  if (existingIndex === -1) list.push(credential);
+  else list[existingIndex] = credential;
+
+  await writeCollection("credentials", list);
 }
 
 /* ---------------------------------------------------------------------------
@@ -379,6 +398,7 @@ export async function registerCustomer(params: {
   });
 
   memoryCustomers.unshift(user);
+  await writeCollection("customers", memoryCustomers);
   currentCustomerSession = user;
   logCustomerActivity(
     user,
@@ -448,13 +468,16 @@ export async function authenticateCustomer(params: {
   await persistCredential(credential);
 
   user.lastLoginAt = new Date().toISOString();
+  await writeCollection("customers", memoryCustomers);
   currentCustomerSession = user;
   logCustomerActivity(user, "USER_LOGIN", `Login berhasil: ${user.name} (${user.email})`);
 
   return { ok: true, user, status: 200 };
 }
 
-export function recordCustomerOrder(order: Omit<CustomerOrder, "id" | "createdAt">): CustomerOrder {
+export async function recordCustomerOrder(
+  order: Omit<CustomerOrder, "id" | "createdAt">
+): Promise<CustomerOrder> {
   const newOrder: CustomerOrder = {
     ...order,
     id: `ORD-${Date.now().toString().slice(-6)}`,
@@ -462,6 +485,7 @@ export function recordCustomerOrder(order: Omit<CustomerOrder, "id" | "createdAt
   };
 
   memoryCustomerOrders.unshift(newOrder);
+  await writeCollection("orders", memoryCustomerOrders);
 
   // Update customer balance & spent stats
   const customer = memoryCustomers.find(
@@ -495,6 +519,12 @@ export function recordCustomerOrder(order: Omit<CustomerOrder, "id" | "createdAt
     },
   };
   memoryCustomerActivities.unshift(log);
+
+  await Promise.all([
+    writeCollection("customers", memoryCustomers),
+    writeCollection("orders", memoryCustomerOrders),
+    writeCollection("activities", memoryCustomerActivities),
+  ]);
 
   return newOrder;
 }

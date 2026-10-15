@@ -6,3 +6,5 @@ node_modules/
 .DS_Store
 *.tsbuildinfo
 .cf-tunnel.url
+.morvexa-data/
+.openhands/

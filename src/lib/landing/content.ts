@@ -6,7 +6,7 @@
  */
 
 import { MODEL_REGISTRY } from "@/lib/gateway/adapters";
-import { PLAN_SPECS } from "@/lib/billing/provisioning";
+import { PLAN_SPECS } from "@/lib/billing/catalog";
 
 export interface ProviderWordmark {
   name: string;

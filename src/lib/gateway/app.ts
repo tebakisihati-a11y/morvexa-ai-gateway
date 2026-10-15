@@ -828,7 +828,7 @@ app.post("/customer/purchase-model", async (c) => {
   const keyName = `${product.name} Key`;
   const keyCreation = await createApiKey(keyName, 180, product.bundleTokensGranted);
 
-  const order = recordCustomerOrder({
+  const order = await recordCustomerOrder({
     customerId: `cust_${Date.now().toString().slice(-6)}`,
     customerEmail,
     customerName: customerName || customerEmail.split("@")[0],

@@ -81,7 +81,7 @@ export async function autoProvisionCustomerKey(params: {
       apex: 2500000,
       zenith: 10000000,
     };
-    recordCustomerOrder({
+    await recordCustomerOrder({
       customerId: orgId,
       customerEmail,
       customerName,
