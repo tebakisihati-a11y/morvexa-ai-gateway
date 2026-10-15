@@ -7,8 +7,8 @@ import {
 } from "../src/lib/auth/keys";
 
 describe("Cryptographic API Key Module", () => {
-  it("generates a live key with valid format, entropy, and matching hash", () => {
-    const key = generateSecureApiKey("live");
+  it("generates a live key with valid format, entropy, and matching hash", async () => {
+    const key = await generateSecureApiKey("live");
 
     expect(key.keyPrefix).toBe("mvx_live_");
     expect(key.rawSecret.startsWith("mvx_live_")).toBe(true);
@@ -21,29 +21,36 @@ describe("Cryptographic API Key Module", () => {
 
     // Verify key hash is consistent SHA-256
     expect(key.keyHash).toHaveLength(64);
-    expect(key.keyHash).toBe(hashApiKeySecret(key.rawSecret));
+    expect(key.keyHash).toBe(await hashApiKeySecret(key.rawSecret));
   });
 
-  it("generates distinct test keys with mvx_test_ prefix", () => {
-    const key = generateSecureApiKey("test");
+  it("generates distinct test keys with mvx_test_ prefix", async () => {
+    const key = await generateSecureApiKey("test");
 
     expect(key.keyPrefix).toBe("mvx_test_");
     expect(key.rawSecret.startsWith("mvx_test_")).toBe(true);
     expect(isValidApiKeyFormat(key.rawSecret)).toBe(true);
   });
 
-  it("produces unique keys across multiple invocations (high entropy)", () => {
-    const keys = new Set(Array.from({ length: 50 }, () => generateSecureApiKey("live").rawSecret));
+  it("produces unique keys across multiple invocations (high entropy)", async () => {
+    const generated = await Promise.all(
+      Array.from({ length: 50 }, () => generateSecureApiKey("live"))
+    );
+    const keys = new Set(generated.map((key) => key.rawSecret));
     expect(keys.size).toBe(50);
   });
 
-  it("computes deterministic SHA-256 hash digests", () => {
+  it("computes deterministic SHA-256 hash digests", async () => {
     const secret = "mvx_live_0123456789abcdef0123456789abcdef";
-    const hash1 = hashApiKeySecret(secret);
-    const hash2 = hashApiKeySecret(secret);
+    const hash1 = await hashApiKeySecret(secret);
+    const hash2 = await hashApiKeySecret(secret);
 
     expect(hash1).toBe(hash2);
     expect(hash1).toHaveLength(64);
+    // Known-answer check against a standard SHA-256 implementation.
+    expect(await hashApiKeySecret("abc")).toBe(
+      "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+    );
   });
 
   it("correctly identifies valid and invalid API key formats", () => {

@@ -134,12 +134,12 @@ describe("Tahap 8 — End-to-End SaaS Life-Cycle Integration Test", () => {
     // ------------------------------------------------------------------------
     // Step 5: Cryptographic API Key Issuance (NIST SP 800-63B Compliant)
     // ------------------------------------------------------------------------
-    const keyGen = generateSecureApiKey("live");
+    const keyGen = await generateSecureApiKey("live");
     expect(keyGen.rawSecret).toMatch(/^mvx_live_[a-f0-9]+$/);
     expect(keyGen.maskedKey).toMatch(/^mvx_live_\.{3}[a-f0-9]{4}$/);
     expect(keyGen.keyHash).toHaveLength(64);
 
-    seedApiKeyForTest({
+    await seedApiKeyForTest({
       id: "key_acme_production",
       name: "Acme Production Gateway Key",
       prefix: "mvx_live_",

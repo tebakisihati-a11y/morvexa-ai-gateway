@@ -1,6 +1,6 @@
-import { isSupabaseConfigured, supabase } from "./client";
+import { isSupabaseConfigured, getSupabaseClient } from "./client";
 import type { ApiKeyItem, QuotaRecord, RequestTraceLog } from "../types";
-import { generateSecureApiKey, hashApiKeySecret } from "../auth/keys";
+
 
 // Seed data for immediate out-of-the-box local interactivity
 const now = Date.now();
@@ -172,9 +172,13 @@ let memoryRequestLogs: RequestTraceLog[] = [
 
 export async function getApiKeys(): Promise<ApiKeyItem[]> {
   if (isSupabaseConfigured) {
-    const { data } = await supabase.from("api_keys").select("*").order("created_at", { ascending: false });
+    const client = await getSupabaseClient();
+    const { data } = await client
+      .from("api_keys")
+      .select("*")
+      .order("created_at", { ascending: false });
     if (data && data.length > 0) {
-      return data.map((d) => ({
+      return data.map((d: any) => ({
         id: d.id,
         name: d.name,
         prefix: d.key_prefix,
@@ -192,7 +196,8 @@ export async function getApiKeys(): Promise<ApiKeyItem[]> {
 }
 
 export async function createApiKey(name: string, rateLimitRpm: number, dailyTokenLimit: number): Promise<{ key: ApiKeyItem; rawSecret: string }> {
-  const generated = generateSecureApiKey("live");
+  const { generateSecureApiKey } = await import("../auth/keys");
+  const generated = await generateSecureApiKey("live");
 
   const newKey: ApiKeyItem = {
     id: `key-${Date.now()}`,
@@ -271,7 +276,8 @@ export async function regenerateKeySecret(id: string): Promise<{ key: ApiKeyItem
   const item = memoryApiKeys.find((k) => k.id === id);
   if (!item) return null;
 
-  const generated = generateSecureApiKey(item.prefix.includes("test") ? "test" : "live");
+  const { generateSecureApiKey } = await import("../auth/keys");
+  const generated = await generateSecureApiKey(item.prefix.includes("test") ? "test" : "live");
   item.hash = generated.keyHash;
   item.prefix = generated.keyPrefix;
   item.maskedKey = generated.maskedKey;
@@ -355,6 +361,8 @@ export async function getRollingQuotaRecords(): Promise<QuotaRecord[]> {
 export async function findApiKeyBySecret(rawSecret: string): Promise<ApiKeyItem | null> {
   if (!rawSecret) return null;
 
+  const { hashApiKeySecret } = await import("../auth/keys");
+
   // Support backward-compatible test fixtures strictly in test environments
   if (process.env.NODE_ENV === "test" && rawSecret === "mvx_live_test_key_123456") {
     return {
@@ -362,7 +370,7 @@ export async function findApiKeyBySecret(rawSecret: string): Promise<ApiKeyItem 
       name: "Default Test Key",
       prefix: "mvx_live_",
       maskedKey: "mvx_live_...3456",
-      hash: hashApiKeySecret("mvx_live_test_key_123456"),
+      hash: await hashApiKeySecret("mvx_live_test_key_123456"),
       isActive: true,
       rateLimitRpm: 120,
       dailyTokenLimit: 1000000,
@@ -378,7 +386,7 @@ export async function findApiKeyBySecret(rawSecret: string): Promise<ApiKeyItem 
       name: "Interactive Playground Demo Key",
       prefix: "mvx_live_",
       maskedKey: "mvx_live_...play",
-      hash: hashApiKeySecret("mvx_live_playground_key"),
+      hash: await hashApiKeySecret("mvx_live_playground_key"),
       isActive: true,
       rateLimitRpm: 300,
       dailyTokenLimit: 5000000,
@@ -387,10 +395,11 @@ export async function findApiKeyBySecret(rawSecret: string): Promise<ApiKeyItem 
     };
   }
 
-  const hash = hashApiKeySecret(rawSecret);
+  const hash = await hashApiKeySecret(rawSecret);
 
   if (isSupabaseConfigured) {
-    const { data } = await supabase.from("api_keys").select("*").eq("key_hash", hash).single();
+    const client = await getSupabaseClient();
+    const { data } = await client.from("api_keys").select("*").eq("key_hash", hash).single();
     if (data) {
       return {
         id: data.id,
@@ -414,8 +423,12 @@ export async function findApiKeyBySecret(rawSecret: string): Promise<ApiKeyItem 
 /**
  * Registers an API key for testing in memory.
  */
-export function registerTestApiKey(rawSecret: string, keyItem: Partial<ApiKeyItem>): ApiKeyItem {
-  const hash = hashApiKeySecret(rawSecret);
+export async function registerTestApiKey(
+  rawSecret: string,
+  keyItem: Partial<ApiKeyItem>
+): Promise<ApiKeyItem> {
+  const { hashApiKeySecret } = await import("../auth/keys");
+  const hash = await hashApiKeySecret(rawSecret);
   const prefix = rawSecret.startsWith("mvx_test_") ? "mvx_test_" : "mvx_live_";
   const item: ApiKeyItem = {
     id: keyItem.id || `test-key-${Date.now()}`,
@@ -446,7 +459,7 @@ export function resetStoreForTest(): void {
 /**
  * Helper to seed API keys for testing.
  */
-export function seedApiKeyForTest(item: {
+export async function seedApiKeyForTest(item: {
   id?: string;
   name?: string;
   prefix?: string;
@@ -454,7 +467,7 @@ export function seedApiKeyForTest(item: {
   rateLimitRpm?: number;
   dailyTokenLimit?: number;
   isActive?: boolean;
-}): ApiKeyItem {
+}): Promise<ApiKeyItem> {
   return registerTestApiKey(item.secret, item);
 }
 

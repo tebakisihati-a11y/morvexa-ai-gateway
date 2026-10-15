@@ -1,9 +1,14 @@
 /**
- * Morvexa Nexus — Cryptographic API Key Security Module
+ * Morvexa Nexus — API Key Security Module
  * Implements NIST SP 800-63B compliant key generation, SHA-256 hashing, and masking.
+ *
+ * Hashing and randomness go through ./hashing, which uses the Web Crypto API
+ * available on both the server and in browsers. That keeps node:crypto out of
+ * the client bundle. Because SubtleCrypto.digest is async, the functions that
+ * derive a hash are async too.
  */
 
-import { createHash, randomBytes } from "crypto";
+import { sha256Hex, randomHex } from "./hashing";
 
 export interface GeneratedApiKey {
   rawSecret: string;
@@ -16,13 +21,13 @@ export interface GeneratedApiKey {
  * Generates a cryptographically secure API key with high entropy.
  * Format: mvx_live_<32 hex chars> (e.g. mvx_live_a1b2c3d4e5f60718293a4b5c6d7e8f90)
  */
-export function generateSecureApiKey(type: "live" | "test" = "live"): GeneratedApiKey {
+export async function generateSecureApiKey(type: "live" | "test" = "live"): Promise<GeneratedApiKey> {
   const keyPrefix = type === "live" ? "mvx_live_" : "mvx_test_";
   // 24 bytes of cryptographically secure random entropy produces 48 hex characters
-  const entropyHex = randomBytes(24).toString("hex");
+  const entropyHex = randomHex(24);
   const rawSecret = `${keyPrefix}${entropyHex}`;
   const maskedKey = `${keyPrefix}...${entropyHex.slice(-4)}`;
-  const keyHash = hashApiKeySecret(rawSecret);
+  const keyHash = await sha256Hex(rawSecret);
 
   return {
     rawSecret,
@@ -35,8 +40,8 @@ export function generateSecureApiKey(type: "live" | "test" = "live"): GeneratedA
 /**
  * Computes the authoritative SHA-256 hex digest of a raw API key secret.
  */
-export function hashApiKeySecret(rawSecret: string): string {
-  return createHash("sha256").update(rawSecret.trim()).digest("hex");
+export function hashApiKeySecret(rawSecret: string): Promise<string> {
+  return sha256Hex(rawSecret.trim());
 }
 
 /**
