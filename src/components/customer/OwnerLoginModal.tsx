@@ -43,7 +43,7 @@ export function OwnerLoginModal({
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} method="post" className="space-y-4">
           <p className="text-xs text-[#8E97BC] leading-relaxed">
             Halaman Control Plane ini dikhususkan bagi Owner untuk memantau infrastruktur server, ledger rekonsiliasi, dan seluruh transaksi tenant.
           </p>

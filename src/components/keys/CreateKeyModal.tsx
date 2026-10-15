@@ -102,7 +102,7 @@ export function CreateKeyModal({ isOpen, onClose, onCreate }: CreateKeyModalProp
             </div>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-4">
+          <form onSubmit={handleSubmit} method="post" className="p-4 sm:p-5 space-y-4">
             <div className="space-y-1.5">
               <label className="text-xs font-mono text-zinc-300">Key Name / Client Tag</label>
               <input

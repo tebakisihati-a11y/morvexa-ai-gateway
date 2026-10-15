@@ -103,7 +103,7 @@ export function CustomerCheckoutModal({
         </button>
 
         {!checkoutSession ? (
-          <form onSubmit={handleCreateCheckout} className="space-y-6">
+          <form onSubmit={handleCreateCheckout} method="post" className="space-y-6">
             <div>
               <div className="text-[10px] font-mono text-[#5B8DEF] uppercase tracking-wider">
                 CHECKOUT LANGGANAN

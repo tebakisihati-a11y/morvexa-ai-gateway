@@ -103,7 +103,7 @@ export function CustomerModelCheckoutModal({
         </div>
 
         {step === "details" ? (
-          <form onSubmit={handleProceedToPayment} className="space-y-4">
+          <form onSubmit={handleProceedToPayment} method="post" className="space-y-4">
             <div className="p-4 rounded-2xl bg-[#06070F] border border-[#E9EDFB]/10 space-y-2 font-mono">
               <div className="flex justify-between text-xs">
                 <span className="text-[#8E97BC]">Harga Paket:</span>

@@ -119,7 +119,7 @@ export default function OwnerControlPlanePage() {
             </div>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleLogin} method="post" className="space-y-4">
             <p className="text-xs text-[#8E97BC] leading-relaxed font-mono">
               Portal ini ditujukan eksklusif bagi Pemilik Server (Owner) untuk memantau infrastruktur edge, MRR, log rekonsiliasi finansial, dan seluruh tenant.
             </p>

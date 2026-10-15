@@ -91,7 +91,7 @@ export function LoginForm() {
         </p>
       }
     >
-      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+      <form onSubmit={handleSubmit} method="post" className="space-y-4" noValidate>
         <TextField
           label="Email"
           type="email"

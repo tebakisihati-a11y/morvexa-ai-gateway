@@ -110,7 +110,7 @@ export function SignupForm() {
         </p>
       }
     >
-      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+      <form onSubmit={handleSubmit} method="post" className="space-y-4" noValidate>
         <TextField
           label="Nama lengkap"
           name="name"
