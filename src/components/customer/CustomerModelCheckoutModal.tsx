@@ -14,6 +14,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import type { ModelProduct } from "@/lib/customer/catalog";
+import { apiFetch } from "@/lib/api/client";
 
 interface ModelCheckoutModalProps {
   product: ModelProduct | null;
@@ -53,7 +54,7 @@ export function CustomerModelCheckoutModal({
   const handleSimulatePaymentSettlement = async () => {
     setIsSettling(true);
     try {
-      const res = await fetch("/api/customer/purchase-model", {
+      const res = await apiFetch("/api/customer/purchase-model", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

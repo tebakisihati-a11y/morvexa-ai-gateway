@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { StreamInspector } from "./StreamInspector";
 import { Play, Sparkles, Sliders, RotateCcw, AlertCircle } from "lucide-react";
+import { apiFetch } from "@/lib/api/client";
 
 export function PlaygroundTab() {
   const [model, setModel] = useState("claude-3-7-sonnet");
@@ -33,7 +34,7 @@ export function PlaygroundTab() {
     let chunkCount = 0;
 
     try {
-      const response = await fetch("/api/v1/messages", {
+      const response = await apiFetch("/api/v1/messages", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

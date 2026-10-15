@@ -14,6 +14,7 @@ import {
   Globe2,
   Zap,
 } from "lucide-react";
+import { apiFetch } from "@/lib/api/client";
 
 interface EnvironmentData {
   envId: string;
@@ -41,7 +42,7 @@ export function InfrastructureTab() {
     // Check if default environment is running
     async function checkExisting() {
       try {
-        const res = await fetch("/api/infrastructure/environments/env_ded_default_sin");
+        const res = await apiFetch("/api/infrastructure/environments/env_ded_default_sin");
         if (res.ok) {
           const data = await res.json();
           setEnvData(data);
@@ -57,7 +58,7 @@ export function InfrastructureTab() {
   const handleProvision = async () => {
     setIsProvisioning(true);
     try {
-      const res = await fetch("/api/infrastructure/provision", {
+      const res = await apiFetch("/api/infrastructure/provision", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -99,7 +100,7 @@ export function InfrastructureTab() {
     setProbeLoading(true);
 
     try {
-      const res = await fetch(`/api/infrastructure/environments/${envData.envId}/probe`, {
+      const res = await apiFetch(`/api/infrastructure/environments/${envData.envId}/probe`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ success: simulateSuccess }),
@@ -121,7 +122,7 @@ export function InfrastructureTab() {
     if (!confirm(`Apakah Anda yakin ingin mendeprovisi node ${envData.envId}?`)) return;
 
     try {
-      const res = await fetch(`/api/infrastructure/environments/${envData.envId}`, {
+      const res = await apiFetch(`/api/infrastructure/environments/${envData.envId}`, {
         method: "DELETE",
       });
 

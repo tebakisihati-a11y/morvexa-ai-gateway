@@ -29,6 +29,15 @@ import {
   deprovisionEnvironment,
 } from "../infrastructure/provisioning";
 import { checkRateLimit } from "./ratelimit";
+import { enforceSameOrigin, enforceCsrfToken, generateCsrfToken, CSRF_COOKIE } from "./csrf";
+import {
+  OWNER_COOKIE,
+  OWNER_TTL_SECONDS,
+  hasOwnerSession,
+  isOwnerAuthConfigured,
+  issueOwnerToken,
+  verifyOwnerPasscode,
+} from "../auth/ownerSession";
 import { checkIpRateLimit, clientIpFromHeaders } from "./ipRateLimit";
 import {
   reconcileSingleOrder,
@@ -53,6 +62,23 @@ app.onError((err, c) => {
     },
     status
   );
+});
+
+/**
+ * Rejects cross-site state-changing requests before any handler runs.
+ *
+ * Applied to the whole app: any browser POST/PUT/PATCH/DELETE must come from a
+ * host we recognise. Requests without an Origin are server-to-server callers
+ * and pass through to their own authentication.
+ */
+app.use("*", async (c, next) => {
+  const method = c.req.method.toUpperCase();
+  if (method === "GET" || method === "HEAD" || method === "OPTIONS") {
+    return next();
+  }
+  const rejected = enforceSameOrigin(c);
+  if (rejected) return rejected;
+  return next();
 });
 
 app.notFound((c) => {
@@ -387,15 +413,30 @@ function setSessionCookie(
     secure,
     maxAge: SESSION_TTL_SECONDS,
   });
+
+  // Double-submit companion token. Deliberately readable by script: the client
+  // must echo it in X-CSRF-Token, and a cross-origin attacker cannot read it.
+  setCookie(c, CSRF_COOKIE, generateCsrfToken(), {
+    path: "/",
+    httpOnly: false,
+    sameSite: "Lax",
+    secure,
+    maxAge: SESSION_TTL_SECONDS,
+  });
 }
 
 // Helper: Verifies administrative/cron authorization
 function isPrivilegedRequest(c: any): boolean {
+  // A signed owner session is the intended path for the browser console.
+  if (hasOwnerSession(c.req.header("Cookie"))) return true;
+
   const authHeader = c.req.header("Authorization");
   const cronSecret = process.env.CRON_SECRET;
   const adminSecret = process.env.ADMIN_SECRET_KEY;
   if (!authHeader) {
-    // In local non-production sandbox without secrets set, permit local UI actions
+    // Outside production, allow the local UI and test suite through. This is
+    // never permitted in production, where the owner must present either a
+    // signed owner session or a configured secret.
     return process.env.NODE_ENV !== "production";
   }
   const token = authHeader.replace(/^Bearer\s+/i, "").trim();
@@ -962,8 +1003,64 @@ app.post("/customer/auth/login", async (c) => {
   return c.json({ success: true, user: result.user, message: "Login berhasil." }, 200);
 });
 
+/**
+ * Owner console sign-in.
+ *
+ * Verifies the passcode on the server and exchanges it for a signed session
+ * cookie. Fails closed when OWNER_PASSCODE is unset, so an unconfigured
+ * deployment cannot be opened with a guess.
+ */
+app.post("/owner/auth/login", async (c) => {
+  const ipBlocked = enforceIpLimit(c, "login");
+  if (ipBlocked) return ipBlocked;
+
+  if (!isOwnerAuthConfigured()) {
+    return c.json(
+      { error: "Owner console is not configured. Set OWNER_PASSCODE to enable it." },
+      503
+    );
+  }
+
+  const body = await c.req.json().catch(() => ({}));
+  if (!verifyOwnerPasscode(body?.passcode)) {
+    // Deliberately vague: does not confirm the passcode length or format.
+    return c.json({ error: "Passcode owner tidak valid." }, 401);
+  }
+
+  const secure = isSecureRequest(c.req.url, c.req.header("x-forwarded-proto"));
+  setCookie(c, OWNER_COOKIE, issueOwnerToken(), {
+    path: "/",
+    httpOnly: true,
+    sameSite: "Strict",
+    secure,
+    maxAge: OWNER_TTL_SECONDS,
+  });
+  setCookie(c, CSRF_COOKIE, generateCsrfToken(), {
+    path: "/",
+    httpOnly: false,
+    sameSite: "Strict",
+    secure,
+    maxAge: OWNER_TTL_SECONDS,
+  });
+
+  return c.json({ success: true, message: "Akses owner diberikan." }, 200);
+});
+
+app.post("/owner/auth/logout", (c) => {
+  deleteCookie(c, OWNER_COOKIE, { path: "/" });
+  deleteCookie(c, CSRF_COOKIE, { path: "/" });
+  return c.json({ success: true, message: "Sesi owner diakhiri." }, 200);
+});
+
+/** Reports whether the caller holds a valid owner session. */
+app.get("/owner/auth/session", (c) => {
+  const authenticated = hasOwnerSession(c.req.header("Cookie"));
+  return c.json({ authenticated, configured: isOwnerAuthConfigured() }, 200);
+});
+
 app.post("/customer/auth/logout", (c) => {
   deleteCookie(c, SESSION_COOKIE, { path: "/" });
+  deleteCookie(c, CSRF_COOKIE, { path: "/" });
   return c.json({ success: true, message: "Anda telah keluar dari akun." }, 200);
 });
 
@@ -1115,7 +1212,14 @@ app.get("/customer/auth/session", async (c) => {
 });
 
 // 19. Customer Data & Activity Feed for Owner: GET /api/customer/dashboard-data
+//
+// Owner-only. This returns every registered customer's email, plan, orders and
+// activity, so it must never answer an anonymous request.
 app.get("/customer/dashboard-data", async (c) => {
+  if (!isPrivilegedRequest(c)) {
+    return c.json({ error: "Forbidden: Privileged access token required" }, 403);
+  }
+
   const {
     getRegisteredCustomers,
     getCustomerOrders,
@@ -1132,12 +1236,28 @@ app.get("/customer/dashboard-data", async (c) => {
 });
 
 // 20. Customer Model Product Token Purchase: POST /api/customer/purchase-model
+//
+// This endpoint issues a live API key, so it requires BOTH a valid session
+// cookie and the CSRF token. Previously it accepted an unauthenticated request
+// and trusted `customerEmail` from the body, which let anyone mint a working key
+// for an arbitrary address without paying. The email now comes from the verified
+// session, never from the caller.
 app.post("/customer/purchase-model", async (c) => {
-  const body = await c.req.json().catch(() => ({}));
-  const { customerEmail, customerName, modelId, paymentMethod = "qris" } = body;
+  const claims = verifySessionToken(readSessionCookie(c.req.header("Cookie")));
+  if (!claims) {
+    return c.json({ error: "Anda harus masuk untuk membeli paket token model." }, 401);
+  }
 
-  if (!customerEmail || !modelId) {
-    return c.json({ error: "customerEmail and modelId are required" }, 400);
+  const csrfRejected = enforceCsrfToken(c);
+  if (csrfRejected) return csrfRejected;
+
+  const body = await c.req.json().catch(() => ({}));
+  const { modelId, paymentMethod = "qris" } = body;
+  const customerEmail = claims.email;
+  const customerName = claims.name;
+
+  if (!modelId) {
+    return c.json({ error: "modelId wajib diisi." }, 400);
   }
 
   const { MODEL_PRODUCTS, recordCustomerOrder } = await import("../customer/store");
@@ -1152,7 +1272,7 @@ app.post("/customer/purchase-model", async (c) => {
   const keyCreation = await createApiKey(keyName, 180, product.bundleTokensGranted);
 
   const order = await recordCustomerOrder({
-    customerId: `cust_${Date.now().toString().slice(-6)}`,
+    customerId: claims.sub,
     customerEmail,
     customerName: customerName || customerEmail.split("@")[0],
     orderType: "model_token_purchase",

@@ -16,6 +16,7 @@ import {
   RotateCw,
   Clock,
 } from "lucide-react";
+import { apiFetch } from "@/lib/api/client";
 
 interface AuditLogItem {
   id: string;
@@ -137,7 +138,7 @@ export function NexusTab() {
   const fetchLogs = async () => {
     setIsLoadingLogs(true);
     try {
-      const res = await fetch("/api/audit/logs?limit=10");
+      const res = await apiFetch("/api/audit/logs?limit=10");
       if (res.ok) {
         const data = await res.json();
         setAuditLogs(data.logs || []);
@@ -157,7 +158,7 @@ export function NexusTab() {
     setIsTriggeringCron(true);
     setCronMessage(null);
     try {
-      const res = await fetch("/api/cron/reconcile", { method: "POST" });
+      const res = await apiFetch("/api/cron/reconcile", { method: "POST" });
       const data = await res.json();
       if (res.ok && data.success) {
         setCronMessage(`Rekonsiliasi Sukses: ${data.details.scannedCount ?? 0} dipindai, ${data.details.resolvedCount ?? 0} diselesaikan.`);

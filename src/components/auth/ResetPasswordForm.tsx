@@ -8,6 +8,7 @@ import { AuthShell } from "./AuthShell";
 import { PasswordField, FormError, FormSuccess } from "./fields";
 import { Button } from "@/components/ui/primitives";
 import { scorePassword, validatePassword, MIN_PASSWORD_LENGTH } from "@/lib/validation/auth";
+import { apiFetch } from "@/lib/api/client";
 
 const HIGHLIGHTS = [
   {
@@ -63,7 +64,7 @@ export function ResetPasswordForm() {
 
     setSubmitting(true);
     try {
-      const response = await fetch("/api/customer/auth/reset-password", {
+      const response = await apiFetch("/api/customer/auth/reset-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, password }),

@@ -7,6 +7,7 @@ import { ArrowRight, CheckCircle2, MailCheck, RefreshCw } from "lucide-react";
 import { AuthShell } from "./AuthShell";
 import { TextField, FormError, FormSuccess } from "./fields";
 import { Button, Spinner } from "@/components/ui/primitives";
+import { apiFetch } from "@/lib/api/client";
 
 const HIGHLIGHTS = [
   {
@@ -50,7 +51,7 @@ export function VerifyEmailClient() {
 
     (async () => {
       try {
-        const response = await fetch("/api/customer/auth/verify-email", {
+        const response = await apiFetch("/api/customer/auth/verify-email", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ token }),
@@ -91,7 +92,7 @@ export function VerifyEmailClient() {
 
     setResending(true);
     try {
-      const response = await fetch("/api/customer/auth/resend-verification", {
+      const response = await apiFetch("/api/customer/auth/resend-verification", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim() }),

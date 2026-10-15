@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { X, CheckCircle2, QrCode, Building, ArrowRight, Loader2, Mail, ShieldAlert } from "lucide-react";
 import { resolvePlanSpec, PLAN_PRICES_IDR } from "@/lib/billing/catalog";
+import { apiFetch } from "@/lib/api/client";
 
 interface CheckoutModalProps {
   planCode: string;
@@ -38,7 +39,7 @@ export function CustomerCheckoutModal({
 
     setLoading(true);
     try {
-      const res = await fetch("/api/billing/checkout", {
+      const res = await apiFetch("/api/billing/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -66,7 +67,7 @@ export function CustomerCheckoutModal({
     try {
       // Settlement is signed server-side. The browser only names the order and
       // the payment method it displayed.
-      const webhookRes = await fetch("/api/billing/sandbox/settle", {
+      const webhookRes = await apiFetch("/api/billing/sandbox/settle", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

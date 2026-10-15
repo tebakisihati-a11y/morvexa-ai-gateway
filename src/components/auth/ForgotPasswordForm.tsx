@@ -7,6 +7,7 @@ import { AuthShell } from "./AuthShell";
 import { TextField, FormError } from "./fields";
 import { Button } from "@/components/ui/primitives";
 import { validateEmail } from "@/lib/validation/auth";
+import { apiFetch } from "@/lib/api/client";
 
 const HIGHLIGHTS = [
   {
@@ -43,7 +44,7 @@ export function ForgotPasswordForm() {
 
     setSubmitting(true);
     try {
-      const response = await fetch("/api/customer/auth/forgot-password", {
+      const response = await apiFetch("/api/customer/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim() }),

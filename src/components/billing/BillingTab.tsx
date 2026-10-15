@@ -16,6 +16,7 @@ import {
   QrCode,
   Building,
 } from "lucide-react";
+import { apiFetch } from "@/lib/api/client";
 
 interface PlanItem {
   code: "developer" | "pro" | "apex" | "zenith";
@@ -157,7 +158,7 @@ export function BillingTab() {
     setCheckoutLoading(true);
 
     try {
-      const res = await fetch("/api/billing/checkout", {
+      const res = await apiFetch("/api/billing/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -185,7 +186,7 @@ export function BillingTab() {
     try {
       // Settlement is signed server-side, so the browser never holds a key that
       // could forge a payment confirmation.
-      const webhookRes = await fetch("/api/billing/sandbox/settle", {
+      const webhookRes = await apiFetch("/api/billing/sandbox/settle", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

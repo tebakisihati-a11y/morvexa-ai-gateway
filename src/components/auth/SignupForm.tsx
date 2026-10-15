@@ -14,6 +14,7 @@ import {
   validatePassword,
   MIN_PASSWORD_LENGTH,
 } from "@/lib/validation/auth";
+import { apiFetch } from "@/lib/api/client";
 
 const HIGHLIGHTS = [
   {
@@ -78,7 +79,7 @@ export function SignupForm() {
 
     setSubmitting(true);
     try {
-      const response = await fetch("/api/customer/auth/register", {
+      const response = await apiFetch("/api/customer/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: name.trim(), email: email.trim(), password }),

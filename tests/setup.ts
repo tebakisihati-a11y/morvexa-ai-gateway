@@ -16,5 +16,9 @@ process.env.AUTH_SESSION_SECRET = process.env.AUTH_SESSION_SECRET || "test-only-
 
 // Tests exercise the log transport unless they opt into Resend explicitly.
 delete process.env.RESEND_API_KEY;
+// Privileged-route secrets must not leak in from the developer's shell, or a
+// test asserting "anonymous is refused" would pass or fail by environment.
+delete process.env.ADMIN_SECRET_KEY;
+delete process.env.OWNER_PASSCODE;
 delete process.env.MORVEXA_PUBLIC_BASE_URL;
 delete process.env.NEXT_PUBLIC_APP_URL;

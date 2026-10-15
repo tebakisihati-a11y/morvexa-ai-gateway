@@ -8,6 +8,7 @@ import { AuthShell } from "./AuthShell";
 import { PasswordField, TextField, FormError } from "./fields";
 import { Button } from "@/components/ui/primitives";
 import { validateEmail, safeRedirectPath } from "@/lib/validation/auth";
+import { apiFetch } from "@/lib/api/client";
 
 const HIGHLIGHTS = [
   {
@@ -60,7 +61,7 @@ export function LoginForm() {
 
     setSubmitting(true);
     try {
-      const response = await fetch("/api/customer/auth/login", {
+      const response = await apiFetch("/api/customer/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim(), password }),

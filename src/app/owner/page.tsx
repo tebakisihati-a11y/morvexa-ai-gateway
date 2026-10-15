@@ -27,6 +27,7 @@ import { DEFAULT_SYSTEM_METRICS } from "@/lib/constants";
 import type { ApiKeyItem, QuotaConfig, QuotaStatus, RequestTraceLog } from "@/lib/types";
 import { Lock, ArrowRight, ShieldCheck, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { apiFetch } from "@/lib/api/client";
 
 const defaultQuotaConfig: QuotaConfig = {
   standardRequest5hLimit: 100,
@@ -39,6 +40,8 @@ export default function OwnerControlPlanePage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [passcode, setPasscode] = useState("");
   const [error, setError] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
   const [activeTab, setActiveTab] = useState<NavTabId>("overview");
   const [keys, setKeys] = useState<ApiKeyItem[]>([]);
@@ -46,6 +49,26 @@ export default function OwnerControlPlanePage() {
   const [quota, setQuota] = useState<QuotaStatus>(() =>
     calculateRollingQuotaStatus([], defaultQuotaConfig)
   );
+
+  // Ask the server whether this browser already holds a valid owner session.
+  // The gate is no longer decided in the browser.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await apiFetch("/api/owner/auth/session");
+        const data = await res.json().catch(() => ({}));
+        if (!cancelled && data?.authenticated) setIsAuthenticated(true);
+      } catch {
+        // Treated as "not signed in"; the passcode form is shown.
+      } finally {
+        if (!cancelled) setCheckingSession(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     async function loadData() {
@@ -92,15 +115,38 @@ export default function OwnerControlPlanePage() {
     }
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (passcode === "morvexa-owner" || passcode === "admin" || passcode.length >= 4) {
+    setError(false);
+    setSubmitting(true);
+    try {
+      const res = await apiFetch("/api/owner/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ passcode }),
+      });
+      if (!res.ok) {
+        setError(true);
+        return;
+      }
       setIsAuthenticated(true);
-      setError(false);
-    } else {
+      setPasscode("");
+    } catch {
       setError(true);
+    } finally {
+      setSubmitting(false);
     }
   };
+
+  if (checkingSession) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#08080a] text-[#a1a1aa]">
+        <span className="font-mono text-xs uppercase tracking-[0.2em]">
+          Memeriksa sesi owner…
+        </span>
+      </div>
+    );
+  }
 
   // If not authenticated, display Dedicated Owner Gate
   if (!isAuthenticated) {
@@ -141,7 +187,7 @@ export default function OwnerControlPlanePage() {
               />
               {error && (
                 <p className="text-[11px] text-[#ef4444] mt-1 font-mono">
-                  Passcode tidak valid. Minimal 4 karakter.
+                  Passcode owner tidak valid.
                 </p>
               )}
             </div>
@@ -149,10 +195,11 @@ export default function OwnerControlPlanePage() {
             <div className="pt-2 space-y-3">
               <button
                 type="submit"
-                className="w-full py-3 rounded-lg bg-[#f97316] text-[#08080a] font-mono font-bold text-xs hover:bg-[#f97316]/90 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                disabled={submitting || passcode.length === 0}
+                className="w-full py-3 rounded bg-[#f97316] text-[#08080a] font-mono font-bold text-xs hover:bg-[#f97316]/90 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <span>Buka Control Plane Owner</span>
-                <ArrowRight className="h-4 w-4" />
+                <span>{submitting ? "Memverifikasi…" : "Buka Control Plane Owner"}</span>
+                {!submitting && <ArrowRight className="h-4 w-4" />}
               </button>
 
               <Link
