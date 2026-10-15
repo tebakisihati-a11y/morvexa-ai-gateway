@@ -699,6 +699,20 @@ app.get("/audit/logs", async (c) => {
 // Sessions are HttpOnly signed cookies, so the browser never holds a token that
 // JavaScript (or an XSS payload) can read. Passwords are verified server-side
 // against scrypt records; the client only ever receives the public user shape.
+/**
+ * Renders a lockout duration the way a person reads it: "12 menit" rather than
+ * "720 detik". Short waits still use seconds so a near-expired lock is precise.
+ */
+function describeLockout(seconds: number): string {
+  if (seconds < 60) return `${seconds} detik`;
+  const minutes = Math.ceil(seconds / 60);
+  return `${minutes} menit`;
+}
+
+function lockoutMessage(seconds: number): string {
+  return `Terlalu banyak percobaan gagal. Coba lagi dalam ${describeLockout(seconds)}.`;
+}
+
 app.post("/customer/auth/register", async (c) => {
   const body = await c.req.json().catch(() => ({}));
   const email = typeof body.email === "string" ? body.email.trim() : "";
@@ -716,10 +730,7 @@ app.post("/customer/auth/register", async (c) => {
   const throttleKey = `register:${email.toLowerCase()}`;
   const throttle = checkLoginThrottle(throttleKey);
   if (!throttle.allowed) {
-    return c.json(
-      { error: `Terlalu banyak percobaan. Coba lagi dalam ${throttle.retryAfterSeconds} detik.` },
-      429
-    );
+    return c.json({ error: lockoutMessage(throttle.retryAfterSeconds) }, 429);
   }
 
   const { registerCustomer } = await import("../customer/store");
@@ -749,10 +760,7 @@ app.post("/customer/auth/login", async (c) => {
   const throttleKey = `login:${email.toLowerCase()}`;
   const throttle = checkLoginThrottle(throttleKey);
   if (!throttle.allowed) {
-    return c.json(
-      { error: `Akun terkunci sementara. Coba lagi dalam ${throttle.retryAfterSeconds} detik.` },
-      429
-    );
+    return c.json({ error: lockoutMessage(throttle.retryAfterSeconds) }, 429);
   }
 
   const { authenticateCustomer } = await import("../customer/store");

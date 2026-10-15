@@ -432,7 +432,8 @@ export async function authenticateCustomer(params: {
 
   const now = Date.now();
   if (credential.lockedUntil > now) {
-    const minutes = Math.ceil((credential.lockedUntil - now) / 60000);
+    const seconds = Math.ceil((credential.lockedUntil - now) / 1000);
+    const minutes = Math.ceil(seconds / 60);
     return {
       ok: false,
       status: 429,
