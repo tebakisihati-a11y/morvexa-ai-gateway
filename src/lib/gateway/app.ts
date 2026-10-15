@@ -1,13 +1,25 @@
 import { Hono } from "hono";
+import { deleteCookie, setCookie } from "hono/cookie";
 import { verifyGatewayApiKey } from "./auth";
+import {
+  SESSION_COOKIE,
+  SESSION_TTL_SECONDS,
+  isSecureRequest,
+  issueSessionToken,
+  readSessionCookie,
+  verifySessionToken,
+} from "../auth/session";
+import { checkLoginThrottle, clearLoginFailures, recordLoginFailure, validatePasswordPolicy } from "../auth/password";
 import { createAnthropicSseStream } from "./stream";
 import { resolveProviderRoute, DEFAULT_PROVIDERS } from "./failover";
 import { forwardToUpstreamProvider } from "./upstream";
 import {
   processMidtransWebhook,
   createMidtransSandboxCheckout,
+  calculateMidtransSignature,
   getTransaction,
 } from "../billing/midtrans";
+import { PLAN_PRICES_IDR } from "../billing/catalog";
 import {
   requestDedicatedEnvironment,
   getEnvironment,
@@ -348,12 +360,26 @@ app.post("/v1/chat/completions", async (c) => {
 });
 
 // Authoritative Plan Pricing Catalog (Prevents Client Amount Tampering)
-const AUTHORITATIVE_PLAN_PRICES: Record<string, number> = {
-  developer: 0,
-  pro: 750000,
-  apex: 2500000,
-  zenith: 10000000,
-};
+const AUTHORITATIVE_PLAN_PRICES: Record<string, number> = PLAN_PRICES_IDR;
+
+// Helper: Issues the signed session cookie for a freshly authenticated customer.
+// `secure` is only set over HTTPS so local http:// development still works.
+function setSessionCookie(c: any, user: { id: string; email: string; name: string; provider: "gmail" | "yahoo" | "email" }): void {
+  const token = issueSessionToken({
+    sub: user.id,
+    email: user.email,
+    name: user.name,
+    provider: user.provider,
+  });
+  const secure = isSecureRequest(c.req.url, c.req.header("x-forwarded-proto"));
+  setCookie(c, SESSION_COOKIE, token, {
+    path: "/",
+    httpOnly: true,
+    sameSite: "Lax",
+    secure,
+    maxAge: SESSION_TTL_SECONDS,
+  });
+}
 
 // Helper: Verifies administrative/cron authorization
 function isPrivilegedRequest(c: any): boolean {
@@ -379,17 +405,19 @@ app.post("/billing/checkout", async (c) => {
 
   const planCode = String(body.planCode).toLowerCase();
   const catalogAmount = AUTHORITATIVE_PLAN_PRICES[planCode];
-  if (catalogAmount === undefined && !body.amount) {
-    return c.json({ error: `Invalid planCode: ${body.planCode}. Must be developer, pro, apex, or zenith.` }, 400);
+  if (catalogAmount === undefined) {
+    return c.json(
+      { error: `Invalid planCode: ${body.planCode}. Must be developer, pro, apex, or zenith.` },
+      400
+    );
   }
 
-  // Use body amount if provided (e.g., custom addons/tiers in test/production contract) or authoritative catalog amount
-  const resolvedAmount = typeof body.amount === "number" && body.amount > 0 ? body.amount : (catalogAmount ?? 0);
-
+  // The client's `amount` is deliberately ignored: trusting it would let a
+  // caller open a session for a lower price than the plan they receive.
   const session = createMidtransSandboxCheckout({
     orgId: body.orgId || "org_default",
     planCode,
-    amount: resolvedAmount,
+    amount: catalogAmount,
     customerName: body.customerName || "Customer",
     customerEmail: body.customerEmail || "customer@example.com",
   });
@@ -398,6 +426,10 @@ app.post("/billing/checkout", async (c) => {
 });
 
 // 6. Midtrans Webhook Receiver: POST /api/billing/webhooks/midtrans
+//
+// This is the endpoint Midtrans itself calls, and it authenticates the caller
+// purely by SHA-512 signature over the order fields and MIDTRANS_SERVER_KEY.
+// The browser must never be able to produce that signature.
 app.post("/billing/webhooks/midtrans", async (c) => {
   const payload = await c.req.json().catch(() => null);
   if (!payload || !payload.order_id || !payload.status_code || !payload.gross_amount) {
@@ -424,6 +456,76 @@ app.post("/billing/webhooks/midtrans", async (c) => {
         customerName,
         planCode,
         orgId: payload.custom_field1 || "org_default",
+      });
+    } catch (err: any) {
+      console.error("[Auto-provision Error]:", err);
+    }
+  }
+
+  return c.json({ ...result, autoProvision: autoProvisionResult }, 200);
+});
+
+// 6b. Sandbox Settlement Simulator: POST /api/billing/sandbox/settle
+//
+// The customer portal needs a way to mark a sandbox invoice as paid without
+// holding Midtrans credentials. Signing happens here, on the server, using the
+// same key the webhook verifier uses — so the trust boundary is unchanged and
+// the browser never sees a signing secret.
+//
+// This is refused in production, where settlement must arrive from Midtrans.
+app.post("/billing/sandbox/settle", async (c) => {
+  if (process.env.NODE_ENV === "production" && process.env.ALLOW_SANDBOX_SETTLEMENT !== "true") {
+    return c.json(
+      { error: "Sandbox settlement is disabled in production. Await the Midtrans webhook." },
+      403
+    );
+  }
+
+  const body = await c.req.json().catch(() => null);
+  const orderId = body?.orderId;
+  if (!orderId) {
+    return c.json({ error: "Missing required parameter: orderId" }, 400);
+  }
+
+  const tx = getTransaction(orderId);
+  if (!tx) {
+    return c.json({ error: "Transaction not found" }, 404);
+  }
+
+  const serverKey = process.env.MIDTRANS_SERVER_KEY || "dummy_sandbox_key";
+  const statusCode = "200";
+  const grossAmount = `${tx.amount}.00`;
+
+  const payload = {
+    order_id: orderId,
+    status_code: statusCode,
+    gross_amount: grossAmount,
+    signature_key: calculateMidtransSignature(orderId, statusCode, grossAmount, serverKey),
+    transaction_status: "settlement" as const,
+    transaction_id: `midtrans-sandbox-${Date.now()}`,
+    payment_type: body?.paymentMethod || "qris",
+    customer_name: body?.customerName || "Customer",
+    customer_email: body?.customerEmail || "customer@example.com",
+    custom_field1: tx.orgId || "org_default",
+    custom_field2: tx.planCode || "pro",
+    custom_field3: body?.customerEmail || "customer@example.com",
+  };
+
+  const result = await processMidtransWebhook(payload);
+  if (!result.success) {
+    return c.json({ error: result.message }, 401);
+  }
+
+  let autoProvisionResult = null;
+  if (result.subscriptionActivated) {
+    const { autoProvisionCustomerKey } = await import("../billing/provisioning");
+    try {
+      autoProvisionResult = await autoProvisionCustomerKey({
+        orderId,
+        customerEmail: payload.customer_email,
+        customerName: payload.customer_name,
+        planCode: payload.custom_field2,
+        orgId: payload.custom_field1,
       });
     } catch (err: any) {
       console.error("[Auto-provision Error]:", err);
@@ -592,27 +694,101 @@ app.get("/audit/logs", async (c) => {
   return c.json({ count: logs.length, logs }, 200);
 });
 
-// 18. Customer Auth / Session: POST /api/customer/auth
-app.post("/customer/auth", async (c) => {
+// 18. Customer Authentication: register / login / logout / session
+//
+// Sessions are HttpOnly signed cookies, so the browser never holds a token that
+// JavaScript (or an XSS payload) can read. Passwords are verified server-side
+// against scrypt records; the client only ever receives the public user shape.
+app.post("/customer/auth/register", async (c) => {
   const body = await c.req.json().catch(() => ({}));
-  const email = body.email;
-  if (!email || typeof email !== "string" || !email.includes("@")) {
-    return c.json({ error: "Email pribadi tidak valid (contoh: user@gmail.com atau user@yahoo.com)" }, 400);
+  const email = typeof body.email === "string" ? body.email.trim() : "";
+  const name = typeof body.name === "string" ? body.name.trim() : "";
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+    return c.json({ error: "Masukkan alamat email yang valid." }, 400);
   }
 
-  const { registerOrLoginCustomer } = await import("../customer/store");
-  const result = registerOrLoginCustomer({
-    email,
-    name: body.name,
-    provider: body.provider,
-  });
+  const policy = validatePasswordPolicy(body.password);
+  if (!policy.valid) {
+    return c.json({ error: policy.message }, 400);
+  }
 
-  return c.json({
-    success: true,
-    user: result.user,
-    isNew: result.isNew,
-    message: result.isNew ? "Pendaftaran akun baru kustomer berhasil!" : "Login kustomer berhasil!",
-  }, 200);
+  const throttleKey = `register:${email.toLowerCase()}`;
+  const throttle = checkLoginThrottle(throttleKey);
+  if (!throttle.allowed) {
+    return c.json(
+      { error: `Terlalu banyak percobaan. Coba lagi dalam ${throttle.retryAfterSeconds} detik.` },
+      429
+    );
+  }
+
+  const { registerCustomer } = await import("../customer/store");
+  const result = await registerCustomer({ email, name, password: body.password });
+
+  if (!result.ok || !result.user) {
+    recordLoginFailure(throttleKey);
+    return c.json({ error: result.error ?? "Pendaftaran gagal." }, result.status as any);
+  }
+
+  clearLoginFailures(throttleKey);
+  setSessionCookie(c, result.user);
+  return c.json(
+    { success: true, user: result.user, message: "Akun berhasil dibuat. Selamat datang di Morvexa." },
+    201
+  );
+});
+
+app.post("/customer/auth/login", async (c) => {
+  const body = await c.req.json().catch(() => ({}));
+  const email = typeof body.email === "string" ? body.email.trim() : "";
+
+  if (!email || typeof body.password !== "string" || body.password.length === 0) {
+    return c.json({ error: "Email dan password wajib diisi." }, 400);
+  }
+
+  const throttleKey = `login:${email.toLowerCase()}`;
+  const throttle = checkLoginThrottle(throttleKey);
+  if (!throttle.allowed) {
+    return c.json(
+      { error: `Akun terkunci sementara. Coba lagi dalam ${throttle.retryAfterSeconds} detik.` },
+      429
+    );
+  }
+
+  const { authenticateCustomer } = await import("../customer/store");
+  const result = await authenticateCustomer({ email, password: body.password });
+
+  if (!result.ok || !result.user) {
+    recordLoginFailure(throttleKey);
+    return c.json({ error: result.error ?? "Login gagal." }, result.status as any);
+  }
+
+  clearLoginFailures(throttleKey);
+  setSessionCookie(c, result.user);
+  return c.json({ success: true, user: result.user, message: "Login berhasil." }, 200);
+});
+
+app.post("/customer/auth/logout", (c) => {
+  deleteCookie(c, SESSION_COOKIE, { path: "/" });
+  return c.json({ success: true, message: "Anda telah keluar dari akun." }, 200);
+});
+
+// Resolves the current session from the signed cookie. Always 200 so the client
+// can distinguish "signed out" from "request failed" without error handling.
+app.get("/customer/auth/session", async (c) => {
+  const claims = verifySessionToken(readSessionCookie(c.req.header("Cookie")));
+  if (!claims) {
+    return c.json({ authenticated: false, user: null }, 200);
+  }
+
+  const { findCustomerById } = await import("../customer/store");
+  const user = findCustomerById(claims.sub);
+  if (!user) {
+    deleteCookie(c, SESSION_COOKIE, { path: "/" });
+    return c.json({ authenticated: false, user: null }, 200);
+  }
+
+  return c.json({ authenticated: true, user }, 200);
 });
 
 // 19. Customer Data & Activity Feed for Owner: GET /api/customer/dashboard-data

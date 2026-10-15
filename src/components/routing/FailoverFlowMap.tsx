@@ -44,7 +44,7 @@ export function FailoverFlowMap() {
   ];
 
   return (
-    <div className="rounded-lg border border-white/10 bg-[#0e0e11] p-4 sm:p-5">
+    <div className="rounded-lg border border-white/10 bg-[#0E1019] p-4 sm:p-5">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 pb-3 border-b border-white/5">
         <div>
           <h3 className="text-xs font-mono uppercase tracking-wider font-semibold text-zinc-200 flex items-center gap-2">

@@ -23,7 +23,7 @@ export function StreamInspector({
   const [viewMode, setViewMode] = useState<"rendered" | "raw">("rendered");
 
   return (
-    <div className="rounded-lg border border-white/10 bg-[#0e0e11] flex flex-col h-full overflow-hidden">
+    <div className="rounded-lg border border-white/10 bg-[#0E1019] flex flex-col h-full overflow-hidden">
       {/* Inspector Header with Telemetry Stats */}
       <div className="p-3.5 sm:p-4 border-b border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-black/40">
         <div className="flex items-center gap-2.5">

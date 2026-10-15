@@ -14,7 +14,7 @@ export function TraceDetailDrawer({ trace, onClose }: TraceDetailDrawerProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-xs">
-      <div className="w-full max-w-lg bg-[#121215] border-l border-white/10 h-full p-6 shadow-2xl flex flex-col overflow-y-auto animate-in slide-in-from-right duration-200">
+      <div className="w-full max-w-lg bg-[#12141F] border-l border-white/10 h-full p-6 shadow-2xl flex flex-col overflow-y-auto animate-in slide-in-from-right duration-200">
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-white/5">
           <div>

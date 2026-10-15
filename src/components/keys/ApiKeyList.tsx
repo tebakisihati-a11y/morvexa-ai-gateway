@@ -90,19 +90,19 @@ export function ApiKeyList({
     <div className="space-y-4">
       {/* Remediation Success Banner */}
       {remediatedKey && (
-        <div className="rounded-2xl border border-[#1CE172]/40 bg-[#1CE172]/10 p-4 sm:p-5 text-[#F0FEF8] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-[0_0_30px_rgba(28,225,114,0.15)] animate-in fade-in slide-in-from-top-2">
+        <div className="rounded-2xl border border-[#5B8DEF]/40 bg-[#5B8DEF]/10 p-4 sm:p-5 text-[#E9EDFB] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-[0_0_30px_rgba(91, 141, 239,0.15)] animate-in fade-in slide-in-from-top-2">
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-[#1CE172]/20 border border-[#1CE172]/40 flex items-center justify-center text-[#1CE172]">
+            <div className="h-9 w-9 rounded-xl bg-[#5B8DEF]/20 border border-[#5B8DEF]/40 flex items-center justify-center text-[#5B8DEF]">
               <CheckCircle2 className="h-5 w-5" />
             </div>
             <div>
-              <div className="text-xs font-mono font-bold text-[#1CE172]">
+              <div className="text-xs font-mono font-bold text-[#5B8DEF]">
                 TOKEN REMEDIATION SUCCESSFUL
               </div>
-              <p className="text-xs text-[#889e93] mt-0.5">
+              <p className="text-xs text-[#8E97BC] mt-0.5">
                 Kunci kustomer telah diperbaiki secara instan. Kunci mentah baru siap disalin:
               </p>
-              <div className="font-mono text-xs text-[#F0FEF8] bg-[#010302] border border-[#1CE172]/30 px-3 py-1.5 rounded-lg mt-2 inline-block select-all">
+              <div className="font-mono text-xs text-[#E9EDFB] bg-[#06070F] border border-[#5B8DEF]/30 px-3 py-1.5 rounded-lg mt-2 inline-block select-all">
                 {remediatedKey.rawSecret}
               </div>
             </div>
@@ -110,7 +110,7 @@ export function ApiKeyList({
           <div className="flex items-center gap-2 self-end sm:self-auto">
             <button
               onClick={() => handleCopy("remediated", remediatedKey.rawSecret)}
-              className="px-3 py-1.5 rounded-lg bg-[#1CE172] text-[#010302] font-mono text-xs font-bold hover:bg-[#1CE172]/90 flex items-center gap-1.5 cursor-pointer"
+              className="px-3 py-1.5 rounded-lg bg-[#5B8DEF] text-[#06070F] font-mono text-xs font-bold hover:bg-[#5B8DEF]/90 flex items-center gap-1.5 cursor-pointer"
             >
               {copiedId === "remediated" ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
               <span>{copiedId === "remediated" ? "Disalin!" : "Salin Kunci"}</span>
@@ -126,7 +126,7 @@ export function ApiKeyList({
       )}
 
       {/* Control & Filter Strip */}
-      <div className="rounded-2xl border border-white/10 bg-[#090d0b]/80 backdrop-blur-md p-3.5 sm:p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+      <div className="rounded-2xl border border-white/10 bg-[#0B0D1A]/80 backdrop-blur-md p-3.5 sm:p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
         {/* Search Input */}
         <div className="relative flex-1">
           <input
@@ -134,7 +134,7 @@ export function ApiKeyList({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Cari token, email kustomer (e.g. dev@acme.ai), atau plan..."
-            className="w-full bg-[#010302] border border-white/10 rounded-xl px-3.5 py-2 text-xs font-mono text-[#F0FEF8] placeholder:text-zinc-600 focus:outline-none focus:border-[#1CE172]/50"
+            className="w-full bg-[#06070F] border border-white/10 rounded-xl px-3.5 py-2 text-xs font-mono text-[#E9EDFB] placeholder:text-zinc-600 focus:outline-none focus:border-[#5B8DEF]/50"
           />
         </div>
 
@@ -144,7 +144,7 @@ export function ApiKeyList({
             onClick={() => setFilter("all")}
             className={`px-3 py-1.5 rounded-xl text-xs font-mono transition-colors cursor-pointer shrink-0 ${
               filter === "all"
-                ? "bg-[#1CE172]/20 text-[#1CE172] border border-[#1CE172]/40"
+                ? "bg-[#5B8DEF]/20 text-[#5B8DEF] border border-[#5B8DEF]/40"
                 : "text-zinc-400 hover:text-white bg-white/5 border border-transparent"
             }`}
           >
@@ -185,16 +185,16 @@ export function ApiKeyList({
       </div>
 
       {/* Main Keys & Token Telemetry Table */}
-      <div className="rounded-2xl border border-white/10 bg-[#090d0b]/80 backdrop-blur-md overflow-hidden shadow-2xl">
+      <div className="rounded-2xl border border-white/10 bg-[#0B0D1A]/80 backdrop-blur-md overflow-hidden shadow-2xl">
         <div className="p-4 border-b border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
-            <h3 className="text-xs font-mono uppercase tracking-wider font-semibold text-[#F0FEF8] flex items-center gap-2">
+            <h3 className="text-xs font-mono uppercase tracking-wider font-semibold text-[#E9EDFB] flex items-center gap-2">
               <span>Token Telemetry & Customer Health Inspector</span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#1CE172]/10 text-[#1CE172] border border-[#1CE172]/20">
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#5B8DEF]/10 text-[#5B8DEF] border border-[#5B8DEF]/20">
                 Autonomous Doctor Active
               </span>
             </h3>
-            <p className="text-xs text-[#889e93] mt-0.5">
+            <p className="text-xs text-[#8E97BC] mt-0.5">
               Pantau konsumsi token real-time per kustomer dan atasi kegagalan token (Invalid Hash / Kuota Habis) secara instan.
             </p>
           </div>
@@ -206,7 +206,7 @@ export function ApiKeyList({
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[840px]">
             <thead>
-              <tr className="border-b border-white/5 bg-[#010302]/60 text-[10px] font-mono uppercase text-zinc-500">
+              <tr className="border-b border-white/5 bg-[#06070F]/60 text-[10px] font-mono uppercase text-zinc-500">
                 <th className="py-3 px-4 font-semibold">Kustomer & Token</th>
                 <th className="py-3 px-4 font-semibold">Prefix Key</th>
                 <th className="py-3 px-4 font-semibold">Konsumsi Token Hari Ini</th>
@@ -244,18 +244,18 @@ export function ApiKeyList({
                     >
                       {/* Customer & Token Ident */}
                       <td className="py-3.5 px-4">
-                        <div className="font-sans font-semibold text-[#F0FEF8] flex items-center gap-2">
+                        <div className="font-sans font-semibold text-[#E9EDFB] flex items-center gap-2">
                           <span>{item.name}</span>
                           {item.planCode && (
-                            <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-[#889e93]">
+                            <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-[#8E97BC]">
                               {item.planCode}
                             </span>
                           )}
                         </div>
-                        <div className="flex items-center gap-2 mt-1 text-[11px] text-[#889e93]">
+                        <div className="flex items-center gap-2 mt-1 text-[11px] text-[#8E97BC]">
                           {item.customerEmail && (
                             <span className="flex items-center gap-1 text-zinc-400">
-                              <Mail className="h-3 w-3 text-[#1CE172]" />
+                              <Mail className="h-3 w-3 text-[#5B8DEF]" />
                               <span>{item.customerEmail}</span>
                             </span>
                           )}
@@ -267,7 +267,7 @@ export function ApiKeyList({
                       {/* Token Masked */}
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-1.5">
-                          <span className="text-zinc-300 bg-[#010302] border border-white/10 px-2.5 py-1 rounded-lg font-mono text-[11px]">
+                          <span className="text-zinc-300 bg-[#06070F] border border-white/10 px-2.5 py-1 rounded-lg font-mono text-[11px]">
                             {item.maskedKey}
                           </span>
                           <button
@@ -297,7 +297,7 @@ export function ApiKeyList({
                                   ? "text-red-400"
                                   : usagePercent > 70
                                   ? "text-amber-400"
-                                  : "text-[#1CE172]"
+                                  : "text-[#5B8DEF]"
                               }`}
                             >
                               {usagePercent}%
@@ -310,7 +310,7 @@ export function ApiKeyList({
                                   ? "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]"
                                   : usagePercent > 70
                                   ? "bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.5)]"
-                                  : "bg-[#1CE172] shadow-[0_0_8px_rgba(28,225,114,0.5)]"
+                                  : "bg-[#5B8DEF] shadow-[0_0_8px_rgba(91, 141, 239,0.5)]"
                               }`}
                               style={{ width: `${usagePercent}%` }}
                             />
@@ -344,8 +344,8 @@ export function ApiKeyList({
                             </p>
                           </div>
                         ) : item.isActive ? (
-                          <span className="inline-flex items-center gap-1.5 text-xs font-mono text-[#1CE172]">
-                            <span className="h-2 w-2 rounded-full bg-[#1CE172] animate-pulse" />
+                          <span className="inline-flex items-center gap-1.5 text-xs font-mono text-[#5B8DEF]">
+                            <span className="h-2 w-2 rounded-full bg-[#5B8DEF] animate-pulse" />
                             <span>Normal & Serving</span>
                           </span>
                         ) : (
@@ -384,7 +384,7 @@ export function ApiKeyList({
                               <button
                                 onClick={() => handleRegenerate(item.id)}
                                 disabled={processingId === item.id}
-                                className="px-2 py-1 rounded border border-white/10 hover:border-[#1CE172]/40 text-zinc-400 hover:text-[#1CE172] text-[10px] font-mono transition-colors cursor-pointer"
+                                className="px-2 py-1 rounded border border-white/10 hover:border-[#5B8DEF]/40 text-zinc-400 hover:text-[#5B8DEF] text-[10px] font-mono transition-colors cursor-pointer"
                                 title="Regenerate kunci"
                               >
                                 Roll Key

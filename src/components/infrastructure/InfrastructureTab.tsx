@@ -173,7 +173,7 @@ export function InfrastructureTab() {
           className={`rounded-lg border p-4 cursor-pointer transition-all ${
             selectedTier === "shared"
               ? "border-orange-500/40 bg-orange-950/[0.08] ring-1 ring-orange-500/20"
-              : "border-white/10 bg-[#0e0e11] hover:border-white/20"
+              : "border-white/10 bg-[#0E1019] hover:border-white/20"
           }`}
         >
           <div className="flex items-center justify-between mb-2">
@@ -203,7 +203,7 @@ export function InfrastructureTab() {
           className={`rounded-lg border p-4 cursor-pointer transition-all ${
             selectedTier === "dedicated"
               ? "border-orange-500/40 bg-orange-950/[0.08] ring-1 ring-orange-500/20"
-              : "border-white/10 bg-[#0e0e11] hover:border-white/20"
+              : "border-white/10 bg-[#0E1019] hover:border-white/20"
           }`}
         >
           <div className="flex items-center justify-between mb-2">
@@ -248,7 +248,7 @@ export function InfrastructureTab() {
         <div className="space-y-6">
           {envData ? (
             /* Active Environment Monitor */
-            <div className="rounded-lg border border-white/10 bg-[#0e0e11] p-5 space-y-5">
+            <div className="rounded-lg border border-white/10 bg-[#0E1019] p-5 space-y-5">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/5 pb-4">
                 <div>
                   <div className="flex items-center gap-2">
@@ -347,7 +347,7 @@ export function InfrastructureTab() {
             </div>
           ) : (
             /* Provisioning Form */
-            <div className="rounded-lg border border-white/10 bg-[#0e0e11] p-5 space-y-4">
+            <div className="rounded-lg border border-white/10 bg-[#0E1019] p-5 space-y-4">
               <div className="border-b border-white/5 pb-3">
                 <h3 className="text-xs font-mono font-semibold uppercase text-zinc-100">
                   Formulir Provisioning Dedicated Node

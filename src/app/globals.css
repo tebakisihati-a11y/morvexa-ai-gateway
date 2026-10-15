@@ -1,84 +1,222 @@
 @import "tailwindcss";
 
+/* =============================================================================
+   Morvexa — Cinematic Agent Core Design System
+   Deep-space indigo canvas, molten blue accent, iris + plum light bloom.
+   Type: Bricolage Grotesque (display) / Instrument Sans (body) / JetBrains Mono.
+   ========================================================================== */
+
+@theme inline {
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-mono-code), ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --color-canvas: #06070f;
+  --color-surface: #0b0d1a;
+  --color-elevated: #11142a;
+  --color-ink: #e9edfb;
+  --color-muted: #8e97bc;
+  --color-dim: #5a6390;
+  --color-accent: #5b8def;
+  --color-iris: #6c63ff;
+  --color-plum: #c0549f;
+  --color-void: #04050c;
+
+  --animate-aurora: aurora 22s ease-in-out infinite;
+  --animate-drift: drift 9s ease-in-out infinite;
+  --animate-rise: rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-sheen: sheen 3.4s ease-in-out infinite;
+}
+
 @layer base {
   :root {
-    /* Morvexa Master Cinematic Color Palette */
-    --color-obsidian: #010302;
-    --color-forest: #355C49;
-    --color-mint-white: #F0FEF8;
-    --color-neon-mint: #1CE172;
-    --color-neon-mint-dim: rgba(28, 225, 114, 0.15);
-    --color-neon-mint-border: rgba(28, 225, 114, 0.35);
+    --line-subtle: rgba(233, 237, 251, 0.07);
+    --line: rgba(233, 237, 251, 0.12);
+    --line-strong: rgba(233, 237, 251, 0.2);
+    --glow-accent: rgba(91, 141, 239, 0.28);
+  }
 
-    /* Surface & Elevation */
-    --bg-canvas: #010302;
-    --bg-surface: #0a0f0d;
-    --bg-elevated: #111a15;
-    --bg-panel: rgba(10, 15, 13, 0.75);
-
-    /* Borders */
-    --border-subtle: rgba(240, 254, 248, 0.08);
-    --border-strong: rgba(240, 254, 248, 0.16);
-    --border-accent: rgba(28, 225, 114, 0.3);
-
-    /* Typography */
-    --text-primary: #F0FEF8;
-    --text-muted: #889e93;
-    --text-dim: #4d6357;
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 6rem;
+    background-color: var(--color-canvas);
+    -webkit-text-size-adjust: 100%;
   }
 
   body {
-    background-color: var(--bg-canvas);
-    color: var(--text-primary);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     min-height: 100vh;
     overflow-x: hidden;
   }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.028em;
+  }
+
+  ::selection {
+    background: rgba(91, 141, 239, 0.28);
+    color: #ffffff;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  [id] {
+    scroll-margin-top: 6rem;
+  }
 }
 
-/* Custom scrollbar matching Morvexa Obsidian/Mint theme */
+/* ---------------------------------------------------------------------------
+   Surfaces & texture
+   ------------------------------------------------------------------------- */
+
+/* Film-grain overlay: breaks up flat gradients so large dark areas read as
+   photographic depth instead of a flat fill. */
+.grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.42;
+  mix-blend-mode: soft-light;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+}
+
+.hairline-top {
+  box-shadow: inset 0 1px 0 rgba(233, 237, 251, 0.07);
+}
+
+.panel {
+  background: linear-gradient(160deg, rgba(17, 20, 42, 0.86), rgba(11, 13, 26, 0.92));
+  border: 1px solid var(--line-subtle);
+  backdrop-filter: blur(14px);
+}
+
+.text-gradient {
+  background: linear-gradient(104deg, #ffffff 8%, #9db9f5 46%, #c0549f 96%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ---------------------------------------------------------------------------
+   Motion
+   ------------------------------------------------------------------------- */
+
+@keyframes aurora {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.55;
+  }
+  33% {
+    transform: translate3d(3%, -4%, 0) scale(1.12);
+    opacity: 0.8;
+  }
+  66% {
+    transform: translate3d(-3%, 3%, 0) scale(1.04);
+    opacity: 0.65;
+  }
+}
+
+@keyframes drift {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes sheen {
+  0% {
+    transform: translateX(-120%);
+  }
+  60%,
+  100% {
+    transform: translateX(220%);
+  }
+}
+
+/* Sequential reveal for hero copy. */
+.stagger > * {
+  animation: rise 0.75s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.stagger > *:nth-child(1) { animation-delay: 0.05s; }
+.stagger > *:nth-child(2) { animation-delay: 0.13s; }
+.stagger > *:nth-child(3) { animation-delay: 0.21s; }
+.stagger > *:nth-child(4) { animation-delay: 0.29s; }
+.stagger > *:nth-child(5) { animation-delay: 0.37s; }
+.stagger > *:nth-child(6) { animation-delay: 0.45s; }
+
+/* Reveal on scroll, toggled by IntersectionObserver. */
+.reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition:
+    opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Scrollbar
+   ------------------------------------------------------------------------- */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 10px;
+  height: 10px;
 }
 ::-webkit-scrollbar-track {
-  background: #010302;
+  background: #06070f;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1e3328;
-  border-radius: 3px;
+  background: #232c63;
+  border: 3px solid #06070f;
+  border-radius: 999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #355C49;
-}
-
-/* Keyframe animations for cinematic glow & floating 3D objects */
-@keyframes pulseGlow {
-  0%, 100% {
-    opacity: 0.4;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.8;
-    transform: scale(1.05);
-  }
-}
-
-@keyframes floatSlow {
-  0%, 100% {
-    transform: translateY(0px) rotate(0deg);
-  }
-  50% {
-    transform: translateY(-12px) rotate(1deg);
-  }
-}
-
-.animate-pulse-glow {
-  animation: pulseGlow 6s ease-in-out infinite;
-}
-
-.animate-float-slow {
-  animation: floatSlow 8s ease-in-out infinite;
+  background: #3b4694;
 }

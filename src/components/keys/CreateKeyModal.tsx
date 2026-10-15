@@ -51,7 +51,7 @@ export function CreateKeyModal({ isOpen, onClose, onCreate }: CreateKeyModalProp
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-4">
-      <div className="w-full max-w-md rounded-lg border border-white/10 bg-[#0e0e11] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div className="w-full max-w-md rounded-lg border border-white/10 bg-[#0E1019] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         <div className="flex items-center justify-between p-4 border-b border-white/5">
           <div className="flex items-center gap-2">
             <KeyRound className="h-3.5 w-3.5 text-zinc-400" />

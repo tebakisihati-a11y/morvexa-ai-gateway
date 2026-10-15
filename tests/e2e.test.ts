@@ -45,8 +45,11 @@ describe("Tahap 8 — End-to-End SaaS Life-Cycle Integration Test", () => {
     expect(canPerform("CUSTOMER_DEVELOPER", "devops:manage_infrastructure")).toBe(false);
 
     // ------------------------------------------------------------------------
-    // Step 2: Customer Initiates Checkout for Apex Scale Plan (IDR 2,850,000)
+    // Step 2: Customer Initiates Checkout for Apex Scale Plan (IDR 2,500,000)
     // ------------------------------------------------------------------------
+    // The client sends a tampered `amount` (2,850,000). The checkout endpoint
+    // must ignore it and charge the authoritative catalog price, otherwise a
+    // caller could open an invoice for less than the plan they receive.
     const checkoutRes = await app.request("/api/billing/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -64,17 +67,18 @@ describe("Tahap 8 — End-to-End SaaS Life-Cycle Integration Test", () => {
     const orderId = checkoutData.orderId;
     expect(orderId).toMatch(/^MVX-\d+-[A-Z0-9]+$/);
     expect(checkoutData.snapToken).toBeDefined();
+    expect(checkoutData.amount).toBe(2500000);
 
     // Verify initial transaction state in store is 'pending'
     const initialTx = getTransaction(orderId);
     expect(initialTx?.status).toBe("pending");
-    expect(initialTx?.amount).toBe(2850000);
+    expect(initialTx?.amount).toBe(2500000);
 
     // ------------------------------------------------------------------------
     // Step 3: Midtrans Webhook Callback Ingestion with SHA-512 Verification
     // ------------------------------------------------------------------------
     const statusCode = "200";
-    const grossAmount = "2850000.00";
+    const grossAmount = "2500000.00";
     const signature = calculateMidtransSignature(orderId, statusCode, grossAmount, SERVER_KEY);
 
     const webhookPayload = {
@@ -122,7 +126,7 @@ describe("Tahap 8 — End-to-End SaaS Life-Cycle Integration Test", () => {
     // ------------------------------------------------------------------------
     const reconRecord = await reconcileSingleOrder(orderId, {
       mockGatewayStatus: "settlement",
-      mockGatewayAmount: 2850000,
+      mockGatewayAmount: 2500000,
     });
     expect(reconRecord.resolved).toBe(true);
     expect(reconRecord.actionTaken).toBe("none"); // Already settled, no discrepancy

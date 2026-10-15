@@ -22,7 +22,7 @@ export function GuardrailsTab() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Compliance Guardrails */}
-        <div className="rounded-lg border border-white/10 bg-[#0e0e11] p-4 sm:p-5 space-y-4">
+        <div className="rounded-lg border border-white/10 bg-[#0E1019] p-4 sm:p-5 space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-white/5">
             <h3 className="text-xs font-mono uppercase tracking-wider font-semibold text-zinc-200 flex items-center gap-2">
               <Lock className="h-3.5 w-3.5 text-zinc-400" />
@@ -94,7 +94,7 @@ export function GuardrailsTab() {
         </div>
 
         {/* Free Cloud Deployment Guide */}
-        <div className="rounded-lg border border-white/10 bg-[#0e0e11] p-4 sm:p-5 space-y-4">
+        <div className="rounded-lg border border-white/10 bg-[#0E1019] p-4 sm:p-5 space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-white/5">
             <h3 className="text-xs font-mono uppercase tracking-wider font-semibold text-zinc-200 flex items-center gap-2">
               <Globe className="h-3.5 w-3.5 text-zinc-400" />

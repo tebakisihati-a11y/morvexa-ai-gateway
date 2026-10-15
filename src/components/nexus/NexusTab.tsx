@@ -205,7 +205,7 @@ export function NexusTab() {
 
       {/* Executive Metrics Overview */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="rounded-lg border border-white/10 bg-[#0e0e11] p-4 space-y-1">
+        <div className="rounded-lg border border-white/10 bg-[#0E1019] p-4 space-y-1">
           <div className="text-[10px] font-mono uppercase text-zinc-500 flex items-center justify-between">
             <span>Monthly Recurring Revenue</span>
             <DollarSign className="h-3.5 w-3.5 text-emerald-400" />
@@ -217,7 +217,7 @@ export function NexusTab() {
           </div>
         </div>
 
-        <div className="rounded-lg border border-white/10 bg-[#0e0e11] p-4 space-y-1">
+        <div className="rounded-lg border border-white/10 bg-[#0E1019] p-4 space-y-1">
           <div className="text-[10px] font-mono uppercase text-zinc-500 flex items-center justify-between">
             <span>Total Organisasi Aktif</span>
             <Layers className="h-3.5 w-3.5 text-orange-400" />
@@ -226,7 +226,7 @@ export function NexusTab() {
           <div className="text-[11px] font-mono text-zinc-400">92 pengguna terdaftar</div>
         </div>
 
-        <div className="rounded-lg border border-white/10 bg-[#0e0e11] p-4 space-y-1">
+        <div className="rounded-lg border border-white/10 bg-[#0E1019] p-4 space-y-1">
           <div className="text-[10px] font-mono uppercase text-zinc-500 flex items-center justify-between">
             <span>24h Gateway Requests</span>
             <Activity className="h-3.5 w-3.5 text-blue-400" />
@@ -235,7 +235,7 @@ export function NexusTab() {
           <div className="text-[11px] font-mono text-zinc-400">Avg TTFT: 142ms</div>
         </div>
 
-        <div className="rounded-lg border border-white/10 bg-[#0e0e11] p-4 space-y-1">
+        <div className="rounded-lg border border-white/10 bg-[#0E1019] p-4 space-y-1">
           <div className="text-[10px] font-mono uppercase text-zinc-500 flex items-center justify-between">
             <span>Dedicated Clusters</span>
             <Server className="h-3.5 w-3.5 text-purple-400" />
@@ -246,7 +246,7 @@ export function NexusTab() {
       </div>
 
       {/* Tenant Directory */}
-      <div className="rounded-lg border border-white/10 bg-[#0e0e11] overflow-hidden">
+      <div className="rounded-lg border border-white/10 bg-[#0E1019] overflow-hidden">
         <div className="p-3.5 sm:p-4 border-b border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <Building2 className="h-4 w-4 text-zinc-400" />
@@ -315,7 +315,7 @@ export function NexusTab() {
       </div>
 
       {/* Financial Ledger & Audit Trail */}
-      <div className="rounded-lg border border-white/10 bg-[#0e0e11] overflow-hidden">
+      <div className="rounded-lg border border-white/10 bg-[#0E1019] overflow-hidden">
         <div className="p-3.5 sm:p-4 border-b border-white/5 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <DollarSign className="h-4 w-4 text-emerald-400" />
@@ -367,7 +367,7 @@ export function NexusTab() {
       </div>
 
       {/* Live System Audit Trail & Cron Automation Trigger */}
-      <div className="rounded-lg border border-white/10 bg-[#0e0e11] overflow-hidden space-y-4 p-4">
+      <div className="rounded-lg border border-white/10 bg-[#0E1019] overflow-hidden space-y-4 p-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/5 pb-3">
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4 text-orange-400" />

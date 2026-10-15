@@ -2,7 +2,26 @@
  * Morvexa Customer & User Store
  * Supports Customer Self-Service Registration, Login, Token Usage, and Orders.
  * Directly integrated into Owner Database & Activity Monitoring.
+ *
+ * Credential records are held separately from the public CustomerUser shape so
+ * password hashes are never serialised into an API response or the session
+ * cookie. The credential store mirrors the persistence strategy used elsewhere
+ * in this module: Supabase when configured, in-memory otherwise.
  */
+
+import { isSupabaseConfigured, supabase } from "../supabase/client";
+import { hashPassword, verifyPassword } from "../auth/password";
+
+export interface CustomerCredential {
+  customerId: string;
+  email: string;
+  /** scrypt record produced by hashPassword(). Never leaves the server. */
+  passwordHash: string;
+  failedAttempts: number;
+  lockedUntil: number;
+  createdAt: string;
+  lastVerifiedAt?: string;
+}
 
 export interface CustomerUser {
   id: string;
@@ -52,94 +71,11 @@ export interface CustomerActivityLog {
   details?: Record<string, any>;
 }
 
-export interface ModelProduct {
-  id: string;
-  name: string;
-  provider: "deepseek" | "anthropic" | "openai" | "gemini" | "groq";
-  tagline: string;
-  contextWindow: string;
-  pricePer1kInputTokensIdr: number; // in IDR
-  pricePer1kOutputTokensIdr: number; // in IDR
-  bundlePriceIdr: number; // Paket siap pakai token bundle e.g. Rp 100.000
-  bundleTokensGranted: number; // misal 10.000.000 token untuk DeepSeek
-  description: string;
-  badge?: string;
-  compliancePolicy: string;
-}
-
-// Model Catalog for Customers
-export const MODEL_PRODUCTS: ModelProduct[] = [
-  {
-    id: "prod-deepseek-v3",
-    name: "DeepSeek V3 (Chat & Code)",
-    provider: "deepseek",
-    tagline: "Ultra-Cost-Efficient Frontier Reasoning",
-    contextWindow: "64k Context",
-    pricePer1kInputTokensIdr: 2.2,
-    pricePer1kOutputTokensIdr: 4.4,
-    bundlePriceIdr: 100000,
-    bundleTokensGranted: 20000000, // 20 Juta token untuk Rp 100rb sesuai pasaran DeepSeek
-    description: "Performa sekelas frontier dengan efisiensi token ekstrem. Kebijakan API: Bebas rate limit terdistribusi dengan auto-retry.",
-    badge: "TERMURAH & TERPOPULER",
-    compliancePolicy: "Standar API DeepSeek AI. Rate limit dynamic tier. Zero data retention policy.",
-  },
-  {
-    id: "prod-deepseek-r1",
-    name: "DeepSeek R1 (Full Reasoning)",
-    provider: "deepseek",
-    tagline: "Open-weights Reasoning Model on Par with o1",
-    contextWindow: "64k Context",
-    pricePer1kInputTokensIdr: 8.5,
-    pricePer1kOutputTokensIdr: 33.0,
-    bundlePriceIdr: 100000,
-    bundleTokensGranted: 5000000, // 5 Juta token
-    description: "Model reasoning mendalam untuk matematika kompleks, sains, dan arsitektur kode berskala besar.",
-    badge: "ADVANCED REASONING",
-    compliancePolicy: "Standar OpenAI API compatible format, chain-of-thought preservation.",
-  },
-  {
-    id: "prod-claude-3-7-sonnet",
-    name: "Claude 3.7 Sonnet (Hybrid)",
-    provider: "anthropic",
-    tagline: "Anthropic's Flagship Coding & Reasoning Engine",
-    contextWindow: "200k Context",
-    pricePer1kInputTokensIdr: 48.0,
-    pricePer1kOutputTokensIdr: 240.0,
-    bundlePriceIdr: 250000,
-    bundleTokensGranted: 1500000,
-    description: "Model unggulan untuk coding kompleks, sistem multi-langkah, dan reasoning adaptif tanpa halusinasi.",
-    badge: "BEST CODING",
-    compliancePolicy: "Anthropic Commercial API Terms, PII filtering & zero model training on customer payloads.",
-  },
-  {
-    id: "prod-gpt-4o",
-    name: "OpenAI GPT-4o (Omni)",
-    provider: "openai",
-    tagline: "High-speed Multimodal Vision & Intelligence",
-    contextWindow: "128k Context",
-    pricePer1kInputTokensIdr: 40.0,
-    pricePer1kOutputTokensIdr: 160.0,
-    bundlePriceIdr: 200000,
-    bundleTokensGranted: 2000000,
-    description: "Model multimodal cerdas untuk pemrosesan teks, kode, dan inspeksi gambar berkecepatan tinggi.",
-    badge: "OMNI MULTIMODAL",
-    compliancePolicy: "OpenAI Enterprise Compliance, SSE streaming protocol natively supported.",
-  },
-  {
-    id: "prod-gemini-2-flash",
-    name: "Google Gemini 2.0 Flash",
-    provider: "gemini",
-    tagline: "Next-gen Fast 1M Context Window",
-    contextWindow: "1,000,000 Context",
-    pricePer1kInputTokensIdr: 1.6,
-    pricePer1kOutputTokensIdr: 6.4,
-    bundlePriceIdr: 100000,
-    bundleTokensGranted: 15000000,
-    description: "Jendela konteks hingga 1 juta token dengan latency Time-To-First-Token terendah (~45ms).",
-    badge: "1M CONTEXT",
-    compliancePolicy: "Google Cloud Platform API guidelines, enterprise-grade availability.",
-  },
-];
+/**
+ * Model catalog lives in ./catalog so client components can render it without
+ * importing the credential hashing code below (which needs node:crypto).
+ */
+export { MODEL_PRODUCTS, type ModelProduct } from "./catalog";
 
 // In-Memory Seeded Customers Data (Shared to Owner Plane)
 let memoryCustomers: CustomerUser[] = [
@@ -275,6 +211,9 @@ let memoryCustomerActivities: CustomerActivityLog[] = [
 // Active Customer Session In Memory (or LocalStorage on client)
 let currentCustomerSession: CustomerUser | null = memoryCustomers[0];
 
+// Credential records (password hashes) kept apart from the public user shape.
+const memoryCredentials: CustomerCredential[] = [];
+
 // API Functions
 export function getRegisteredCustomers(): CustomerUser[] {
   return [...memoryCustomers];
@@ -296,51 +235,130 @@ export function setCurrentCustomerSession(user: CustomerUser | null): void {
   currentCustomerSession = user;
 }
 
+function normaliseEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
+export function resolveEmailProvider(email: string): "gmail" | "yahoo" | "email" {
+  const normalized = normaliseEmail(email);
+  if (normalized.endsWith("@gmail.com") || normalized.endsWith("@googlemail.com")) return "gmail";
+  if (normalized.endsWith("@yahoo.com") || normalized.endsWith("@yahoo.co.id") || normalized.includes("@yahoo.")) return "yahoo";
+  return "email";
+}
+
+export function findCustomerByEmail(email: string): CustomerUser | undefined {
+  const normalized = normaliseEmail(email);
+  return memoryCustomers.find((c) => c.email.toLowerCase() === normalized);
+}
+
+export function findCustomerById(id: string): CustomerUser | undefined {
+  return memoryCustomers.find((c) => c.id === id);
+}
+
+function logCustomerActivity(
+  customer: CustomerUser,
+  activityType: CustomerActivityLog["activityType"],
+  description: string,
+  details?: Record<string, any>
+): void {
+  memoryCustomerActivities.unshift({
+    id: `act-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    timestamp: new Date().toISOString(),
+    customerId: customer.id,
+    customerEmail: customer.email,
+    activityType,
+    description,
+    details,
+  });
+}
+
+/* ---------------------------------------------------------------------------
+   Credential persistence
+   ------------------------------------------------------------------------- */
+
+async function loadCredential(email: string): Promise<CustomerCredential | undefined> {
+  const normalized = normaliseEmail(email);
+
+  if (isSupabaseConfigured) {
+    const { data, error } = await supabase
+      .from("customer_credentials")
+      .select("customer_id, email, password_hash, failed_attempts, locked_until, created_at, last_verified_at")
+      .eq("email", normalized)
+      .maybeSingle();
+
+    if (!error && data) {
+      return {
+        customerId: data.customer_id,
+        email: data.email,
+        passwordHash: data.password_hash,
+        failedAttempts: data.failed_attempts ?? 0,
+        lockedUntil: data.locked_until ?? 0,
+        createdAt: data.created_at,
+        lastVerifiedAt: data.last_verified_at ?? undefined,
+      };
+    }
+  }
+
+  return memoryCredentials.find((c) => c.email === normalized);
+}
+
+async function persistCredential(credential: CustomerCredential): Promise<void> {
+  if (isSupabaseConfigured) {
+    await supabase.from("customer_credentials").upsert(
+      {
+        customer_id: credential.customerId,
+        email: credential.email,
+        password_hash: credential.passwordHash,
+        failed_attempts: credential.failedAttempts,
+        locked_until: credential.lockedUntil,
+        created_at: credential.createdAt,
+        last_verified_at: credential.lastVerifiedAt ?? null,
+      },
+      { onConflict: "email" }
+    );
+  }
+
+  const existingIndex = memoryCredentials.findIndex((c) => c.email === credential.email);
+  if (existingIndex === -1) memoryCredentials.push(credential);
+  else memoryCredentials[existingIndex] = credential;
+}
+
+/* ---------------------------------------------------------------------------
+   Registration & sign-in
+   ------------------------------------------------------------------------- */
+
+export interface AuthOutcome {
+  ok: boolean;
+  user?: CustomerUser;
+  error?: string;
+  status: number;
+}
+
 /**
- * Register or Login Customer via Gmail / Yahoo / Email
+ * Creates a new customer account with a hashed password.
+ * Rejects duplicates so an existing email cannot be silently taken over.
  */
-export function registerOrLoginCustomer(params: {
+export async function registerCustomer(params: {
   email: string;
   name?: string;
-  provider?: "gmail" | "yahoo" | "email";
-}): { user: CustomerUser; isNew: boolean } {
-  const normalizedEmail = params.email.trim().toLowerCase();
-  let provider = params.provider;
-  if (!provider) {
-    if (normalizedEmail.includes("@gmail.com")) provider = "gmail";
-    else if (normalizedEmail.includes("@yahoo.")) provider = "yahoo";
-    else provider = "email";
-  }
+  password: string;
+}): Promise<AuthOutcome> {
+  const email = normaliseEmail(params.email);
+  const displayName = (params.name || "").trim() || email.split("@")[0];
 
-  const existing = memoryCustomers.find((c) => c.email.toLowerCase() === normalizedEmail);
-
-  if (existing) {
-    existing.lastLoginAt = new Date().toISOString();
-    if (params.name && (!existing.name || existing.name === "Customer")) {
-      existing.name = params.name;
-    }
-    currentCustomerSession = existing;
-
-    // Log Activity
-    const log: CustomerActivityLog = {
-      id: `act-${Date.now()}`,
-      timestamp: new Date().toISOString(),
-      customerId: existing.id,
-      customerEmail: existing.email,
-      activityType: "USER_LOGIN",
-      description: `Customer login kembali via ${provider.toUpperCase()} (${existing.email})`,
+  if (findCustomerByEmail(email) || (await loadCredential(email))) {
+    return {
+      ok: false,
+      status: 409,
+      error: "Email ini sudah terdaftar. Silakan masuk menggunakan password Anda.",
     };
-    memoryCustomerActivities.unshift(log);
-
-    return { user: existing, isNew: false };
   }
 
-  // Create new customer user
-  const newUser: CustomerUser = {
-    id: `cust-${Date.now().toString().slice(-6)}`,
-    email: normalizedEmail,
-    name: params.name || normalizedEmail.split("@")[0],
-    provider,
+  const user: CustomerUser = {
+    id: `cust-${Date.now().toString().slice(-6)}${Math.random().toString(36).slice(2, 5)}`,
+    email,
+    name: displayName,
+    provider: resolveEmailProvider(email),
     registeredAt: new Date().toISOString(),
     lastLoginAt: new Date().toISOString(),
     status: "active",
@@ -351,27 +369,91 @@ export function registerOrLoginCustomer(params: {
     totalSpentIdr: 0,
   };
 
-  memoryCustomers.unshift(newUser);
-  currentCustomerSession = newUser;
+  await persistCredential({
+    customerId: user.id,
+    email,
+    passwordHash: await hashPassword(params.password),
+    failedAttempts: 0,
+    lockedUntil: 0,
+    createdAt: new Date().toISOString(),
+  });
 
-  // Log Activity directly to Owner monitoring
-  const log: CustomerActivityLog = {
-    id: `act-${Date.now()}`,
-    timestamp: new Date().toISOString(),
-    customerId: newUser.id,
-    customerEmail: newUser.email,
-    activityType: "USER_REGISTER",
-    description: `Pendaftaran akun kustomer baru via ${provider.toUpperCase()}: ${newUser.name} (${newUser.email})`,
-    details: { provider, registeredAt: newUser.registeredAt },
-  };
-  memoryCustomerActivities.unshift(log);
+  memoryCustomers.unshift(user);
+  currentCustomerSession = user;
+  logCustomerActivity(
+    user,
+    "USER_REGISTER",
+    `Pendaftaran akun kustomer baru: ${user.name} (${user.email})`,
+    { provider: user.provider }
+  );
 
-  return { user: newUser, isNew: true };
+  return { ok: true, user, status: 201 };
 }
 
 /**
- * Record a Customer Order (Package or Model Product) and notify Owner
+ * Verifies credentials and returns the customer record.
+ * The same generic error is returned for unknown emails and wrong passwords so
+ * the response cannot be used to enumerate registered accounts.
  */
+export async function authenticateCustomer(params: {
+  email: string;
+  password: string;
+}): Promise<AuthOutcome> {
+  const email = normaliseEmail(params.email);
+  const credential = await loadCredential(email);
+
+  const genericFailure: AuthOutcome = {
+    ok: false,
+    status: 401,
+    error: "Email atau password tidak cocok.",
+  };
+
+  if (!credential) return genericFailure;
+
+  const now = Date.now();
+  if (credential.lockedUntil > now) {
+    const minutes = Math.ceil((credential.lockedUntil - now) / 60000);
+    return {
+      ok: false,
+      status: 429,
+      error: `Terlalu banyak percobaan gagal. Coba lagi dalam ${minutes} menit.`,
+    };
+  }
+
+  const valid = await verifyPassword(params.password, credential.passwordHash);
+
+  if (!valid) {
+    credential.failedAttempts += 1;
+    // Escalate to a short lockout so credential stuffing stalls quickly.
+    if (credential.failedAttempts >= 5) {
+      credential.lockedUntil = now + 15 * 60 * 1000;
+      credential.failedAttempts = 0;
+    }
+    await persistCredential(credential);
+    return genericFailure;
+  }
+
+  const user = findCustomerByEmail(email);
+  if (!user) {
+    return {
+      ok: false,
+      status: 409,
+      error: "Akun ini tidak lagi aktif. Silakan hubungi dukungan Morvexa.",
+    };
+  }
+
+  credential.failedAttempts = 0;
+  credential.lockedUntil = 0;
+  credential.lastVerifiedAt = new Date().toISOString();
+  await persistCredential(credential);
+
+  user.lastLoginAt = new Date().toISOString();
+  currentCustomerSession = user;
+  logCustomerActivity(user, "USER_LOGIN", `Login berhasil: ${user.name} (${user.email})`);
+
+  return { ok: true, user, status: 200 };
+}
+
 export function recordCustomerOrder(order: Omit<CustomerOrder, "id" | "createdAt">): CustomerOrder {
   const newOrder: CustomerOrder = {
     ...order,

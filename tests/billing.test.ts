@@ -195,6 +195,79 @@ describe("Midtrans Payment Gateway & Webhook Integration", () => {
       expect(checkJson.status).toBe("pending");
     });
 
+    it("ignores a client-supplied amount and charges the catalog price", async () => {
+      const res = await app.request("/api/billing/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orgId: "org_tamper",
+          planCode: "apex",
+          amount: 1,
+          customerName: "Tamper Attempt",
+          customerEmail: "tamper@example.com",
+        }),
+      });
+
+      expect(res.status).toBe(201);
+      const json = await res.json();
+      expect(json.amount).toBe(2500000);
+      expect(getTransaction(json.orderId)?.amount).toBe(2500000);
+    });
+
+    it("rejects checkout for an unknown plan code", async () => {
+      const res = await app.request("/api/billing/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planCode: "enterprise_free_unlimited", amount: 0 }),
+      });
+
+      expect(res.status).toBe(400);
+    });
+
+    it("settles a sandbox order server-side via POST /api/billing/sandbox/settle", async () => {
+      const checkoutRes = await app.request("/api/billing/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orgId: "org_sandbox",
+          planCode: "pro",
+          customerName: "Sandbox User",
+          customerEmail: "sandbox@example.com",
+        }),
+      });
+      const { orderId } = await checkoutRes.json();
+
+      const settleRes = await app.request("/api/billing/sandbox/settle", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId,
+          paymentMethod: "qris",
+          customerName: "Sandbox User",
+          customerEmail: "sandbox@example.com",
+        }),
+      });
+
+      expect(settleRes.status).toBe(200);
+      const settleJson = await settleRes.json();
+      expect(settleJson.success).toBe(true);
+      expect(settleJson.status).toBe("settled");
+      expect(settleJson.subscriptionActivated).toBe(true);
+      // Provisioning must target the plan recorded at checkout, not one supplied later.
+      expect(settleJson.autoProvision?.planCode).toBe("pro");
+      expect(getTransaction(orderId)?.status).toBe("settled");
+    });
+
+    it("refuses to settle an unknown order", async () => {
+      const res = await app.request("/api/billing/sandbox/settle", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: "MVX-DOES-NOT-EXIST" }),
+      });
+
+      expect(res.status).toBe(404);
+    });
+
     it("processes webhook through HTTP POST /api/billing/webhooks/midtrans", async () => {
       const orderId = "MVX-HTTP-WEBHOOK-01";
       const grossAmount = "2500000.00";

@@ -1,520 +1,750 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import {
-  ShieldCheck,
-  Zap,
-  Server,
   ArrowRight,
-  Terminal,
-  Activity,
-  Layers,
-  Lock,
-  Globe,
-  CheckCircle2,
-  ChevronRight,
-  Code2,
-  Copy,
+  Boxes,
   Check,
+  CheckCircle2,
+  Copy,
+  Fingerprint,
+  GitBranch,
+  KeyRound,
+  Layers,
+  ScrollText,
+  ShieldCheck,
+  Sparkles,
+  Terminal,
+  Zap,
 } from "lucide-react";
-import { Cinematic3DScene } from "./Cinematic3DScene";
-import type { NavTabId } from "../layout/Sidebar";
+import { AgentCore } from "@/components/visual/AgentCore";
+import { AmbientField } from "@/components/visual/AmbientField";
+import { Button, Eyebrow, Panel, Pill } from "@/components/ui/primitives";
+import { useScrollReveal } from "@/lib/hooks/useScrollReveal";
+import {
+  COST_TIER_LABELS,
+  MODEL_CARDS,
+  PLAN_CARDS,
+  PROVIDERS,
+  formatIdr,
+  formatTokens,
+} from "@/lib/landing/content";
 
-interface LandingPageProps {
-  onEnterDashboard: (targetTab?: NavTabId) => void;
-}
+/* ---------------------------------------------------------------------------
+   Static copy that is not derived from runtime registries.
+   ------------------------------------------------------------------------- */
 
-export function LandingPage({ onEnterDashboard }: LandingPageProps) {
-  const [copiedCurl, setCopiedCurl] = useState(false);
+const CAPABILITIES = [
+  {
+    icon: GitBranch,
+    title: "Failover mesh",
+    body: "Jika satu provider mengembalikan 429 atau timeout, permintaan yang sama otomatis dicoba ke provider berikutnya dalam rantai prioritas.",
+  },
+  {
+    icon: Zap,
+    title: "Streaming tanpa buffer",
+    body: "Respons diteruskan sebagai Server-Sent Events apa adanya, sehingga token pertama sampai tanpa menunggu jawaban selesai.",
+  },
+  {
+    icon: KeyRound,
+    title: "API key berbasis hash",
+    body: "Key dibuat dengan CSPRNG dan disimpan sebagai digest SHA-256. Plaintext hanya muncul sekali, saat pembuatan.",
+  },
+  {
+    icon: Boxes,
+    title: "Kuota rolling dua lapis",
+    body: "Batas permintaan 5 jam dan 7 hari untuk model standar, ditambah kuota token harian dan mingguan untuk model frontier.",
+  },
+  {
+    icon: Fingerprint,
+    title: "Isolasi per tenant",
+    body: "Baris data dikunci oleh organisasi dengan Row Level Security, sehingga kueri lintas tenant ditolak di level database.",
+  },
+  {
+    icon: ScrollText,
+    title: "Jejak audit",
+    body: "Pembuatan key, perubahan konfigurasi, dan rekonsiliasi pembayaran dicatat sebagai entri audit yang bisa ditelusuri.",
+  },
+];
 
-  const curlSnippet = `curl https://morvexa-sistem.vercel.app/api/v1/messages \\
-  -H "Authorization: Bearer mvx_live_a1b2c3d4..." \\
+const SECURITY_FACTS = [
+  { label: "Penyimpanan API key", value: "Digest SHA-256, dibandingkan dalam waktu konstan" },
+  { label: "Kredensial provider", value: "Envelope encryption AES-256-GCM di sisi server" },
+  { label: "Session kustomer", value: "Cookie HttpOnly bertanda tangan HMAC-SHA256" },
+  { label: "Password akun", value: "scrypt dengan salt unik per akun" },
+  { label: "Isolasi data", value: "Row Level Security per organisasi" },
+  { label: "Webhook pembayaran", value: "Verifikasi signature sebelum provisioning" },
+];
+
+const STEPS = [
+  {
+    step: "01",
+    title: "Buat akun",
+    body: "Daftar dengan email dan password. Akun langsung aktif dengan kuota sandbox.",
+  },
+  {
+    step: "02",
+    title: "Terbitkan API key",
+    body: "Buat key dari portal kustomer. Plaintext ditampilkan sekali, lalu hanya digest yang disimpan.",
+  },
+  {
+    step: "03",
+    title: "Arahkan SDK Anda",
+    body: "Ganti base URL ke gateway Morvexa. Format request tetap sesuai SDK provider asal.",
+  },
+  {
+    step: "04",
+    title: "Pantau pemakaian",
+    body: "Lihat token, latency, dan riwayat failover per key dari dasbor.",
+  },
+];
+
+const CURL_SNIPPET = `curl https://morvexa-sistem.vercel.app/api/v1/messages \\
+  -H "Authorization: Bearer $MORVEXA_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{
     "model": "claude-3-7-sonnet",
-    "messages": [{"role": "user", "content": "Unified AI routing initiated."}],
-    "stream": true
+    "max_tokens": 1024,
+    "stream": true,
+    "messages": [
+      { "role": "user", "content": "Ringkas laporan kuartal ini." }
+    ]
   }'`;
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(curlSnippet);
-    setCopiedCurl(true);
-    setTimeout(() => setCopiedCurl(false), 2000);
+const NAV_LINKS = [
+  { href: "#capabilities", label: "Kemampuan" },
+  { href: "#models", label: "Model" },
+  { href: "#security", label: "Keamanan" },
+  { href: "#pricing", label: "Harga" },
+];
+
+/* ---------------------------------------------------------------------------
+   Page
+   ------------------------------------------------------------------------- */
+
+export function LandingPage() {
+  useScrollReveal();
+  const [copied, setCopied] = useState(false);
+
+  const copySnippet = async () => {
+    try {
+      await navigator.clipboard.writeText(CURL_SNIPPET);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard is unavailable over insecure origins; the code stays selectable.
+    }
   };
 
   return (
-    <div className="min-h-screen bg-[#010302] text-[#F0FEF8] selection:bg-[#1CE172]/20 selection:text-[#1CE172] font-sans">
-      {/* 1. Header Navigation */}
-      <header className="sticky top-0 z-50 border-b border-[#F0FEF8]/10 bg-[#010302]/90 backdrop-blur-md px-4 sm:px-8 h-16 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-lg bg-[#355C49] border border-[#1CE172]/40 flex items-center justify-center font-mono font-bold text-sm text-[#1CE172] shadow-[0_0_15px_rgba(28,225,114,0.25)]">
-            M
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="font-semibold tracking-tight text-base text-[#F0FEF8]">
-              Morvexa
-            </span>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#1CE172]/10 text-[#1CE172] border border-[#1CE172]/30">
-              AI SERVER MASTER
-            </span>
-          </div>
-        </div>
+    <div className="grain relative min-h-screen overflow-hidden bg-[#06070f]">
+      <AmbientField variant="hero" />
 
-        <nav className="hidden md:flex items-center gap-6 text-xs font-mono text-[#889e93]">
-          <a href="#models" className="hover:text-[#F0FEF8] transition-colors">
-            Model Registry
-          </a>
-          <a href="#architecture" className="hover:text-[#F0FEF8] transition-colors">
-            Architecture
-          </a>
-          <a href="#security" className="hover:text-[#F0FEF8] transition-colors">
-            Zero-Leak Security
-          </a>
-          <a href="#pricing" className="hover:text-[#F0FEF8] transition-colors">
-            Pricing
-          </a>
+      <div className="relative z-10">
+        <SiteHeader />
+        <Hero />
+        <ProviderStrip />
+        <CapabilitiesSection />
+        <QuickstartSection copied={copied} onCopy={copySnippet} />
+        <ModelsSection />
+        <SecuritySection />
+        <PricingSection />
+        <ClosingSection />
+        <SiteFooter />
+      </div>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------------------
+   Header
+   ------------------------------------------------------------------------- */
+
+function SiteHeader() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <header className="sticky top-0 z-50 border-b border-[#e9edfb]/8 bg-[#06070f]/80 backdrop-blur-xl">
+      <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-5 sm:px-8">
+        <Link href="/" className="flex items-center gap-2.5">
+          <span className="grid h-8 w-8 place-items-center rounded-lg border border-[#5b8def]/35 bg-[#5b8def]/12 font-mono text-[13px] font-bold text-[#9db9f5]">
+            M
+          </span>
+          <span className="text-[15px] font-semibold tracking-tight text-[#e9edfb]">Morvexa</span>
+        </Link>
+
+        <nav className="hidden items-center gap-8 md:flex">
+          {NAV_LINKS.map((link) => (
+            <a
+              key={link.href}
+              href={link.href}
+              className="text-[13.5px] text-[#8e97bc] transition-colors hover:text-[#e9edfb]"
+            >
+              {link.label}
+            </a>
+          ))}
         </nav>
 
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => onEnterDashboard("overview")}
-            className="text-xs font-mono px-3.5 py-1.5 rounded-lg border border-[#F0FEF8]/15 text-[#F0FEF8] hover:bg-[#F0FEF8]/5 transition-colors cursor-pointer"
+        <div className="flex items-center gap-2.5">
+          <Link
+            href="/login"
+            className="hidden text-[13.5px] text-[#8e97bc] transition-colors hover:text-[#e9edfb] sm:block"
           >
-            Dashboard
-          </button>
+            Masuk
+          </Link>
+          <Link href="/signup">
+            <Button size="sm">Mulai gratis</Button>
+          </Link>
+
           <button
-            onClick={() => onEnterDashboard("playground")}
-            className="text-xs font-mono font-semibold px-4 py-1.5 rounded-lg bg-[#1CE172] text-[#010302] hover:bg-[#1CE172]/90 transition-all shadow-[0_0_20px_rgba(28,225,114,0.3)] flex items-center gap-1.5 cursor-pointer"
+            type="button"
+            onClick={() => setOpen((current) => !current)}
+            aria-label="Buka menu navigasi"
+            aria-expanded={open}
+            className="grid h-9 w-9 place-items-center rounded-lg border border-[#e9edfb]/12 text-[#8e97bc] transition-colors hover:text-[#e9edfb] md:hidden"
           >
-            <span>Get API Access</span>
-            <ArrowRight className="h-3.5 w-3.5" />
+            <Layers className="h-4 w-4" />
           </button>
         </div>
-      </header>
+      </div>
 
-      {/* 2. Cinematic Hero Section with 3D Core */}
-      <section className="relative min-h-[calc(100vh-4rem)] flex flex-col justify-center px-4 sm:px-8 max-w-7xl mx-auto pt-8 pb-16 overflow-hidden">
-        {/* Glow ambient background lights */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-[#355C49]/20 rounded-full blur-[140px] pointer-events-none -z-10" />
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[300px] h-[300px] bg-[#1CE172]/15 rounded-full blur-[90px] pointer-events-none -z-10" />
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          {/* Left Hero Narrative */}
-          <div className="lg:col-span-7 space-y-6">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#1CE172]/30 bg-[#1CE172]/5 text-[#1CE172] text-xs font-mono">
-              <span className="h-2 w-2 rounded-full bg-[#1CE172] animate-pulse" />
-              <span>UNIVERSAL GATEWAY & CONTROL PLANE</span>
-            </div>
-
-            <h1 className="text-4xl sm:text-5xl xl:text-6xl font-bold tracking-tight text-[#F0FEF8] leading-[1.12]">
-              ONE GATEWAY. <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1CE172] via-[#F0FEF8] to-[#889e93]">
-                MANY AI MODELS.
-              </span>
-            </h1>
-
-            <p className="text-base sm:text-lg text-[#889e93] max-w-xl font-normal leading-relaxed">
-              Unify Anthropic, OpenAI, DeepSeek, and Gemini under a single authenticated
-              Morvexa API Key. Real-time failover, zero-buffer streaming, and precision usage quotas.
-            </p>
-
-            <div className="flex flex-wrap items-center gap-4 pt-2">
-              <button
-                onClick={() => onEnterDashboard("keys")}
-                className="px-6 py-3 rounded-xl bg-[#1CE172] text-[#010302] font-semibold text-sm hover:bg-[#1CE172]/90 transition-all shadow-[0_0_25px_rgba(28,225,114,0.35)] flex items-center gap-2 cursor-pointer"
+      {open && (
+        <nav className="border-t border-[#e9edfb]/8 bg-[#06070f]/95 px-5 py-4 md:hidden">
+          <div className="flex flex-col gap-1">
+            {NAV_LINKS.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                onClick={() => setOpen(false)}
+                className="rounded-lg px-3 py-2.5 text-sm text-[#8e97bc] transition-colors hover:bg-[#e9edfb]/5 hover:text-[#e9edfb]"
               >
-                <span>Create Morvexa Key</span>
-                <ChevronRight className="h-4 w-4" />
-              </button>
+                {link.label}
+              </a>
+            ))}
+            <Link
+              href="/login"
+              className="rounded-lg px-3 py-2.5 text-sm text-[#8e97bc] transition-colors hover:bg-[#e9edfb]/5 hover:text-[#e9edfb]"
+            >
+              Masuk
+            </Link>
+          </div>
+        </nav>
+      )}
+    </header>
+  );
+}
 
-              <button
-                onClick={() => onEnterDashboard("playground")}
-                className="px-6 py-3 rounded-xl border border-[#F0FEF8]/15 bg-[#0a0f0d]/80 text-[#F0FEF8] hover:bg-[#F0FEF8]/5 font-mono text-sm transition-all flex items-center gap-2 cursor-pointer"
-              >
-                <Terminal className="h-4 w-4 text-[#1CE172]" />
-                <span>Open Playground</span>
-              </button>
-            </div>
+/* ---------------------------------------------------------------------------
+   Hero
+   ------------------------------------------------------------------------- */
 
-            {/* Live Metrics Pill */}
-            <div className="grid grid-cols-3 gap-4 pt-6 border-t border-[#F0FEF8]/10 max-w-lg font-mono">
-              <div>
-                <div className="text-xs text-[#889e93]">LATENCY TTFT</div>
-                <div className="text-xl font-bold text-[#1CE172]">142ms</div>
-              </div>
-              <div>
-                <div className="text-xs text-[#889e93]">UPSTREAM MESH</div>
-                <div className="text-xl font-bold text-[#F0FEF8]">6 Active</div>
-              </div>
-              <div>
-                <div className="text-xs text-[#889e93]">ISOLATION</div>
-                <div className="text-xl font-bold text-[#F0FEF8]">Tenant RLS</div>
-              </div>
-            </div>
+function Hero() {
+  return (
+    <section className="relative mx-auto w-full max-w-6xl px-5 pb-16 pt-16 sm:px-8 sm:pb-24 sm:pt-24">
+      <div className="grid grid-cols-1 items-center gap-14 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:gap-10">
+        <div className="stagger">
+          <Pill tone="accent" className="mb-6">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#5b8def]" />
+            UNIVERSAL AI GATEWAY
+          </Pill>
+
+          <h1 className="text-[38px] font-semibold leading-[1.06] tracking-tight text-[#e9edfb] sm:text-[54px] lg:text-[60px]">
+            Satu endpoint.
+            <br />
+            <span className="text-gradient">Semua model frontier.</span>
+          </h1>
+
+          <p className="mt-6 max-w-xl text-[15.5px] leading-relaxed text-[#8e97bc] sm:text-base">
+            Arahkan SDK Anda ke satu base URL dan dapatkan akses ke Claude, GPT-4o, DeepSeek dan
+            Gemini dengan autentikasi tunggal, failover otomatis, serta kuota yang tercatat rapi.
+          </p>
+
+          <div className="mt-9 flex flex-wrap items-center gap-3">
+            <Link href="/signup">
+              <Button size="lg">
+                Buat akun gratis
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+            <a href="#quickstart">
+              <Button variant="secondary" size="lg">
+                <Terminal className="h-4 w-4 text-[#5b8def]" />
+                Lihat contoh request
+              </Button>
+            </a>
           </div>
 
-          {/* Right 3D Geodesic Visualizer */}
-          <div className="lg:col-span-5 h-[420px] sm:h-[480px] w-full rounded-2xl border border-[#F0FEF8]/10 bg-[#0a0f0d]/60 backdrop-blur-xl relative overflow-hidden shadow-[0_0_50px_rgba(53,92,73,0.25)] flex items-center justify-center">
-            <Cinematic3DScene className="w-full h-full" />
-            
-            {/* Overlay status tag */}
-            <div className="absolute top-4 right-4 z-20 flex items-center gap-2 px-2.5 py-1 rounded bg-[#010302]/80 border border-[#1CE172]/30 text-[11px] font-mono text-[#1CE172]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#1CE172] animate-ping" />
-              <span>RADAR ONLINE</span>
-            </div>
-
-            <div className="absolute bottom-4 left-4 right-4 z-20 flex justify-between items-center text-[11px] font-mono text-[#889e93] bg-[#010302]/70 px-3 py-1.5 rounded border border-[#F0FEF8]/5">
-              <span>Interactive Geodesic Core</span>
-              <span className="text-[#1CE172]">Zero-Buffer SSE</span>
-            </div>
+          <div className="mt-9 flex flex-wrap items-center gap-x-6 gap-y-2 text-[12.5px] text-[#5a6390]">
+            <span className="flex items-center gap-2">
+              <Check className="h-3.5 w-3.5 text-[#5b8def]" />
+              Tanpa kartu kredit untuk paket gratis
+            </span>
+            <span className="flex items-center gap-2">
+              <Check className="h-3.5 w-3.5 text-[#5b8def]" />
+              Format kompatibel Anthropic &amp; OpenAI
+            </span>
           </div>
         </div>
-      </section>
 
-      {/* 3. Developer Quickstart Code Section */}
-      <section className="py-16 border-y border-[#F0FEF8]/10 bg-[#0a0f0d]/40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-8">
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
-            <div>
-              <div className="text-xs font-mono text-[#1CE172] mb-1">DEVELOPER INGRESS</div>
-              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">One Endpoint. Unified SDK.</h2>
-            </div>
-            <div className="text-xs font-mono text-[#889e93]">
-              Standard Bearer Token Auth | Constant-time SHA-256
-            </div>
+        {/* The overlay chips name only what is actually drawn, so the
+            composition stays honest rather than implying live telemetry. */}
+        <div className="relative">
+          <div className="relative mx-auto h-[20rem] w-full max-w-[26rem] sm:h-[26rem] lg:h-[30rem] lg:max-w-none">
+            <AgentCore className="h-full w-full" />
           </div>
 
-          <div className="rounded-xl border border-[#F0FEF8]/15 bg-[#010302] overflow-hidden shadow-2xl">
-            <div className="flex items-center justify-between px-4 py-2.5 bg-[#0a0f0d] border-b border-[#F0FEF8]/10">
-              <div className="flex items-center gap-2">
-                <span className="h-3 w-3 rounded-full bg-red-500/80" />
-                <span className="h-3 w-3 rounded-full bg-yellow-500/80" />
-                <span className="h-3 w-3 rounded-full bg-green-500/80" />
-                <span className="text-xs font-mono text-[#889e93] ml-2">curl-messages.sh</span>
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-wrap justify-center gap-2">
+            <Pill>
+              <Sparkles className="h-3 w-3 text-[#5b8def]" />
+              Mesh geodesik interaktif
+            </Pill>
+            <Pill>Streaming SSE</Pill>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------------------------------------------------------------------------
+   Provider strip
+   ------------------------------------------------------------------------- */
+
+function ProviderStrip() {
+  return (
+    <section className="border-y border-[#e9edfb]/8 bg-[#06070f]/50">
+      <div className="mx-auto w-full max-w-6xl px-5 py-8 sm:px-8">
+        <p className="text-center font-mono text-[11px] uppercase tracking-[0.22em] text-[#5a6390]">
+          Provider yang saat ini dirutekan gateway
+        </p>
+        <div className="mt-6 grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-3 lg:grid-cols-5">
+          {PROVIDERS.map((provider) => (
+            <div key={provider.name} className="text-center sm:text-left">
+              <div className="text-[14.5px] font-semibold text-[#e9edfb]">{provider.name}</div>
+              <div className="mt-0.5 text-[11.5px] leading-snug text-[#5a6390]">
+                {provider.models}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------------------------------------------------------------------------
+   Capabilities
+   ------------------------------------------------------------------------- */
+
+function CapabilitiesSection() {
+  return (
+    <section id="capabilities" className="mx-auto w-full max-w-6xl px-5 py-20 sm:px-8 sm:py-28">
+      <div className="reveal max-w-2xl">
+        <Eyebrow>Kemampuan gateway</Eyebrow>
+        <h2 className="mt-4 text-[30px] font-semibold leading-tight tracking-tight text-[#e9edfb] sm:text-[38px]">
+          Yang dikerjakan gateway di antara aplikasi Anda dan provider
+        </h2>
+        <p className="mt-4 text-[15px] leading-relaxed text-[#8e97bc]">
+          Morvexa bukan sekadar penerus permintaan. Setiap panggilan melewati rantai kebijakan:
+          autentikasi key, pengecekan kuota, pemilihan provider, dan pencatatan jejak.
+        </p>
+      </div>
+
+      <div className="mt-14 grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-[#e9edfb]/8 bg-[#e9edfb]/8 sm:grid-cols-2 lg:grid-cols-3">
+        {CAPABILITIES.map((item) => (
+          <div
+            key={item.title}
+            className="reveal group bg-[#080a14] p-7 transition-colors duration-300 hover:bg-[#0b0d1a]"
+          >
+            <item.icon
+              className="h-5 w-5 text-[#5b8def] transition-transform duration-300 group-hover:-translate-y-0.5"
+              aria-hidden="true"
+            />
+            <h3 className="mt-5 text-[15.5px] font-semibold text-[#e9edfb]">{item.title}</h3>
+            <p className="mt-2.5 text-[13.5px] leading-relaxed text-[#8e97bc]">{item.body}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/* ---------------------------------------------------------------------------
+   Quickstart
+   ------------------------------------------------------------------------- */
+
+function QuickstartSection({ copied, onCopy }: { copied: boolean; onCopy: () => void }) {
+  return (
+    <section
+      id="quickstart"
+      className="border-y border-[#e9edfb]/8 bg-[linear-gradient(180deg,rgba(11,13,26,0.6),rgba(6,7,15,0.2))]"
+    >
+      <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-12 px-5 py-20 sm:px-8 sm:py-28 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
+        <div className="reveal">
+          <Eyebrow>Mulai dalam empat langkah</Eyebrow>
+          <h2 className="mt-4 text-[30px] font-semibold leading-tight tracking-tight text-[#e9edfb] sm:text-[38px]">
+            Kompatibel dengan SDK yang sudah Anda pakai
+          </h2>
+          <p className="mt-4 text-[15px] leading-relaxed text-[#8e97bc]">
+            Endpoint <code className="font-mono text-[13px] text-[#9db9f5]">/api/v1/messages</code>{" "}
+            mengikuti skema Anthropic, dan{" "}
+            <code className="font-mono text-[13px] text-[#9db9f5]">
+              /api/v1/chat/completions
+            </code>{" "}
+            mengikuti skema OpenAI.
+          </p>
+
+          <ol className="mt-10 space-y-7">
+            {STEPS.map((step) => (
+              <li key={step.step} className="flex gap-5">
+                <span className="mt-0.5 font-mono text-[12px] text-[#5b8def]">{step.step}</span>
+                <div>
+                  <h3 className="text-[14.5px] font-semibold text-[#e9edfb]">{step.title}</h3>
+                  <p className="mt-1 text-[13.5px] leading-relaxed text-[#8e97bc]">{step.body}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+
+        <div className="reveal lg:sticky lg:top-24 lg:self-start">
+          <div className="overflow-hidden rounded-2xl border border-[#e9edfb]/10 bg-[#04050c]">
+            <div className="flex items-center justify-between border-b border-[#e9edfb]/8 px-4 py-3">
+              <div className="flex items-center gap-2.5">
+                <Terminal className="h-3.5 w-3.5 text-[#5b8def]" aria-hidden="true" />
+                <span className="font-mono text-[12px] text-[#8e97bc]">POST /api/v1/messages</span>
               </div>
               <button
-                onClick={copyToClipboard}
-                className="flex items-center gap-1.5 text-xs font-mono text-[#889e93] hover:text-[#1CE172] transition-colors cursor-pointer"
+                type="button"
+                onClick={onCopy}
+                className="flex items-center gap-1.5 rounded-lg px-2 py-1 font-mono text-[11.5px] text-[#8e97bc] transition-colors hover:bg-[#e9edfb]/5 hover:text-[#e9edfb]"
               >
-                {copiedCurl ? (
+                {copied ? (
                   <>
-                    <Check className="h-3.5 w-3.5 text-[#1CE172]" />
-                    <span className="text-[#1CE172]">Copied!</span>
+                    <Check className="h-3.5 w-3.5 text-emerald-400" />
+                    Tersalin
                   </>
                 ) : (
                   <>
                     <Copy className="h-3.5 w-3.5" />
-                    <span>Copy Request</span>
+                    Salin
                   </>
                 )}
               </button>
             </div>
-            <pre className="p-4 sm:p-6 text-xs sm:text-sm font-mono text-[#1CE172] overflow-x-auto leading-relaxed">
-              <code>{curlSnippet}</code>
+            <pre className="overflow-x-auto p-5 font-mono text-[12.5px] leading-relaxed text-[#b9c4e6]">
+              <code>{CURL_SNIPPET}</code>
             </pre>
           </div>
-        </div>
-      </section>
 
-      {/* 4. Model Registry & Capabilities */}
-      <section id="models" className="py-20 max-w-7xl mx-auto px-4 sm:px-8">
-        <div className="text-center max-w-2xl mx-auto mb-16">
-          <div className="text-xs font-mono text-[#1CE172] mb-2 uppercase">Verified Models</div>
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">Ecosystem Compatibility</h2>
-          <p className="text-[#889e93] text-sm mt-3">
-            Switch providers instantly without altering client client-side schemas.
+          <p className="mt-4 text-[12.5px] leading-relaxed text-[#5a6390]">
+            Simpan key sebagai environment variable. Jangan pernah menaruhnya di kode yang dikirim
+            ke browser.
           </p>
         </div>
+      </div>
+    </section>
+  );
+}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[
-            {
-              id: "claude-3-7-sonnet",
-              provider: "Anthropic",
-              name: "Claude 3.7 Sonnet",
-              desc: "Hybrid reasoning architecture with adaptive thinking depth.",
-              context: "200k tokens",
-              status: "Optimal",
-            },
-            {
-              id: "deepseek-chat",
-              provider: "DeepSeek",
-              name: "DeepSeek V3",
-              desc: "Ultra-efficient reasoning engine with minimal token overhead.",
-              context: "64k tokens",
-              status: "Optimal",
-            },
-            {
-              id: "gpt-4o",
-              provider: "OpenAI",
-              name: "GPT-4o (Omni)",
-              desc: "Multimodal high-throughput standard for agentic tasks.",
-              context: "128k tokens",
-              status: "Optimal",
-            },
-            {
-              id: "gemini-2.0-flash",
-              provider: "Google",
-              name: "Gemini 2.0 Flash",
-              desc: "High-concurrency streaming with ultra-large context.",
-              context: "1.0M tokens",
-              status: "Optimal",
-            },
-          ].map((m) => (
-            <div
-              key={m.id}
-              className="rounded-xl border border-[#F0FEF8]/10 bg-[#0a0f0d] p-6 hover:border-[#1CE172]/40 transition-all group flex flex-col justify-between"
-            >
-              <div>
-                <div className="flex items-center justify-between text-xs font-mono mb-3">
-                  <span className="text-[#889e93]">{m.provider}</span>
-                  <span className="text-[#1CE172] bg-[#1CE172]/10 px-2 py-0.5 rounded text-[10px] border border-[#1CE172]/30">
-                    {m.status}
-                  </span>
-                </div>
-                <h3 className="font-bold text-lg text-[#F0FEF8] group-hover:text-[#1CE172] transition-colors">
-                  {m.name}
-                </h3>
-                <p className="text-xs text-[#889e93] mt-2 leading-relaxed">
-                  {m.desc}
-                </p>
-              </div>
+/* ---------------------------------------------------------------------------
+   Models
+   ------------------------------------------------------------------------- */
 
-              <div className="pt-4 mt-6 border-t border-[#F0FEF8]/5 flex items-center justify-between text-xs font-mono text-[#889e93]">
-                <span>Window:</span>
-                <span className="text-[#F0FEF8]">{m.context}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* 5. Security & Zero-Leak Credential Guard */}
-      <section id="security" className="py-20 border-t border-[#F0FEF8]/10 bg-[#0a0f0d]/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div className="space-y-6">
-              <div className="text-xs font-mono text-[#1CE172] uppercase">Security Architecture</div>
-              <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
-                Master Secret Boundaries. Zero Leakage.
-              </h2>
-              <p className="text-sm text-[#889e93] leading-relaxed">
-                Morvexa never stores plaintext API secrets. Customer keys are hashed with
-                authoritative SHA-256 standard and verified in constant time. Third-party provider
-                secrets are guarded by server-side envelope isolation.
-              </p>
-
-              <div className="space-y-3 font-mono text-xs">
-                <div className="flex items-start gap-3 p-3 rounded-lg border border-[#F0FEF8]/10 bg-[#010302]">
-                  <CheckCircle2 className="h-4 w-4 text-[#1CE172] shrink-0 mt-0.5" />
-                  <div>
-                    <span className="text-[#F0FEF8] font-semibold">Display Plaintext Once:</span>
-                    <p className="text-[#889e93] mt-0.5">Secrets are only visible during creation and never recorded in plain database fields or client localStorage.</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3 p-3 rounded-lg border border-[#F0FEF8]/10 bg-[#010302]">
-                  <CheckCircle2 className="h-4 w-4 text-[#1CE172] shrink-0 mt-0.5" />
-                  <div>
-                    <span className="text-[#F0FEF8] font-semibold">Tenant Isolation RLS:</span>
-                    <p className="text-[#889e93] mt-0.5">Transactions, quota records, and audit events strictly enforce organization boundaries.</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3 p-3 rounded-lg border border-[#F0FEF8]/10 bg-[#010302]">
-                  <CheckCircle2 className="h-4 w-4 text-[#1CE172] shrink-0 mt-0.5" />
-                  <div>
-                    <span className="text-[#F0FEF8] font-semibold">Token Bucket Rate Limiting:</span>
-                    <p className="text-[#889e93] mt-0.5">Guards against DDoS and runaway billing spikes with dynamic retry-after headers.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-8 rounded-2xl border border-[#F0FEF8]/10 bg-[#010302] space-y-6">
-              <div className="flex items-center justify-between border-b border-[#F0FEF8]/10 pb-4">
-                <span className="text-xs font-mono text-[#889e93]">THREAT MITIGATION</span>
-                <span className="text-xs font-mono text-[#1CE172]">OWASP COMPLIANT</span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 text-xs font-mono">
-                <div className="p-4 rounded-lg bg-[#0a0f0d] border border-[#F0FEF8]/5">
-                  <div className="text-[#889e93]">Hashing Method</div>
-                  <div className="text-[#F0FEF8] font-bold mt-1">SHA-256 (CSPRNG)</div>
-                </div>
-                <div className="p-4 rounded-lg bg-[#0a0f0d] border border-[#F0FEF8]/5">
-                  <div className="text-[#889e93]">BYOK Envelope</div>
-                  <div className="text-[#F0FEF8] font-bold mt-1">AES-256-GCM</div>
-                </div>
-                <div className="p-4 rounded-lg bg-[#0a0f0d] border border-[#F0FEF8]/5">
-                  <div className="text-[#889e93]">IDOR Protection</div>
-                  <div className="text-[#1CE172] font-bold mt-1">Active on All Endpoints</div>
-                </div>
-                <div className="p-4 rounded-lg bg-[#0a0f0d] border border-[#F0FEF8]/5">
-                  <div className="text-[#889e93]">Cron Security</div>
-                  <div className="text-[#1CE172] font-bold mt-1">Bearer Auth Guarded</div>
-                </div>
-              </div>
-
-              <button
-                onClick={() => onEnterDashboard("guardrails")}
-                className="w-full py-2.5 rounded-lg border border-[#1CE172]/40 text-[#1CE172] hover:bg-[#1CE172]/10 font-mono text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <span>Inspect Security Baseline</span>
-                <ChevronRight className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 6. Configurable Pricing Section */}
-      <section id="pricing" className="py-20 max-w-7xl mx-auto px-4 sm:px-8">
-        <div className="text-center max-w-2xl mx-auto mb-16">
-          <div className="text-xs font-mono text-[#1CE172] mb-2 uppercase">Transparent Plans</div>
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">Flexible Infrastructure</h2>
-          <p className="text-[#889e93] text-sm mt-3">
-            Start free with sandbox capabilities, scale to dedicated proxy clusters.
+function ModelsSection() {
+  return (
+    <section id="models" className="mx-auto w-full max-w-6xl px-5 py-20 sm:px-8 sm:py-28">
+      <div className="reveal flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+        <div className="max-w-2xl">
+          <Eyebrow>Model terdaftar</Eyebrow>
+          <h2 className="mt-4 text-[30px] font-semibold leading-tight tracking-tight text-[#e9edfb] sm:text-[38px]">
+            Registry yang dipakai router
+          </h2>
+          <p className="mt-4 text-[15px] leading-relaxed text-[#8e97bc]">
+            Daftar ini dibaca langsung dari registry runtime gateway, jadi apa yang Anda lihat di
+            sini adalah yang benar-benar bisa dipanggil.
           </p>
         </div>
+        <Link
+          href="/catalog"
+          className="shrink-0 text-[13.5px] font-medium text-[#9db9f5] underline-offset-4 transition-colors hover:text-[#e9edfb] hover:underline"
+        >
+          Buka katalog API →
+        </Link>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {[
-            {
-              name: "Developer",
-              price: "Rp 0",
-              period: "/ month",
-              desc: "Ideal for testing, local evaluation, and prototyping.",
-              features: [
-                "100 Standard Requests / 5h",
-                "157k Daily Token Allowance",
-                "Community Shared Mesh",
-                "Midtrans Sandbox Checkout",
-              ],
-              cta: "Launch Sandbox",
-              popular: false,
-              tab: "playground" as NavTabId,
-            },
-            {
-              name: "Pro Master",
-              price: "Rp 750.000",
-              period: "/ month",
-              desc: "For production startups requiring zero-buffer SLA and failover.",
-              features: [
-                "Unlimited Model Routing",
-                "Multi-Provider Failover Mesh",
-                "60 RPM Rate Limit Enforcement",
-                "Authoritative Audit Ledger",
-                "Automated Reconciliation",
-              ],
-              cta: "Upgrade to Pro",
-              popular: true,
-              tab: "billing" as NavTabId,
-            },
-            {
-              name: "Dedicated Apex",
-              price: "Rp 2.500.000",
-              period: "/ month",
-              desc: "Dedicated enterprise proxy host with isolated network egress.",
-              features: [
-                "Custom Dedicated Egress Host",
-                "BYOK Secure Vault (AES-256)",
-                "Custom RPM & Rate Allowlist",
-                "Priority Singapore Low-Latency Route",
-                "Dedicated Health Probing Daemon",
-              ],
-              cta: "Deploy Dedicated",
-              popular: false,
-              tab: "infrastructure" as NavTabId,
-            },
-          ].map((plan, idx) => (
-            <div
-              key={idx}
-              className={`rounded-2xl p-8 border flex flex-col justify-between relative ${
-                plan.popular
-                  ? "border-[#1CE172] bg-[#0a0f0d] shadow-[0_0_35px_rgba(28,225,114,0.15)]"
-                  : "border-[#F0FEF8]/10 bg-[#010302]"
-              }`}
-            >
-              {plan.popular && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-[#1CE172] text-[#010302] text-[10px] font-mono font-bold uppercase tracking-wider">
-                  RECOMMENDED
-                </div>
-              )}
-
-              <div>
-                <h3 className="text-xl font-bold text-[#F0FEF8]">{plan.name}</h3>
-                <p className="text-xs text-[#889e93] mt-2">{plan.desc}</p>
-
-                <div className="mt-6 flex items-baseline gap-1">
-                  <span className="text-3xl font-extrabold text-[#F0FEF8]">{plan.price}</span>
-                  <span className="text-xs font-mono text-[#889e93]">{plan.period}</span>
-                </div>
-
-                <div className="space-y-3 mt-8 font-mono text-xs">
-                  {plan.features.map((feat, fIdx) => (
-                    <div key={fIdx} className="flex items-center gap-2.5 text-[#F0FEF8]">
-                      <Check className="h-3.5 w-3.5 text-[#1CE172] shrink-0" />
-                      <span>{feat}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <button
-                onClick={() => onEnterDashboard(plan.tab)}
-                className={`w-full mt-8 py-3 rounded-xl font-mono text-xs font-semibold transition-all cursor-pointer ${
-                  plan.popular
-                    ? "bg-[#1CE172] text-[#010302] hover:bg-[#1CE172]/90 shadow-[0_0_20px_rgba(28,225,114,0.3)]"
-                    : "border border-[#F0FEF8]/20 text-[#F0FEF8] hover:bg-[#F0FEF8]/5"
-                }`}
-              >
-                {plan.cta}
-              </button>
+      <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {MODEL_CARDS.map((model) => (
+          <Panel
+            key={model.id}
+            className="reveal group flex flex-col p-6 transition-colors duration-300 hover:border-[#5b8def]/35"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#5a6390]">
+                {model.provider}
+              </span>
+              <Pill tone={model.costTier === "high" ? "neutral" : "accent"}>
+                {COST_TIER_LABELS[model.costTier]}
+              </Pill>
             </div>
-          ))}
-        </div>
-      </section>
 
-      {/* 7. Footer */}
-      <footer className="border-t border-[#F0FEF8]/10 bg-[#010302] py-12 px-4 sm:px-8">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6 text-xs font-mono text-[#889e93]">
-          <div className="flex items-center gap-3">
-            <span className="font-bold text-[#F0FEF8]">Morvexa</span>
-            <span>—</span>
-            <span>AI Server Master Architecture</span>
-          </div>
+            <h3 className="mt-4 text-[16px] font-semibold text-[#e9edfb]">{model.name}</h3>
 
-          <div className="flex items-center gap-6">
-            <button
-              onClick={() => onEnterDashboard("overview")}
-              className="hover:text-[#1CE172] transition-colors cursor-pointer"
-            >
-              Control Plane
-            </button>
-            <a
-              href="/api/v1/metrics"
-              target="_blank"
-              rel="noreferrer"
-              className="hover:text-[#1CE172] transition-colors"
-            >
-              Live Telemetry Status
-            </a>
-            <a
-              href="https://github.com"
-              target="_blank"
-              rel="noreferrer"
-              className="hover:text-[#1CE172] transition-colors"
-            >
-              Documentation
-            </a>
-          </div>
+            <div className="mt-5 space-y-2.5 border-t border-[#e9edfb]/8 pt-4 font-mono text-[12px]">
+              <Row label="Konteks" value={model.context} />
+              <Row label="Streaming" value={model.streaming ? "Didukung" : "Tidak"} />
+              <Row label="Tool calling" value={model.tools ? "Didukung" : "Tidak"} />
+            </div>
+          </Panel>
+        ))}
+      </div>
+    </section>
+  );
+}
 
-          <div className="text-[11px] text-[#4d6357]">
-            © {new Date().getFullYear()} Morvexa. Free-Tier First, Universal AI Gateway.
-          </div>
-        </div>
-      </footer>
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-[#5a6390]">{label}</span>
+      <span className="text-[#e9edfb]">{value}</span>
     </div>
+  );
+}
+
+/* ---------------------------------------------------------------------------
+   Security
+   ------------------------------------------------------------------------- */
+
+function SecuritySection() {
+  return (
+    <section
+      id="security"
+      className="border-y border-[#e9edfb]/8 bg-[linear-gradient(180deg,rgba(11,13,26,0.5),rgba(6,7,15,0.1))]"
+    >
+      <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-14 px-5 py-20 sm:px-8 sm:py-28 lg:grid-cols-2 lg:gap-16">
+        <div className="reveal">
+          <Eyebrow>Model keamanan</Eyebrow>
+          <h2 className="mt-4 text-[30px] font-semibold leading-tight tracking-tight text-[#e9edfb] sm:text-[38px]">
+            Rahasia tidak pernah disimpan dalam bentuk terbaca
+          </h2>
+          <p className="mt-4 text-[15px] leading-relaxed text-[#8e97bc]">
+            Morvexa memisahkan tiga jenis rahasia dan menangani masing-masing secara berbeda: API
+            key kustomer, kredensial provider, dan session login.
+          </p>
+
+          <div className="mt-9 space-y-4">
+            <div className="flex items-start gap-3">
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#5b8def]" aria-hidden="true" />
+              <p className="text-[13.5px] leading-relaxed text-[#8e97bc]">
+                <span className="text-[#e9edfb]">Ditampilkan sekali.</span> Plaintext API key hanya
+                ada pada respons pembuatan, lalu tidak dapat diambil kembali.
+              </p>
+            </div>
+            <div className="flex items-start gap-3">
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#5b8def]" aria-hidden="true" />
+              <p className="text-[13.5px] leading-relaxed text-[#8e97bc]">
+                <span className="text-[#e9edfb]">Session di cookie HttpOnly.</span> JavaScript di
+                browser tidak dapat membaca token sesi Anda.
+              </p>
+            </div>
+            <div className="flex items-start gap-3">
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#5b8def]" aria-hidden="true" />
+              <p className="text-[13.5px] leading-relaxed text-[#8e97bc]">
+                <span className="text-[#e9edfb]">Rate limit berlapis.</span> Token bucket per key
+                plus pembatasan percobaan login untuk menahan credential stuffing.
+              </p>
+            </div>
+          </div>
+
+          <Link
+            href="/signup"
+            className="mt-9 inline-flex items-center gap-2 text-[13.5px] font-medium text-[#9db9f5] underline-offset-4 transition-colors hover:text-[#e9edfb] hover:underline"
+          >
+            <ShieldCheck className="h-4 w-4" />
+            Lihat sendiri dari dalam portal
+          </Link>
+        </div>
+
+        <Panel className="reveal overflow-hidden">
+          <div className="flex items-center justify-between border-b border-[#e9edfb]/8 px-6 py-4">
+            <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#8e97bc]">
+              Ringkasan implementasi
+            </span>
+            <Pill tone="positive">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              Aktif
+            </Pill>
+          </div>
+
+          <dl className="divide-y divide-[#e9edfb]/8">
+            {SECURITY_FACTS.map((fact) => (
+              <div key={fact.label} className="px-6 py-4">
+                <dt className="font-mono text-[11.5px] uppercase tracking-[0.12em] text-[#5a6390]">
+                  {fact.label}
+                </dt>
+                <dd className="mt-1.5 text-[13.5px] leading-relaxed text-[#e9edfb]">
+                  {fact.value}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </Panel>
+      </div>
+    </section>
+  );
+}
+
+/* ---------------------------------------------------------------------------
+   Pricing
+   ------------------------------------------------------------------------- */
+
+function PricingSection() {
+  return (
+    <section id="pricing" className="mx-auto w-full max-w-6xl px-5 py-20 sm:px-8 sm:py-28">
+      <div className="reveal mx-auto max-w-2xl text-center">
+        <Eyebrow className="justify-center">Harga</Eyebrow>
+        <h2 className="mt-4 text-[30px] font-semibold leading-tight tracking-tight text-[#e9edfb] sm:text-[38px]">
+          Batas yang jelas, tanpa biaya tersembunyi
+        </h2>
+        <p className="mt-4 text-[15px] leading-relaxed text-[#8e97bc]">
+          Setiap paket menetapkan rate limit per menit dan kuota token harian. Angka di bawah sama
+          dengan yang ditegakkan gateway.
+        </p>
+      </div>
+
+      <div className="mt-14 grid grid-cols-1 gap-6 lg:grid-cols-3">
+        {PLAN_CARDS.map((plan) => (
+          <div
+            key={plan.code}
+            className={`reveal relative flex flex-col rounded-2xl p-7 transition-colors duration-300 ${
+              plan.featured
+                ? "border border-[#5b8def]/45 bg-[linear-gradient(165deg,rgba(17,20,42,0.95),rgba(11,13,26,0.98))]"
+                : "border border-[#e9edfb]/10 bg-[#080a14] hover:border-[#e9edfb]/20"
+            }`}
+          >
+            {plan.featured && (
+              <span className="absolute -top-3 left-7 rounded-full border border-[#5b8def]/40 bg-[#0b0d1a] px-3 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-[#9db9f5]">
+                Paling populer
+              </span>
+            )}
+
+            <h3 className="text-[17px] font-semibold text-[#e9edfb]">{plan.name}</h3>
+            <p className="mt-2 min-h-[2.5rem] text-[13px] leading-relaxed text-[#8e97bc]">
+              {plan.blurb}
+            </p>
+
+            <div className="mt-6 flex items-baseline gap-1.5">
+              <span className="text-[32px] font-semibold tracking-tight text-[#e9edfb]">
+                {formatIdr(plan.priceIdr)}
+              </span>
+              {plan.priceIdr > 0 && (
+                <span className="font-mono text-[12px] text-[#5a6390]">/ bulan</span>
+              )}
+            </div>
+
+            <ul className="mt-7 flex-1 space-y-3 border-t border-[#e9edfb]/8 pt-6 text-[13.5px]">
+              <Feature>{plan.rpm} permintaan / menit</Feature>
+              <Feature>{formatTokens(plan.dailyTokens)} token per hari</Feature>
+              <Feature>{plan.modelCount} model dalam registry</Feature>
+              <Feature>Riwayat pemakaian &amp; jejak audit</Feature>
+            </ul>
+
+            <Link href="/signup" className="mt-8 block">
+              <Button variant={plan.featured ? "primary" : "secondary"} className="w-full">
+                {plan.priceIdr === 0 ? "Mulai gratis" : "Pilih paket ini"}
+              </Button>
+            </Link>
+          </div>
+        ))}
+      </div>
+
+      <p className="reveal mt-8 text-center text-[12.5px] text-[#5a6390]">
+        Paket token per model (DeepSeek, Claude, GPT, Gemini) tersedia di dalam portal kustomer.
+      </p>
+    </section>
+  );
+}
+
+function Feature({ children }: { children: React.ReactNode }) {
+  return (
+    <li className="flex items-start gap-2.5 text-[#8e97bc]">
+      <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#5b8def]" aria-hidden="true" />
+      <span>{children}</span>
+    </li>
+  );
+}
+
+/* ---------------------------------------------------------------------------
+   Closing + footer
+   ------------------------------------------------------------------------- */
+
+function ClosingSection() {
+  return (
+    <section className="mx-auto w-full max-w-6xl px-5 pb-20 sm:px-8 sm:pb-28">
+      <div className="reveal relative overflow-hidden rounded-3xl border border-[#e9edfb]/10 bg-[linear-gradient(150deg,rgba(42,53,118,0.55),rgba(11,13,26,0.9)_55%,rgba(192,84,159,0.18))] px-8 py-14 text-center sm:px-16">
+        <div className="animate-drift pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-[#5b8def]/20 blur-[90px]" />
+
+        <h2 className="relative text-[28px] font-semibold leading-tight tracking-tight text-[#e9edfb] sm:text-[36px]">
+          Mulai dari kuota gratis, naikkan saat trafik Anda naik
+        </h2>
+        <p className="relative mx-auto mt-4 max-w-xl text-[15px] leading-relaxed text-[#c3cbe8]">
+          Buat akun, terbitkan key, dan kirim request pertama Anda hari ini.
+        </p>
+
+        <div className="relative mt-9 flex flex-wrap items-center justify-center gap-3">
+          <Link href="/signup">
+            <Button size="lg">
+              Buat akun gratis
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </Link>
+          <Link href="/login">
+            <Button variant="secondary" size="lg">
+              Masuk ke akun saya
+            </Button>
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function SiteFooter() {
+  return (
+    <footer className="border-t border-[#e9edfb]/8">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-5 py-10 sm:px-8 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex items-center gap-2.5">
+          <span className="grid h-7 w-7 place-items-center rounded-lg border border-[#5b8def]/30 bg-[#5b8def]/10 font-mono text-[11px] font-bold text-[#9db9f5]">
+            M
+          </span>
+          <span className="text-[13.5px] text-[#8e97bc]">Morvexa — Universal AI Gateway</span>
+        </div>
+
+        <nav className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[12.5px] text-[#8e97bc]">
+          <a href="#capabilities" className="transition-colors hover:text-[#e9edfb]">
+            Kemampuan
+          </a>
+          <a href="#models" className="transition-colors hover:text-[#e9edfb]">
+            Model
+          </a>
+          <Link href="/catalog" className="transition-colors hover:text-[#e9edfb]">
+            Katalog API
+          </Link>
+          <a
+            href="/api/v1/metrics"
+            target="_blank"
+            rel="noreferrer"
+            className="transition-colors hover:text-[#e9edfb]"
+          >
+            Status endpoint
+          </a>
+        </nav>
+
+        <p className="font-mono text-[11.5px] text-[#5a6390]">
+          © {new Date().getFullYear()} Morvexa
+        </p>
+      </div>
+    </footer>
   );
 }

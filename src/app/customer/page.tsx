@@ -1,226 +1,203 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, CheckCircle2, Coins, LogOut, User } from "lucide-react";
 import { CustomerBentoPortal } from "@/components/customer/CustomerBentoPortal";
 import { CustomerCheckoutModal } from "@/components/customer/CustomerCheckoutModal";
 import { CustomerModelCheckoutModal } from "@/components/customer/CustomerModelCheckoutModal";
-import { CustomerAuthModal } from "@/components/customer/CustomerAuthModal";
-import {
-  CheckCircle2,
-  ArrowLeft,
-  KeyRound,
-  Sparkles,
-  User,
-  LogOut,
-  Coins,
-  ShieldCheck,
-} from "lucide-react";
-import Link from "next/link";
-import type { ModelProduct, CustomerUser } from "@/lib/customer/store";
+import { AmbientField } from "@/components/visual/AmbientField";
+import { Button, Spinner } from "@/components/ui/primitives";
+import { useSession } from "@/lib/hooks/useSession";
+import { providerLabel } from "@/lib/validation/auth";
+import type { ModelProduct } from "@/lib/customer/catalog";
+
+interface IssuedKeyNotice {
+  email: string;
+  keySecret: string;
+  title: string;
+}
 
 export default function CustomerPortalPage() {
+  const router = useRouter();
+  const { loading, authenticated, user, signOut } = useSession();
+
   const [selectedCheckoutPlan, setSelectedCheckoutPlan] = useState<string | null>(null);
   const [selectedModelProduct, setSelectedModelProduct] = useState<ModelProduct | null>(null);
-  const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [authModalMode, setAuthModalMode] = useState<"login" | "register">("login");
+  const [issuedKey, setIssuedKey] = useState<IssuedKeyNotice | null>(null);
 
-  const [activeCustomer, setActiveCustomer] = useState<CustomerUser | null>(null);
-  const [isCheckingSession, setIsCheckingSession] = useState(true);
-
-  const [dispatchedNotification, setDispatchedNotification] = useState<{
-    email: string;
-    keySecret: string;
-    title: string;
-  } | null>(null);
-
-  useEffect(() => {
-    // Check local session
-    const saved = localStorage.getItem("morvexa_customer_session");
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (parsed && parsed.email) {
-          setActiveCustomer(parsed);
-          setAuthModalOpen(false);
-        } else {
-          setAuthModalOpen(true);
-        }
-      } catch {
-        setAuthModalOpen(true);
-      }
-    } else {
-      setAuthModalOpen(true);
-    }
-    setIsCheckingSession(false);
-  }, []);
-
-  const handleAuthSuccess = (user: CustomerUser) => {
-    setActiveCustomer(user);
-    localStorage.setItem("morvexa_customer_session", JSON.stringify(user));
-    setAuthModalOpen(false);
+  const handleLogout = async () => {
+    await signOut();
+    router.replace("/login");
   };
 
-  const handleLogout = () => {
-    setActiveCustomer(null);
-    localStorage.removeItem("morvexa_customer_session");
-    setAuthModalOpen(true);
-    setAuthModalMode("login");
-  };
-
-  const handlePlanPaymentSettled = (res: any) => {
-    if (res.autoProvision) {
-      setDispatchedNotification({
-        email: res.autoProvision.emailSentTo,
-        keySecret: res.autoProvision.rawSecret,
-        title: `PAKET ${res.autoProvision.apiKey.name} BERHASIL DITERBITKAN!`,
+  const handlePlanSettled = (result: any) => {
+    if (result?.autoProvision) {
+      setIssuedKey({
+        email: result.autoProvision.emailSentTo,
+        keySecret: result.autoProvision.rawSecret,
+        title: `Paket ${result.autoProvision.apiKey.name} berhasil diterbitkan`,
       });
     }
   };
 
-  const handleModelPaymentSuccess = (res: any) => {
-    if (res.apiKey) {
-      setDispatchedNotification({
-        email: res.order.customerEmail,
-        keySecret: res.apiKey.rawSecret,
-        title: `TOKEN ${res.order.productName} BERHASIL DITERBITKAN!`,
+  const handleModelPaymentSuccess = (result: any) => {
+    if (result?.apiKey) {
+      setIssuedKey({
+        email: result.order.customerEmail,
+        keySecret: result.apiKey.rawSecret,
+        title: `Token ${result.order.productName} berhasil diterbitkan`,
       });
     }
   };
+
+  // The session cookie is HttpOnly, so gate on the server probe rather than
+  // localStorage. Signed-out visitors are sent to /login and returned here.
+  if (loading) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-[#06070f]">
+        <div className="flex items-center gap-3 text-sm text-[#8e97bc]">
+          <Spinner className="text-[#5b8def]" />
+          Memeriksa sesi…
+        </div>
+      </div>
+    );
+  }
+
+  if (!authenticated || !user) {
+    return (
+      <div className="grain relative grid min-h-screen place-items-center overflow-hidden bg-[#06070f] px-5">
+        <AmbientField variant="hero" />
+        <div className="panel relative z-10 w-full max-w-md rounded-2xl p-8 text-center">
+          <h1 className="text-xl font-semibold text-[#e9edfb]">Sesi Anda sudah berakhir</h1>
+          <p className="mt-2 text-sm leading-relaxed text-[#8e97bc]">
+            Masuk kembali untuk melanjutkan ke portal kustomer.
+          </p>
+          <div className="mt-6 flex flex-col gap-2.5 sm:flex-row sm:justify-center">
+            <Button onClick={() => router.replace("/login?next=/customer")}>Masuk ke akun</Button>
+            <Button variant="secondary" onClick={() => router.replace("/signup")}>
+              Daftar akun baru
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const initials = user.name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
 
   return (
-    <div className="min-h-screen bg-[#010302] text-[#F0FEF8] flex flex-col font-sans selection:bg-[#1CE172]/20 selection:text-[#1CE172]">
-      {/* Customer Header */}
-      <header className="border-b border-[#F0FEF8]/10 bg-[#0a0f0d]/95 backdrop-blur-md px-4 sm:px-8 h-16 flex items-center justify-between sticky top-0 z-40">
-        <div className="flex items-center gap-3">
-          <Link
-            href="/"
-            className="flex items-center gap-2 text-xs font-mono text-[#889e93] hover:text-[#1CE172] transition-colors"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            <span>Kembali ke Beranda</span>
-          </Link>
-          <span className="text-[#889e93] font-mono">/</span>
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-[#1CE172] animate-pulse" />
-            <span className="font-semibold text-sm text-[#F0FEF8]">Customer Space</span>
-          </div>
-        </div>
+    <div className="grain relative min-h-screen overflow-hidden bg-[#06070f]">
+      <AmbientField variant="quiet" />
 
-        {/* Customer Auth Profile / Login / Register */}
-        <div className="flex items-center gap-3">
-          {activeCustomer ? (
-            <div className="flex items-center gap-2.5">
-              <div className="hidden sm:flex flex-col items-end text-right">
-                <span className="text-xs font-bold text-[#F0FEF8]">{activeCustomer.name}</span>
-                <span className="text-[10px] font-mono text-[#1CE172]">{activeCustomer.email}</span>
-              </div>
-              <div className="h-8 w-8 rounded-full bg-[#1CE172]/20 border border-[#1CE172]/40 flex items-center justify-center text-[#1CE172] text-xs font-bold font-mono">
-                {activeCustomer.name.slice(0, 2).toUpperCase()}
-              </div>
-              <button
-                onClick={handleLogout}
-                title="Keluar Akun"
-                className="p-1.5 rounded-lg border border-white/10 hover:bg-white/10 text-zinc-400 hover:text-red-400 transition-colors cursor-pointer"
+      <div className="relative z-10 flex min-h-screen flex-col">
+        <header className="sticky top-0 z-40 border-b border-[#e9edfb]/8 bg-[#06070f]/85 backdrop-blur-xl">
+          <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-5 sm:px-8">
+            <div className="flex items-center gap-3">
+              <Link
+                href="/"
+                className="flex items-center gap-1.5 text-[12.5px] text-[#8e97bc] transition-colors hover:text-[#e9edfb]"
               >
-                <LogOut className="h-4 w-4" />
-              </button>
+                <ArrowLeft className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Beranda</span>
+              </Link>
+              <span className="text-[#5a6390]">/</span>
+              <span className="flex items-center gap-2 text-[13.5px] font-medium text-[#e9edfb]">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#5b8def]" />
+                Portal Kustomer
+              </span>
             </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  setAuthModalMode("login");
-                  setAuthModalOpen(true);
-                }}
-                className="px-3 py-1.5 rounded-lg border border-[#F0FEF8]/20 text-[#F0FEF8] hover:bg-white/5 text-xs font-mono transition-all cursor-pointer"
+
+            <div className="flex items-center gap-2.5">
+              <div className="hidden items-center gap-2.5 sm:flex">
+                <div className="text-right">
+                  <div className="text-[12.5px] font-medium text-[#e9edfb]">{user.name}</div>
+                  <div className="font-mono text-[10.5px] text-[#8e97bc]">{user.email}</div>
+                </div>
+                <div className="grid h-9 w-9 place-items-center rounded-full border border-[#5b8def]/35 bg-[#5b8def]/12 font-mono text-[12px] font-bold text-[#9db9f5]">
+                  {initials}
+                </div>
+              </div>
+
+              <Button variant="ghost" size="sm" onClick={handleLogout} title="Keluar dari akun">
+                <LogOut className="h-4 w-4" />
+                <span className="hidden sm:inline">Keluar</span>
+              </Button>
+            </div>
+          </div>
+        </header>
+
+        <main className="mx-auto w-full max-w-6xl flex-1 px-5 py-8 sm:px-8 sm:py-10">
+          {issuedKey && (
+            <div className="mb-8 flex flex-col gap-5 rounded-2xl border border-[#5b8def]/30 bg-[#5b8def]/[0.06] p-6 sm:flex-row sm:items-start sm:justify-between">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-[12.5px] font-medium text-[#9db9f5]">
+                  <CheckCircle2 className="h-4 w-4" />
+                  {issuedKey.title}
+                </div>
+                <p className="text-sm text-[#e9edfb]">
+                  API key dikirim ke{" "}
+                  <span className="font-medium text-[#9db9f5]">{issuedKey.email}</span>
+                </p>
+                <p className="text-[12.5px] text-[#8e97bc]">
+                  Kunci ini hanya ditampilkan sekali. Simpan di secret manager Anda sekarang.
+                </p>
+                <code className="block break-all rounded-lg border border-[#e9edfb]/10 bg-[#06070f] px-3 py-2 font-mono text-[12.5px] text-[#9db9f5]">
+                  {issuedKey.keySecret}
+                </code>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIssuedKey(null)}
+                className="shrink-0"
               >
-                Masuk Email
-              </button>
-              <button
-                onClick={() => {
-                  setAuthModalMode("register");
-                  setAuthModalOpen(true);
-                }}
-                className="px-3.5 py-1.5 rounded-lg bg-[#1CE172] text-[#010302] text-xs font-mono font-bold hover:bg-[#1CE172]/90 shadow-[0_0_15px_rgba(28,225,114,0.3)] transition-all cursor-pointer"
-              >
-                Daftar Akun Baru
-              </button>
+                Tutup
+              </Button>
             </div>
           )}
-        </div>
-      </header>
 
-      {/* Main Customer Content */}
-      <main className="max-w-7xl mx-auto w-full p-4 sm:p-8 flex-1">
-        {/* Dispatched Notification Card */}
-        {dispatchedNotification && (
-          <div className="mb-8 p-6 rounded-3xl bg-[#0a0f0d] border border-[#1CE172]/40 shadow-[0_0_35px_rgba(28,225,114,0.15)] flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-300">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2 text-[#1CE172] text-xs font-mono font-bold">
-                <CheckCircle2 className="h-4 w-4" />
-                <span>{dispatchedNotification.title}</span>
-              </div>
-              <h4 className="font-bold text-base text-[#F0FEF8]">
-                API Key Siap Pakai Telah Dikirimkan ke Email:{" "}
-                <span className="text-[#1CE172]">{dispatchedNotification.email}</span>
-              </h4>
-              <p className="text-xs text-[#889e93]">
-                Kunci Anda:{" "}
-                <code className="text-[#1CE172] bg-[#010302] px-2 py-0.5 rounded border border-[#1CE172]/20 font-mono">
-                  {dispatchedNotification.keySecret}
-                </code>
-              </p>
-            </div>
+          <CustomerBentoPortal
+            onOpenCheckoutModal={(plan) => setSelectedCheckoutPlan(plan)}
+            onOpenModelCheckoutModal={(model) => setSelectedModelProduct(model)}
+            activeCustomer={user}
+            onOpenAuthModal={() => router.push("/login")}
+          />
+        </main>
 
-            <button
-              onClick={() => setDispatchedNotification(null)}
-              className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-mono text-[#889e93] self-start md:self-auto cursor-pointer"
-            >
-              Tutup Notifikasi
-            </button>
+        <footer className="border-t border-[#e9edfb]/8 py-6">
+          <div className="mx-auto flex w-full max-w-6xl flex-col gap-2 px-5 text-[11.5px] text-[#5a6390] sm:flex-row sm:items-center sm:justify-between sm:px-8">
+            <span className="flex items-center gap-2 font-mono">
+              <User className="h-3.5 w-3.5" />
+              {providerLabel(user.provider)} · {user.currentPlan}
+            </span>
+            <span className="flex items-center gap-2 font-mono">
+              <Coins className="h-3.5 w-3.5" />
+              {user.tokenBalance.toLocaleString("id-ID")} token tersedia
+            </span>
           </div>
-        )}
+        </footer>
+      </div>
 
-        <CustomerBentoPortal
-          onOpenCheckoutModal={(plan) => setSelectedCheckoutPlan(plan)}
-          onOpenModelCheckoutModal={(model) => setSelectedModelProduct(model)}
-          activeCustomer={activeCustomer}
-          onOpenAuthModal={() => {
-            setAuthModalMode("login");
-            setAuthModalOpen(true);
-          }}
-        />
-      </main>
-
-      {/* Modal 1: Plan Subscription Checkout */}
       <CustomerCheckoutModal
         planCode={selectedCheckoutPlan || "pro"}
         isOpen={Boolean(selectedCheckoutPlan)}
         onClose={() => setSelectedCheckoutPlan(null)}
-        onPaymentSettled={handlePlanPaymentSettled}
+        onPaymentSettled={handlePlanSettled}
       />
 
-      {/* Modal 2: Model Token Checkout (DeepSeek etc.) */}
       <CustomerModelCheckoutModal
         product={selectedModelProduct}
         isOpen={Boolean(selectedModelProduct)}
         onClose={() => setSelectedModelProduct(null)}
         onSuccess={handleModelPaymentSuccess}
-        defaultEmail={activeCustomer?.email || ""}
-        defaultName={activeCustomer?.name || ""}
-      />
-
-      {/* Modal 3: Customer Login / Register with Gmail or Yahoo */}
-      <CustomerAuthModal
-        isOpen={authModalOpen}
-        initialMode={authModalMode}
-        canClose={Boolean(activeCustomer)}
-        onClose={() => {
-          if (activeCustomer) {
-            setAuthModalOpen(false);
-          }
-        }}
-        onSuccess={handleAuthSuccess}
+        defaultEmail={user.email}
+        defaultName={user.name}
       />
     </div>
   );

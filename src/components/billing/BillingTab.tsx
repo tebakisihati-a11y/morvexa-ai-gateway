@@ -16,7 +16,6 @@ import {
   QrCode,
   Building,
 } from "lucide-react";
-import { calculateMidtransSignature } from "@/lib/billing/midtrans";
 
 interface PlanItem {
   code: "developer" | "pro" | "apex" | "zenith";
@@ -184,29 +183,16 @@ export function BillingTab() {
     setIsProcessingPayment(true);
 
     try {
-      const grossAmount = `${checkoutSession.amount}.00`;
-      const statusCode = "200";
-      // Signature calculation matching server-side verifier
-      const signature = calculateMidtransSignature(
-        checkoutSession.orderId,
-        statusCode,
-        grossAmount,
-        "dummy_sandbox_key"
-      );
-
-      const webhookRes = await fetch("/api/billing/webhooks/midtrans", {
+      // Settlement is signed server-side, so the browser never holds a key that
+      // could forge a payment confirmation.
+      const webhookRes = await fetch("/api/billing/sandbox/settle", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          order_id: checkoutSession.orderId,
-          status_code: statusCode,
-          gross_amount: grossAmount,
-          signature_key: signature,
-          transaction_status: "settlement",
-          transaction_id: `sb-tx-${Date.now()}`,
-          payment_type: selectedPaymentMethod,
-          custom_field1: "org_default",
-          custom_field2: selectedPlanForCheckout.code,
+          orderId: checkoutSession.orderId,
+          paymentMethod: selectedPaymentMethod,
+          customerName: "Owner Account",
+          customerEmail: "owner@morvexa.ai",
         }),
       });
 
@@ -262,7 +248,7 @@ export function BillingTab() {
       </div>
 
       {/* Active Subscription Banner */}
-      <div className="rounded-lg border border-white/10 bg-[#0e0e11] p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="rounded-lg border border-white/10 bg-[#0E1019] p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-start gap-3.5">
           <div className="h-10 w-10 rounded-lg bg-orange-500/10 border border-orange-500/20 flex items-center justify-center shrink-0">
             <Zap className="h-5 w-5 text-orange-400" />
@@ -306,7 +292,7 @@ export function BillingTab() {
                 className={`rounded-lg border p-4 flex flex-col justify-between transition-all ${
                   isCurrent
                     ? "border-orange-500/40 bg-orange-950/[0.08] shadow-lg shadow-orange-950/20 ring-1 ring-orange-500/20"
-                    : "border-white/10 bg-[#0e0e11] hover:border-white/20"
+                    : "border-white/10 bg-[#0E1019] hover:border-white/20"
                 }`}
               >
                 <div className="space-y-3">
@@ -361,7 +347,7 @@ export function BillingTab() {
       </div>
 
       {/* Transaction & Invoices Table */}
-      <div className="rounded-lg border border-white/10 bg-[#0e0e11] overflow-hidden">
+      <div className="rounded-lg border border-white/10 bg-[#0E1019] overflow-hidden">
         <div className="p-3.5 sm:p-4 border-b border-white/5 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4 text-zinc-400" />
@@ -421,7 +407,7 @@ export function BillingTab() {
       {/* Midtrans Snap Simulation Modal */}
       {isCheckoutOpen && selectedPlanForCheckout && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4">
-          <div className="w-full max-w-lg rounded-lg border border-white/10 bg-[#0e0e11] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+          <div className="w-full max-w-lg rounded-lg border border-white/10 bg-[#0E1019] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
             <div className="p-4 border-b border-white/10 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <CreditCard className="h-4 w-4 text-orange-400" />

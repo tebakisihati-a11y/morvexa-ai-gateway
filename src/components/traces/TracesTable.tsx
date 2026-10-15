@@ -11,7 +11,7 @@ interface TracesTableProps {
 
 export function TracesTable({ traces, onSelectTrace }: TracesTableProps) {
   return (
-    <div className="rounded-lg border border-white/10 bg-[#0e0e11] overflow-hidden">
+    <div className="rounded-lg border border-white/10 bg-[#0E1019] overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse min-w-[720px]">
           <thead>

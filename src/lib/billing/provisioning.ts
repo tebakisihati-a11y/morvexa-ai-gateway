@@ -1,5 +1,6 @@
 import { generateSecureApiKey } from "../auth/keys";
 import { createApiKey } from "../supabase/store";
+import { PLAN_SPECS } from "./catalog";
 import type { ApiKeyItem } from "../types";
 
 /**
@@ -32,42 +33,12 @@ export interface DispatchedEmailReceipt {
 const dispatchedReceipts: DispatchedEmailReceipt[] = [];
 
 /**
- * Map plan code to quota & model allowances
+ * Map plan code to quota & model allowances.
+ *
+ * The spec table lives in ./catalog so client components can import it without
+ * dragging in the Supabase service client that this module depends on.
  */
-export const PLAN_SPECS: Record<
-  string,
-  {
-    name: string;
-    rateLimitRpm: number;
-    dailyTokens: number;
-    models: string[];
-  }
-> = {
-  developer: {
-    name: "Developer Starter",
-    rateLimitRpm: 30,
-    dailyTokens: 50000,
-    models: ["deepseek-chat", "gemini-2.0-flash"],
-  },
-  pro: {
-    name: "Pro Workspace",
-    rateLimitRpm: 120,
-    dailyTokens: 300000,
-    models: ["claude-3-5-sonnet", "deepseek-chat", "gpt-4o", "gemini-2.0-flash"],
-  },
-  apex: {
-    name: "Apex Scale",
-    rateLimitRpm: 300,
-    dailyTokens: 1500000,
-    models: ["claude-3-7-sonnet", "claude-3-5-sonnet", "gpt-4o", "deepseek-chat", "gemini-2.0-flash"],
-  },
-  zenith: {
-    name: "Zenith Enterprise",
-    rateLimitRpm: 1000,
-    dailyTokens: 10000000,
-    models: ["claude-3-7-sonnet", "claude-3-5-sonnet", "gpt-4o", "deepseek-chat", "gemini-2.0-flash", "private-server-5002"],
-  },
-};
+export { PLAN_SPECS };
 
 /**
  * Automatically provisions an active Morvexa Gateway API Key

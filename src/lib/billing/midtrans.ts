@@ -135,6 +135,8 @@ interface ProcessedEventRecord {
 export interface StoredTransaction {
   status: TransactionStatus;
   orgId?: string;
+  /** Plan the customer is paying for; needed to provision the right quota. */
+  planCode?: string;
   amount: number;
   createdAt: number;
   invoiceId?: string;
@@ -159,9 +161,10 @@ export function seedTransaction(
   status: TransactionStatus,
   amount = 750000,
   orgId = "org_default",
-  createdAt = Date.now()
+  createdAt = Date.now(),
+  planCode?: string
 ): void {
-  memoryTransactions.set(orderId, { status, orgId, amount, createdAt });
+  memoryTransactions.set(orderId, { status, orgId, amount, createdAt, planCode });
 }
 
 
@@ -333,7 +336,7 @@ export function createMidtransSandboxCheckout(params: {
   const snapToken = `snap-token-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
   const redirectUrl = `https://app.sandbox.midtrans.com/snap/v2/vtweb/${snapToken}`;
 
-  seedTransaction(orderId, "pending", params.amount, params.orgId);
+  seedTransaction(orderId, "pending", params.amount, params.orgId, Date.now(), params.planCode);
 
   return {
     orderId,

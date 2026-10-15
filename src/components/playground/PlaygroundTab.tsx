@@ -123,7 +123,7 @@ export function PlaygroundTab() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Prompt Controls */}
         <div className="lg:col-span-5 space-y-4">
-          <div className="rounded-lg border border-white/10 bg-[#0e0e11] p-4 sm:p-5 space-y-4">
+          <div className="rounded-lg border border-white/10 bg-[#0E1019] p-4 sm:p-5 space-y-4">
             {/* Model Selector */}
             <div className="space-y-1.5">
               <label className="text-xs font-mono font-medium text-zinc-300">Model Selection</label>

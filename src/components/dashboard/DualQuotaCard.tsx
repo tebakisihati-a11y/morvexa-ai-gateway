@@ -31,26 +31,26 @@ export function DualQuotaCard({ quota }: DualQuotaCardProps) {
   const strokeDashoffset = 283 - (283 * requestPercent) / 100;
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-[#0a0714]/80 backdrop-blur-md p-5 sm:p-6">
+    <div className="rounded-2xl border border-white/10 bg-[#0A0C1E]/80 backdrop-blur-md p-5 sm:p-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-white/5">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-xs font-mono uppercase tracking-wider font-semibold text-[#f7f8fd]">
+            <h2 className="text-xs font-mono uppercase tracking-wider font-semibold text-[#E9EDFB]">
               Dual Rolling Quota Architecture
             </h2>
-            <span className="text-[11px] font-mono text-[#aca3e1]/60 hidden sm:inline">
+            <span className="text-[11px] font-mono text-[#A5AFDD]/60 hidden sm:inline">
               [window: 5h_ttl_sliding · 7d_cap]
             </span>
           </div>
-          <p className="text-xs text-[#aca3e1] mt-1 leading-relaxed">
+          <p className="text-xs text-[#A5AFDD] mt-1 leading-relaxed">
             Two-tier rate-limiting engine with 5-hour rolling TTL auto-recovery and weekly token ceilings.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 text-xs font-mono text-[#aca3e1] bg-black/60 border border-white/10 px-3 py-1.5 rounded-xl">
-          <Clock className="h-3.5 w-3.5 text-[#c03fb5]" />
+        <div className="flex items-center gap-2 text-xs font-mono text-[#A5AFDD] bg-black/60 border border-white/10 px-3 py-1.5 rounded-xl">
+          <Clock className="h-3.5 w-3.5 text-[#C0549F]" />
           <span>Next Slot Recovery:</span>
-          <span className="text-[#f7f8fd] font-bold">
+          <span className="text-[#E9EDFB] font-bold">
             {countdownMs ? formatTimeRemaining(countdownMs) : "100% Available"}
           </span>
         </div>
@@ -63,15 +63,15 @@ export function DualQuotaCard({ quota }: DualQuotaCardProps) {
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-emerald-400" />
-                <span className="text-xs font-semibold text-[#f7f8fd]">
+                <span className="text-xs font-semibold text-[#E9EDFB]">
                   Standard Tier Models
                 </span>
               </div>
-              <span className="text-[11px] font-mono text-[#aca3e1]">
+              <span className="text-[11px] font-mono text-[#A5AFDD]">
                 [100 req / 5h]
               </span>
             </div>
-            <p className="text-[11px] text-[#aca3e1]/80 mb-4 leading-relaxed">
+            <p className="text-[11px] text-[#A5AFDD]/80 mb-4 leading-relaxed">
               Claude 3.5 Sonnet, Haiku, Gemini 2.0 Flash, DeepSeek V3. Each request slot recovers precisely 300 minutes post-dispatch.
             </p>
           </div>
@@ -93,7 +93,7 @@ export function DualQuotaCard({ quota }: DualQuotaCardProps) {
                   cx="50"
                   cy="50"
                   r="45"
-                  className="text-[#c03fb5] transition-all duration-700 ease-out"
+                  className="text-[#C0549F] transition-all duration-700 ease-out"
                   strokeWidth="7"
                   strokeDasharray="283"
                   strokeDashoffset={strokeDashoffset}
@@ -103,8 +103,8 @@ export function DualQuotaCard({ quota }: DualQuotaCardProps) {
                 />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center font-mono">
-                <span className="text-sm font-bold text-[#f7f8fd]">{requestPercent}%</span>
-                <span className="text-[9px] text-[#aca3e1]/70">utilized</span>
+                <span className="text-sm font-bold text-[#E9EDFB]">{requestPercent}%</span>
+                <span className="text-[9px] text-[#A5AFDD]/70">utilized</span>
               </div>
             </div>
 
@@ -123,7 +123,7 @@ export function DualQuotaCard({ quota }: DualQuotaCardProps) {
                 </span>
               </div>
               <div className="flex justify-between items-center text-[11px] pt-1 border-t border-white/5">
-                <span className="text-[#aca3e1]">Remaining Slots:</span>
+                <span className="text-[#A5AFDD]">Remaining Slots:</span>
                 <span className="text-emerald-400 font-semibold">
                   {quota.standard5hRemaining} requests
                 </span>
@@ -137,16 +137,16 @@ export function DualQuotaCard({ quota }: DualQuotaCardProps) {
           <div>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-[#c03fb5]" />
-                <span className="text-xs font-semibold text-[#f7f8fd]">
+                <span className="h-2 w-2 rounded-full bg-[#C0549F]" />
+                <span className="text-xs font-semibold text-[#E9EDFB]">
                   Frontier & Reasoning Models
                 </span>
               </div>
-              <span className="text-[11px] font-mono text-[#aca3e1]">
+              <span className="text-[11px] font-mono text-[#A5AFDD]">
                 [token_budget: 24h/7d]
               </span>
             </div>
-            <p className="text-[11px] text-[#aca3e1]/80 mb-4 leading-relaxed">
+            <p className="text-[11px] text-[#A5AFDD]/80 mb-4 leading-relaxed">
               Claude 3.7 Sonnet, GPT-4o, and reasoning architectures. Token ingestion bounded by daily velocity and weekly budgets.
             </p>
           </div>
@@ -162,7 +162,7 @@ export function DualQuotaCard({ quota }: DualQuotaCardProps) {
               </div>
               <div className="h-1.5 w-full bg-zinc-900 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-[#5449ab] to-[#c03fb5] rounded-full transition-all duration-500"
+                  className="h-full bg-gradient-to-r from-[#4A57B8] to-[#C0549F] rounded-full transition-all duration-500"
                   style={{ width: `${quota.latestDailyPercentage}%` }}
                 />
               </div>
@@ -178,15 +178,15 @@ export function DualQuotaCard({ quota }: DualQuotaCardProps) {
               </div>
               <div className="h-1.5 w-full bg-zinc-900 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-[#a6085b] to-[#c03fb5] rounded-full transition-all duration-500"
+                  className="h-full bg-gradient-to-r from-[#9E3D7A] to-[#C0549F] rounded-full transition-all duration-500"
                   style={{ width: `${quota.latestWeeklyPercentage}%` }}
                 />
               </div>
             </div>
 
             <div className="flex justify-between items-center text-[11px] pt-1.5 border-t border-white/5">
-              <span className="text-[#aca3e1]">Daily Headroom:</span>
-              <span className="text-[#f7f8fd] font-semibold">
+              <span className="text-[#A5AFDD]">Daily Headroom:</span>
+              <span className="text-[#E9EDFB] font-semibold">
                 {(quota.latestDailyTokensRemaining / 1000).toFixed(1)}k tokens
               </span>
             </div>

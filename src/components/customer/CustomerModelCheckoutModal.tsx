@@ -13,7 +13,7 @@ import {
   Coins,
   Sparkles,
 } from "lucide-react";
-import type { ModelProduct } from "@/lib/customer/store";
+import type { ModelProduct } from "@/lib/customer/catalog";
 
 interface ModelCheckoutModalProps {
   product: ModelProduct | null;
@@ -80,51 +80,51 @@ export function CustomerModelCheckoutModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="w-full max-w-lg rounded-3xl bg-[#0a0f0d] border border-[#1CE172]/30 p-6 sm:p-8 shadow-[0_0_60px_rgba(28,225,114,0.2)] relative text-[#F0FEF8]">
+      <div className="w-full max-w-lg rounded-3xl bg-[#0B0D1A] border border-[#5B8DEF]/30 p-6 sm:p-8 shadow-[0_0_60px_rgba(91, 141, 239,0.2)] relative text-[#E9EDFB]">
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 p-2 rounded-xl text-[#889e93] hover:text-[#F0FEF8] hover:bg-white/5 transition-colors cursor-pointer"
+          className="absolute top-5 right-5 p-2 rounded-xl text-[#8E97BC] hover:text-[#E9EDFB] hover:bg-white/5 transition-colors cursor-pointer"
         >
           <X className="h-4 w-4" />
         </button>
 
         {/* Modal Header */}
         <div className="flex items-center gap-3 mb-6">
-          <div className="h-10 w-10 rounded-2xl bg-[#1CE172]/10 border border-[#1CE172]/30 flex items-center justify-center text-[#1CE172]">
+          <div className="h-10 w-10 rounded-2xl bg-[#5B8DEF]/10 border border-[#5B8DEF]/30 flex items-center justify-center text-[#5B8DEF]">
             <Coins className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-[#F0FEF8]">Beli Token Model AI</h3>
-            <p className="text-xs text-[#889e93] font-mono">
-              Produk: <span className="text-[#1CE172] font-semibold">{product.name}</span>
+            <h3 className="text-lg font-bold text-[#E9EDFB]">Beli Token Model AI</h3>
+            <p className="text-xs text-[#8E97BC] font-mono">
+              Produk: <span className="text-[#5B8DEF] font-semibold">{product.name}</span>
             </p>
           </div>
         </div>
 
         {step === "details" ? (
           <form onSubmit={handleProceedToPayment} className="space-y-4">
-            <div className="p-4 rounded-2xl bg-[#010302] border border-[#F0FEF8]/10 space-y-2 font-mono">
+            <div className="p-4 rounded-2xl bg-[#06070F] border border-[#E9EDFB]/10 space-y-2 font-mono">
               <div className="flex justify-between text-xs">
-                <span className="text-[#889e93]">Harga Paket:</span>
-                <span className="font-bold text-base text-[#1CE172]">
+                <span className="text-[#8E97BC]">Harga Paket:</span>
+                <span className="font-bold text-base text-[#5B8DEF]">
                   Rp {product.bundlePriceIdr.toLocaleString("id-ID")}
                 </span>
               </div>
               <div className="flex justify-between text-xs">
-                <span className="text-[#889e93]">Alokasi Token:</span>
-                <span className="text-[#F0FEF8] font-bold">
+                <span className="text-[#8E97BC]">Alokasi Token:</span>
+                <span className="text-[#E9EDFB] font-bold">
                   {product.bundleTokensGranted.toLocaleString("id-ID")} Tokens
                 </span>
               </div>
               <div className="flex justify-between text-xs">
-                <span className="text-[#889e93]">Provider:</span>
-                <span className="text-[#F0FEF8] uppercase">{product.provider}</span>
+                <span className="text-[#8E97BC]">Provider:</span>
+                <span className="text-[#E9EDFB] uppercase">{product.provider}</span>
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-mono text-[#889e93] mb-1.5">
+              <label className="block text-xs font-mono text-[#8E97BC] mb-1.5">
                 Nama Pemesan / Perusahaan
               </label>
               <input
@@ -132,12 +132,12 @@ export function CustomerModelCheckoutModal({
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
                 placeholder="e.g. John Doe / PT Acme"
-                className="w-full px-3.5 py-2.5 rounded-xl bg-[#010302] border border-[#F0FEF8]/15 text-[#F0FEF8] font-mono text-xs focus:border-[#1CE172] focus:outline-none"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[#06070F] border border-[#E9EDFB]/15 text-[#E9EDFB] font-mono text-xs focus:border-[#5B8DEF] focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-mono text-[#889e93] mb-1.5">
+              <label className="block text-xs font-mono text-[#8E97BC] mb-1.5">
                 Email Pribadi (Kunci API & Notif akan dikirim ke sini)
               </label>
               <input
@@ -146,14 +146,14 @@ export function CustomerModelCheckoutModal({
                 value={customerEmail}
                 onChange={(e) => setCustomerEmail(e.target.value)}
                 placeholder="nama@gmail.com atau @yahoo.com"
-                className="w-full px-3.5 py-2.5 rounded-xl bg-[#010302] border border-[#F0FEF8]/15 text-[#F0FEF8] font-mono text-xs focus:border-[#1CE172] focus:outline-none"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[#06070F] border border-[#E9EDFB]/15 text-[#E9EDFB] font-mono text-xs focus:border-[#5B8DEF] focus:outline-none"
               />
             </div>
 
             <div className="pt-2">
               <button
                 type="submit"
-                className="w-full py-3 rounded-xl bg-[#1CE172] text-[#010302] font-mono font-bold text-xs hover:bg-[#1CE172]/90 shadow-[0_0_20px_rgba(28,225,114,0.3)] transition-all flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full py-3 rounded-xl bg-[#5B8DEF] text-[#06070F] font-mono font-bold text-xs hover:bg-[#5B8DEF]/90 shadow-[0_0_20px_rgba(91, 141, 239,0.3)] transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 <span>Lanjut ke Metode Pembayaran</span>
                 <ArrowRight className="h-4 w-4" />
@@ -162,21 +162,21 @@ export function CustomerModelCheckoutModal({
           </form>
         ) : (
           <div className="space-y-4 font-mono">
-            <div className="p-4 rounded-2xl bg-[#010302] border border-[#F0FEF8]/10 text-xs space-y-2">
+            <div className="p-4 rounded-2xl bg-[#06070F] border border-[#E9EDFB]/10 text-xs space-y-2">
               <div className="flex justify-between">
-                <span className="text-[#889e93]">Total Tagihan:</span>
-                <span className="font-bold text-base text-[#1CE172]">
+                <span className="text-[#8E97BC]">Total Tagihan:</span>
+                <span className="font-bold text-base text-[#5B8DEF]">
                   Rp {product.bundlePriceIdr.toLocaleString("id-ID")}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#889e93]">Email Penerima:</span>
-                <span className="text-[#F0FEF8]">{customerEmail}</span>
+                <span className="text-[#8E97BC]">Email Penerima:</span>
+                <span className="text-[#E9EDFB]">{customerEmail}</span>
               </div>
             </div>
 
             <div className="space-y-2">
-              <div className="text-xs text-[#889e93] uppercase">Pilih Metode Pembayaran:</div>
+              <div className="text-xs text-[#8E97BC] uppercase">Pilih Metode Pembayaran:</div>
               <div className="grid grid-cols-3 gap-2">
                 {[
                   { id: "qris", label: "QRIS Instan", icon: QrCode },
@@ -191,11 +191,11 @@ export function CustomerModelCheckoutModal({
                       onClick={() => setPaymentMethod(item.id as any)}
                       className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 text-xs transition-all cursor-pointer ${
                         paymentMethod === item.id
-                          ? "border-[#1CE172] bg-[#1CE172]/10 text-[#F0FEF8]"
-                          : "border-[#F0FEF8]/10 bg-white/[0.02] text-[#889e93] hover:border-white/20"
+                          ? "border-[#5B8DEF] bg-[#5B8DEF]/10 text-[#E9EDFB]"
+                          : "border-[#E9EDFB]/10 bg-white/[0.02] text-[#8E97BC] hover:border-white/20"
                       }`}
                     >
-                      <Icon className="h-4 w-4 text-[#1CE172]" />
+                      <Icon className="h-4 w-4 text-[#5B8DEF]" />
                       <span>{item.label}</span>
                     </button>
                   );
@@ -204,11 +204,11 @@ export function CustomerModelCheckoutModal({
             </div>
 
             {/* QRIS / VA Simulation Box */}
-            <div className="p-4 rounded-2xl bg-[#010302] border border-[#1CE172]/30 flex flex-col items-center justify-center gap-2 text-center">
+            <div className="p-4 rounded-2xl bg-[#06070F] border border-[#5B8DEF]/30 flex flex-col items-center justify-center gap-2 text-center">
               <div className="h-28 w-28 rounded-xl bg-white p-2 flex items-center justify-center">
                 <QrCode className="h-full w-full text-black" />
               </div>
-              <div className="text-[11px] text-[#889e93]">
+              <div className="text-[11px] text-[#8E97BC]">
                 Pindai QRIS dengan GoPay, OVO, Dana, BCA, atau Livin'
               </div>
             </div>
@@ -217,7 +217,7 @@ export function CustomerModelCheckoutModal({
               <button
                 type="button"
                 onClick={() => setStep("details")}
-                className="w-1/3 py-2.5 rounded-xl border border-[#F0FEF8]/10 text-[#889e93] text-xs hover:bg-white/5 cursor-pointer"
+                className="w-1/3 py-2.5 rounded-xl border border-[#E9EDFB]/10 text-[#8E97BC] text-xs hover:bg-white/5 cursor-pointer"
               >
                 Kembali
               </button>
@@ -225,7 +225,7 @@ export function CustomerModelCheckoutModal({
                 type="button"
                 disabled={isSettling}
                 onClick={handleSimulatePaymentSettlement}
-                className="w-2/3 py-2.5 rounded-xl bg-[#1CE172] text-[#010302] font-bold text-xs hover:bg-[#1CE172]/90 shadow-[0_0_20px_rgba(28,225,114,0.3)] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                className="w-2/3 py-2.5 rounded-xl bg-[#5B8DEF] text-[#06070F] font-bold text-xs hover:bg-[#5B8DEF]/90 shadow-[0_0_20px_rgba(91, 141, 239,0.3)] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 {isSettling ? (
                   <>
