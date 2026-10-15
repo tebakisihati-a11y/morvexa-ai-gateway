@@ -65,3 +65,21 @@ export function providerLabel(provider: string | undefined): string {
   if (provider === "yahoo") return "Yahoo Mail";
   return "Email";
 }
+
+/**
+ * Narrows a caller-supplied `next` value to a safe same-origin path.
+ *
+ * A leading "/" alone is not enough: browsers treat "//evil.com" and
+ * "/\evil.com" as protocol-relative, so a naive check turns the login form into
+ * an open redirect. Anything that could resolve off-origin falls back to the
+ * portal.
+ */
+export function safeRedirectPath(candidate: string | null | undefined, fallback = "/customer"): string {
+  if (!candidate) return fallback;
+  if (!candidate.startsWith("/")) return fallback;
+  // "//" and "/\" are protocol-relative in browsers; control characters can
+  // smuggle a newline into the header the browser then follows.
+  if (candidate.startsWith("//") || candidate.startsWith("/\\")) return fallback;
+  if (/[\u0000-\u001f\u007f]/.test(candidate)) return fallback;
+  return candidate;
+}

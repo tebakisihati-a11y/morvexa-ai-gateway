@@ -7,7 +7,7 @@ import { ArrowRight } from "lucide-react";
 import { AuthShell } from "./AuthShell";
 import { PasswordField, TextField, FormError } from "./fields";
 import { Button } from "@/components/ui/primitives";
-import { validateEmail } from "@/lib/validation/auth";
+import { validateEmail, safeRedirectPath } from "@/lib/validation/auth";
 
 const HIGHLIGHTS = [
   {
@@ -28,7 +28,7 @@ export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   // `next` lets /customer bounce a signed-out visitor here and return them after.
-  const nextPath = searchParams.get("next") || "/customer";
+  const nextPath = safeRedirectPath(searchParams.get("next"));
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -65,7 +65,7 @@ export function LoginForm() {
       }
 
       // Full navigation so the portal re-reads the new session cookie.
-      router.replace(nextPath.startsWith("/") ? nextPath : "/customer");
+      router.replace(nextPath);
       router.refresh();
     } catch {
       setFormError("Koneksi ke server gagal. Periksa jaringan Anda lalu coba lagi.");
