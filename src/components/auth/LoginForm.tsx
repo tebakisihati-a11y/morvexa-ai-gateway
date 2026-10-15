@@ -119,6 +119,14 @@ export function LoginForm() {
           value={password}
           onValueChange={setPassword}
           valid={password.length >= 8}
+          hint={
+            <Link
+              href="/forgot-password"
+              className="text-[12px] text-[#8e97bc] underline-offset-4 transition-colors hover:text-[#9db9f5] hover:underline"
+            >
+              Lupa password?
+            </Link>
+          }
         />
 
         {formError && <FormError>{formError}</FormError>}

@@ -17,6 +17,8 @@ interface IssuedKeyNotice {
   email: string;
   keySecret: string;
   title: string;
+  /** False when no mail transport is configured; the copy then must not claim an email was sent. */
+  emailDelivered: boolean;
 }
 
 export default function CustomerPortalPage() {
@@ -38,6 +40,7 @@ export default function CustomerPortalPage() {
         email: result.autoProvision.emailSentTo,
         keySecret: result.autoProvision.rawSecret,
         title: `Paket ${result.autoProvision.apiKey.name} berhasil diterbitkan`,
+        emailDelivered: Boolean(result.autoProvision.emailDelivered),
       });
     }
   };
@@ -48,6 +51,7 @@ export default function CustomerPortalPage() {
         email: result.order.customerEmail,
         keySecret: result.apiKey.rawSecret,
         title: `Token ${result.order.productName} berhasil diterbitkan`,
+        emailDelivered: Boolean(result.autoProvision?.emailDelivered),
       });
     }
   };
@@ -141,11 +145,22 @@ export default function CustomerPortalPage() {
                   {issuedKey.title}
                 </div>
                 <p className="text-sm text-[#e9edfb]">
-                  API key dikirim ke{" "}
-                  <span className="font-medium text-[#9db9f5]">{issuedKey.email}</span>
+                  {issuedKey.emailDelivered ? (
+                    <>
+                      API key dikirim ke{" "}
+                      <span className="font-medium text-[#9db9f5]">{issuedKey.email}</span>
+                    </>
+                  ) : (
+                    <>
+                      API key diterbitkan untuk{" "}
+                      <span className="font-medium text-[#9db9f5]">{issuedKey.email}</span>
+                    </>
+                  )}
                 </p>
                 <p className="text-[12.5px] text-[#8e97bc]">
-                  Kunci ini hanya ditampilkan sekali. Simpan di secret manager Anda sekarang.
+                  {issuedKey.emailDelivered
+                    ? "Kunci ini juga hanya ditampilkan sekali di sini. Simpan di secret manager Anda sekarang."
+                    : "Pengiriman email belum aktif di lingkungan ini, jadi salin kunci dari sini. Kunci hanya ditampilkan sekali."}
                 </p>
                 <code className="block break-all rounded-lg border border-[#e9edfb]/10 bg-[#06070f] px-3 py-2 font-mono text-[12.5px] text-[#9db9f5]">
                   {issuedKey.keySecret}

@@ -10,6 +10,7 @@ import {
   verifySessionToken,
 } from "../auth/session";
 import { checkLoginThrottle, clearLoginFailures, recordLoginFailure, validatePasswordPolicy } from "../auth/password";
+import { RESET_TOKEN_TTL_MINUTES } from "../auth/resetTokens";
 import { createAnthropicSseStream } from "./stream";
 import { resolveProviderRoute, DEFAULT_PROVIDERS } from "./failover";
 import { forwardToUpstreamProvider } from "./upstream";
@@ -742,6 +743,34 @@ app.post("/customer/auth/register", async (c) => {
   }
 
   clearLoginFailures(throttleKey);
+
+  // Welcome email. A delivery failure must not fail the registration the
+  // customer already completed, so the result is logged rather than surfaced.
+  try {
+    const { sendEmail } = await import("../email/send");
+    const { welcomeEmail } = await import("../email/templates");
+    const { resolvePublicBaseUrl } = await import("../email/baseUrl");
+
+    const baseUrl = resolvePublicBaseUrl({
+      url: c.req.url,
+      forwardedHost: c.req.header("x-forwarded-host"),
+      forwardedProto: c.req.header("x-forwarded-proto"),
+    });
+
+    const delivery = await sendEmail({
+      to: result.user.email,
+      email: welcomeEmail({ name: result.user.name, portalUrl: `${baseUrl}/customer` }),
+    });
+
+    if (!delivery.delivered) {
+      console.warn(
+        `[Morvexa Auth] Welcome email to ${result.user.email} was NOT delivered (transport: ${delivery.transport}).`
+      );
+    }
+  } catch (error) {
+    console.error("[Morvexa Auth] Welcome email failed:", error);
+  }
+
   setSessionCookie(c, result.user);
   return c.json(
     { success: true, user: result.user, message: "Akun berhasil dibuat. Selamat datang di Morvexa." },
@@ -779,6 +808,118 @@ app.post("/customer/auth/login", async (c) => {
 app.post("/customer/auth/logout", (c) => {
   deleteCookie(c, SESSION_COOKIE, { path: "/" });
   return c.json({ success: true, message: "Anda telah keluar dari akun." }, 200);
+});
+
+/**
+ * Requests a password-reset link.
+ *
+ * Always answers with the same 200 body whether or not the address is
+ * registered, so the endpoint cannot be used to discover which emails have
+ * accounts. The reset email is only sent when an account exists.
+ */
+app.post("/customer/auth/forgot-password", async (c) => {
+  const body = await c.req.json().catch(() => ({}));
+  const email = typeof body.email === "string" ? body.email.trim() : "";
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+    return c.json({ error: "Masukkan alamat email yang valid." }, 400);
+  }
+
+  const throttleKey = `forgot:${email.toLowerCase()}`;
+  const throttle = checkLoginThrottle(throttleKey);
+  if (!throttle.allowed) {
+    return c.json({ error: lockoutMessage(throttle.retryAfterSeconds) }, 429);
+  }
+  recordLoginFailure(throttleKey);
+
+  const { findCustomerByEmail } = await import("../customer/store");
+  const customer = findCustomerByEmail(email);
+
+  // Same response either way; only the side effect differs.
+  const acknowledgement = {
+    success: true,
+    message:
+      "Jika email tersebut terdaftar, kami sudah mengirim tautan untuk mengatur ulang password. Periksa kotak masuk dan folder spam Anda.",
+  };
+
+  if (customer) {
+    const { issuePasswordResetToken } = await import("../auth/resetTokens");
+    const { passwordResetEmail } = await import("../email/templates");
+    const { sendEmail } = await import("../email/send");
+    const { resolvePublicBaseUrl } = await import("../email/baseUrl");
+
+    const { rawToken } = await issuePasswordResetToken({
+      customerId: customer.id,
+      email: customer.email,
+    });
+
+    const baseUrl = resolvePublicBaseUrl({
+      url: c.req.url,
+      forwardedHost: c.req.header("x-forwarded-host"),
+      forwardedProto: c.req.header("x-forwarded-proto"),
+    });
+    const resetUrl = `${baseUrl}/reset-password?token=${encodeURIComponent(rawToken)}`;
+
+    await sendEmail({
+      to: customer.email,
+      email: passwordResetEmail({
+        name: customer.name,
+        resetUrl,
+        expiresMinutes: RESET_TOKEN_TTL_MINUTES,
+      }),
+    });
+  }
+
+  return c.json(acknowledgement, 200);
+});
+
+/**
+ * Completes a reset. The token is checked but not consumed until the new
+ * password is safely persisted, so a storage failure does not burn the link.
+ */
+app.post("/customer/auth/reset-password", async (c) => {
+  const body = await c.req.json().catch(() => ({}));
+  const token = typeof body.token === "string" ? body.token.trim() : "";
+
+  if (!token) {
+    return c.json({ error: "Tautan reset tidak valid atau sudah kedaluwarsa." }, 400);
+  }
+
+  const policy = validatePasswordPolicy(body.password);
+  if (!policy.valid) {
+    return c.json({ error: policy.message }, 400);
+  }
+
+  const { findUsableResetToken, consumeResetToken } = await import("../auth/resetTokens");
+  const record = findUsableResetToken(token);
+  if (!record) {
+    return c.json(
+      { error: "Tautan reset tidak valid atau sudah kedaluwarsa. Silakan minta tautan baru." },
+      400
+    );
+  }
+
+  const { updateCustomerPassword } = await import("../customer/store");
+  const result = await updateCustomerPassword({
+    email: record.email,
+    newPassword: body.password,
+  });
+
+  if (!result.ok || !result.user) {
+    return c.json({ error: result.error ?? "Password gagal diperbarui." }, result.status as any);
+  }
+
+  await consumeResetToken(token);
+  clearLoginFailures(`login:${record.email}`);
+
+  // Sign the customer in so the reset lands them in the portal, not back at the
+  // login screen. The old cookie, if any, is replaced by this one.
+  setSessionCookie(c, result.user);
+
+  return c.json(
+    { success: true, user: result.user, message: "Password berhasil diperbarui." },
+    200
+  );
 });
 
 // Resolves the current session from the signed cookie. Always 200 so the client

@@ -64,6 +64,7 @@ export interface CustomerActivityLog {
   activityType:
     | "USER_REGISTER"
     | "USER_LOGIN"
+    | "USER_PASSWORD_RESET"
     | "PACKAGE_PURCHASED"
     | "MODEL_TOKEN_PURCHASED"
     | "API_KEY_USED"
@@ -472,6 +473,44 @@ export async function authenticateCustomer(params: {
   await writeCollection("customers", memoryCustomers);
   currentCustomerSession = user;
   logCustomerActivity(user, "USER_LOGIN", `Login berhasil: ${user.name} (${user.email})`);
+
+  return { ok: true, user, status: 200 };
+}
+
+/**
+ * Replaces a customer's password after a verified reset.
+ *
+ * Clears the lockout counters as well: a user who forgot their password has
+ * almost certainly tripped the throttle trying to guess it, and leaving them
+ * locked out after a successful reset would make the reset useless.
+ */
+export async function updateCustomerPassword(params: {
+  email: string;
+  newPassword: string;
+}): Promise<AuthOutcome> {
+  const email = normaliseEmail(params.email);
+  const credential = await loadCredential(email);
+
+  if (!credential) {
+    return { ok: false, status: 404, error: "Akun tidak ditemukan." };
+  }
+
+  const user = findCustomerByEmail(email);
+  if (!user) {
+    return {
+      ok: false,
+      status: 409,
+      error: "Akun ini tidak lagi aktif. Silakan hubungi dukungan Morvexa.",
+    };
+  }
+
+  credential.passwordHash = await hashPassword(params.newPassword);
+  credential.failedAttempts = 0;
+  credential.lockedUntil = 0;
+  credential.lastVerifiedAt = new Date().toISOString();
+  await persistCredential(credential);
+
+  logCustomerActivity(user, "USER_PASSWORD_RESET", `Password diatur ulang: ${user.email}`);
 
   return { ok: true, user, status: 200 };
 }

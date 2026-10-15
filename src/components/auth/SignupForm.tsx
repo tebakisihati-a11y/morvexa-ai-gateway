@@ -22,7 +22,7 @@ const HIGHLIGHTS = [
   },
   {
     title: "Key otomatis setelah pembayaran",
-    body: "Begitu pembayaran paket atau paket token model dikonfirmasi, API key dikirim otomatis ke email Anda.",
+    body: "Begitu pembayaran paket atau paket token model dikonfirmasi, API key dibuat otomatis, dikirim ke email Anda, dan langsung tampil di portal.",
   },
   {
     title: "Tanpa penyimpanan plaintext",

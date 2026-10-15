@@ -13,6 +13,8 @@ export interface ProvisionSubscriptionResult {
   apiKey: ApiKeyItem;
   rawSecret: string;
   emailSentTo: string;
+  /** False when no mail transport is configured, so the UI can say so. */
+  emailDelivered: boolean;
   planCode: string;
   dispatchedAt: string;
   message: string;
@@ -58,7 +60,8 @@ export async function autoProvisionCustomerKey(params: {
   const keyName = `${spec.name} Key (${orderId})`;
   const creation = await createApiKey(keyName, spec.rateLimitRpm, spec.dailyTokens);
 
-  // 2. Dispatch simulated / transactional email
+  // 2. Deliver the key by email. The receipt is recorded regardless of the
+  //    transport outcome so the owner audit trail shows what was attempted.
   const receipt: DispatchedEmailReceipt = {
     orderId,
     recipientEmail: customerEmail,
@@ -71,6 +74,27 @@ export async function autoProvisionCustomerKey(params: {
   };
 
   dispatchedReceipts.unshift(receipt);
+
+  const { sendEmail } = await import("../email/send");
+  const { apiKeyDeliveryEmail } = await import("../email/templates");
+  const delivery = await sendEmail({
+    to: customerEmail,
+    email: apiKeyDeliveryEmail({
+      name: customerName,
+      planName: spec.name,
+      orderId,
+      apiKey: creation.rawSecret,
+      rateLimitRpm: spec.rateLimitRpm,
+      models: spec.models,
+    }),
+  });
+
+  if (!delivery.delivered) {
+    console.warn(
+      `[Morvexa Dispatch] API key email to ${customerEmail} was NOT delivered ` +
+        `(transport: ${delivery.transport}). The key is still valid and shown in the portal.`
+    );
+  }
 
   // 3. Directly integrate into customer orders and owner monitoring database
   try {
@@ -105,9 +129,12 @@ export async function autoProvisionCustomerKey(params: {
     apiKey: creation.key,
     rawSecret: creation.rawSecret,
     emailSentTo: customerEmail,
+    emailDelivered: delivery.delivered,
     planCode,
     dispatchedAt: receipt.sentAt,
-    message: `API Key successfully provisioned and dispatched to ${customerEmail}.`,
+    message: delivery.delivered
+      ? `API Key provisioned and emailed to ${customerEmail}.`
+      : `API Key provisioned for ${customerEmail}. Email delivery is not configured, so the key is shown here instead.`,
   };
 }
 
