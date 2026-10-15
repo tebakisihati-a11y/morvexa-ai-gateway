@@ -5,6 +5,7 @@
  */
 
 import { createHash, timingSafeEqual } from "crypto";
+import { resolveMidtransServerKey } from "./sandboxKey";
 import type {
   MidtransNotificationPayload,
   TransactionStatus,
@@ -179,8 +180,8 @@ export async function processMidtransWebhook(
     overrideStore?: boolean;
   }
 ): Promise<WebhookProcessingResult> {
-  const serverKey = options?.serverKey || process.env.MIDTRANS_SERVER_KEY;
-  if (!serverKey && process.env.NODE_ENV === "production") {
+  const serverKey = options?.serverKey || resolveMidtransServerKey();
+  if (!serverKey) {
     return {
       success: false,
       duplicate: false,
@@ -191,8 +192,7 @@ export async function processMidtransWebhook(
     };
   }
 
-  // Non-production fallback only: dummy_sandbox_key matching UI/test mock sandbox
-  const effectiveKey = serverKey || options?.serverKey || "dummy_sandbox_key";
+  const effectiveKey = serverKey;
 
   // 1. Authenticate signature
   const isValid = verifyMidtransSignature(payload, effectiveKey);

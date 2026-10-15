@@ -1,4 +1,3 @@
-import { generateSecureApiKey } from "../auth/keys";
 import { createApiKey } from "../supabase/store";
 import { PLAN_SPECS } from "./catalog";
 import type { ApiKeyItem } from "../types";
@@ -10,6 +9,8 @@ import type { ApiKeyItem } from "../types";
 
 export interface ProvisionSubscriptionResult {
   success: boolean;
+  /** False when the account has not verified its email, so no key was issued. */
+  blocked?: boolean;
   apiKey: ApiKeyItem;
   rawSecret: string;
   emailSentTo: string;
@@ -55,6 +56,26 @@ export async function autoProvisionCustomerKey(params: {
 }): Promise<ProvisionSubscriptionResult> {
   const { orderId, customerEmail, customerName, planCode, orgId = "org_default" } = params;
   const spec = PLAN_SPECS[planCode.toLowerCase()] || PLAN_SPECS.pro;
+
+  // 0. Refuse to issue a key to an address nobody has proven they control.
+  //    Mailing a live credential to an unverified address would let anyone
+  //    obtain a working key for someone else's mailbox.
+  const { findCustomerByEmail, isEmailVerified } = await import("../customer/store");
+  const account = findCustomerByEmail(customerEmail);
+  if (account && !isEmailVerified(account)) {
+    return {
+      success: false,
+      blocked: true,
+      apiKey: null as unknown as ApiKeyItem,
+      rawSecret: "",
+      emailSentTo: customerEmail,
+      emailDelivered: false,
+      planCode,
+      dispatchedAt: new Date().toISOString(),
+      message:
+        "Email pelanggan belum diverifikasi. API key baru dapat diterbitkan setelah email diverifikasi.",
+    };
+  }
 
   // 1. Generate active API Key for the customer
   const keyName = `${spec.name} Key (${orderId})`;

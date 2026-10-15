@@ -9,7 +9,7 @@
  * in this module: Supabase when configured, in-memory otherwise.
  */
 
-import { isSupabaseConfigured, supabase } from "../supabase/client";
+import { isSupabaseConfigured, getSupabaseClient } from "../supabase/client";
 import { hashPassword, verifyPassword } from "../auth/password";
 import { readCollection, writeCollection } from "../persistence/jsonStore";
 
@@ -22,6 +22,12 @@ export interface CustomerCredential {
   lockedUntil: number;
   createdAt: string;
   lastVerifiedAt?: string;
+  /**
+   * Epoch seconds when the password last changed. Sessions carry the value that
+   * was current when they were issued; a mismatch means the session predates a
+   * reset and must be rejected.
+   */
+  passwordChangedAt?: number;
 }
 
 export interface CustomerUser {
@@ -33,6 +39,12 @@ export interface CustomerUser {
   registeredAt: string;
   lastLoginAt: string;
   status: "active" | "suspended";
+  /**
+   * False until the customer opens the link emailed at registration. Accounts
+   * created before this field existed are treated as verified by the read
+   * path in readEmailVerified().
+   */
+  emailVerified?: boolean;
   currentPlan: string;
   tokenBalance: number;
   tokensUsed: number;
@@ -65,6 +77,8 @@ export interface CustomerActivityLog {
     | "USER_REGISTER"
     | "USER_LOGIN"
     | "USER_PASSWORD_RESET"
+    | "USER_EMAIL_VERIFIED"
+    | "USER_EMAIL_VERIFICATION_SENT"
     | "PACKAGE_PURCHASED"
     | "MODEL_TOKEN_PURCHASED"
     | "API_KEY_USED"
@@ -91,6 +105,7 @@ const SEED_CUSTOMERS: CustomerUser[] = [
     registeredAt: new Date(Date.now() - 86400000 * 4).toISOString(),
     lastLoginAt: new Date(Date.now() - 3600000 * 2).toISOString(),
     status: "active",
+    emailVerified: true,
     currentPlan: "Apex Scale",
     tokenBalance: 12500000,
     tokensUsed: 420850,
@@ -105,6 +120,7 @@ const SEED_CUSTOMERS: CustomerUser[] = [
     registeredAt: new Date(Date.now() - 86400000 * 7).toISOString(),
     lastLoginAt: new Date(Date.now() - 1800000).toISOString(),
     status: "active",
+    emailVerified: true,
     currentPlan: "Pro Workspace",
     tokenBalance: 4500000,
     tokensUsed: 298400,
@@ -119,6 +135,7 @@ const SEED_CUSTOMERS: CustomerUser[] = [
     registeredAt: new Date(Date.now() - 86400000 * 12).toISOString(),
     lastLoginAt: new Date(Date.now() - 7200000).toISOString(),
     status: "active",
+    emailVerified: true,
     currentPlan: "DeepSeek V3 Token Pack",
     tokenBalance: 19800000,
     tokensUsed: 12500,
@@ -133,6 +150,7 @@ const SEED_CUSTOMERS: CustomerUser[] = [
     registeredAt: new Date(Date.now() - 86400000 * 1).toISOString(),
     lastLoginAt: new Date(Date.now() - 600000).toISOString(),
     status: "active",
+    emailVerified: true,
     currentPlan: "Developer Starter",
     tokenBalance: 50000,
     tokensUsed: 3100,
@@ -271,6 +289,34 @@ export function findCustomerById(id: string): CustomerUser | undefined {
   return memoryCustomers.find((c) => c.id === id);
 }
 
+/**
+ * Reads the verification state.
+ *
+ * Records written before email verification existed have no `emailVerified`
+ * field. Treating those as verified avoids locking out the seeded and
+ * pre-existing accounts; only an explicit `false` counts as unverified.
+ */
+export function isEmailVerified(user: CustomerUser): boolean {
+  return user.emailVerified !== false;
+}
+
+/**
+ * Marks an account verified and records the activity.
+ * Idempotent, so a double-click on the emailed link is harmless.
+ */
+export async function markEmailVerified(email: string): Promise<CustomerUser | undefined> {
+  const user = findCustomerByEmail(email);
+  if (!user) return undefined;
+
+  if (user.emailVerified === true) return user;
+
+  user.emailVerified = true;
+  await writeCollection("customers", memoryCustomers);
+  logCustomerActivity(user, "USER_EMAIL_VERIFIED", `Email terverifikasi: ${user.email}`);
+
+  return user;
+}
+
 function logCustomerActivity(
   customer: CustomerUser,
   activityType: CustomerActivityLog["activityType"],
@@ -297,7 +343,10 @@ async function loadCredential(email: string): Promise<CustomerCredential | undef
   const normalized = normaliseEmail(email);
 
   if (isSupabaseConfigured) {
-    const { data, error } = await supabase
+    const client = await getSupabaseClient();
+    if (!client) return undefined;
+
+    const { data, error } = await client
       .from("customer_credentials")
       .select("customer_id, email, password_hash, failed_attempts, locked_until, created_at, last_verified_at")
       .eq("email", normalized)
@@ -321,7 +370,8 @@ async function loadCredential(email: string): Promise<CustomerCredential | undef
 
 async function persistCredential(credential: CustomerCredential): Promise<void> {
   if (isSupabaseConfigured) {
-    await supabase.from("customer_credentials").upsert(
+    const client = await getSupabaseClient();
+    await client.from("customer_credentials").upsert(
       {
         customer_id: credential.customerId,
         email: credential.email,
@@ -382,6 +432,7 @@ export async function registerCustomer(params: {
     registeredAt: new Date().toISOString(),
     lastLoginAt: new Date().toISOString(),
     status: "active",
+    emailVerified: false,
     currentPlan: "Developer Starter (Free)",
     tokenBalance: 50000,
     tokensUsed: 0,
@@ -508,11 +559,25 @@ export async function updateCustomerPassword(params: {
   credential.failedAttempts = 0;
   credential.lockedUntil = 0;
   credential.lastVerifiedAt = new Date().toISOString();
+  // Bumping the epoch invalidates every session issued before this reset, which
+  // is what evicts an attacker who already holds a stolen cookie.
+  credential.passwordChangedAt = Math.floor(Date.now() / 1000);
   await persistCredential(credential);
 
   logCustomerActivity(user, "USER_PASSWORD_RESET", `Password diatur ulang: ${user.email}`);
 
   return { ok: true, user, status: 200 };
+}
+
+/**
+ * Returns the account's current password epoch in seconds, or 0 when unknown.
+ *
+ * 0 means "no reset on record", and every token issued without a pwdAt claim
+ * also reads as 0, so a missing epoch never invalidates an existing session.
+ */
+export async function getPasswordEpoch(email: string): Promise<number> {
+  const credential = await loadCredential(email);
+  return credential?.passwordChangedAt ?? 0;
 }
 
 export async function recordCustomerOrder(

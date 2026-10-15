@@ -21,6 +21,10 @@ const HIGHLIGHTS = [
     body: "Akun baru langsung mendapat kuota sandbox untuk menguji endpoint tanpa mengisi kartu kredit.",
   },
   {
+    title: "Verifikasi email lebih dulu",
+    body: "Kami mengirim satu tautan verifikasi saat Anda mendaftar. Ini memastikan API key nanti hanya terkirim ke alamat yang benar-benar Anda miliki.",
+  },
+  {
     title: "Key otomatis setelah pembayaran",
     body: "Begitu pembayaran paket atau paket token model dikonfirmasi, API key dibuat otomatis, dikirim ke email Anda, dan langsung tampil di portal.",
   },
@@ -84,7 +88,12 @@ export function SignupForm() {
         return;
       }
 
-      router.replace("/customer");
+      // Send the customer straight to the verification step, which explains
+      // what to do when the mail has not arrived. The account already exists,
+      // so abandoning this page is recoverable via the resend button there.
+      const query = new URLSearchParams({ email: email.trim() });
+      if (data.emailDelivered === false) query.set("delivery", "failed");
+      router.replace(`/verify-email?${query.toString()}`);
       router.refresh();
     } catch {
       setFormError("Koneksi ke server gagal. Periksa jaringan Anda lalu coba lagi.");

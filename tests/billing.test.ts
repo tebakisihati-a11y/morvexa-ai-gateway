@@ -10,6 +10,7 @@ import {
   seedTransaction,
   getTransaction,
 } from "../src/lib/billing/midtrans";
+import { resolveMidtransServerKey } from "../src/lib/billing/sandboxKey";
 import type { MidtransNotificationPayload } from "../src/lib/billing/types";
 
 describe("Midtrans Payment Gateway & Webhook Integration", () => {
@@ -258,6 +259,83 @@ describe("Midtrans Payment Gateway & Webhook Integration", () => {
       expect(getTransaction(orderId)?.status).toBe("settled");
     });
 
+    it("no longer accepts a signature forged from the old public constant", async () => {
+      const orderId = "MVX-FORGERY-ATTEMPT";
+      const statusCode = "200";
+      const grossAmount = "2500000.00";
+
+      const forged = calculateMidtransSignature(
+        orderId,
+        statusCode,
+        grossAmount,
+        "dummy_sandbox_key"
+      );
+
+      const res = await app.request("/api/billing/webhooks/midtrans", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          order_id: orderId,
+          status_code: statusCode,
+          gross_amount: grossAmount,
+          signature_key: forged,
+          transaction_status: "settlement",
+          transaction_id: "forged-tx-1",
+        }),
+      });
+
+      expect(res.status).toBe(401);
+      expect(getTransaction(orderId)).toBeFalsy();
+    });
+
+    it("generates an unguessable per-process sandbox key when none is configured", () => {
+      const previous = process.env.MIDTRANS_SERVER_KEY;
+      delete process.env.MIDTRANS_SERVER_KEY;
+
+      const first = resolveMidtransServerKey();
+      const second = resolveMidtransServerKey();
+
+      expect(first).toBeTruthy();
+      expect(first).not.toBe("dummy_sandbox_key");
+      // Stable within a process so a checkout and its webhook agree.
+      expect(first).toBe(second);
+      expect(first!.length).toBeGreaterThan(32);
+
+      if (previous === undefined) delete process.env.MIDTRANS_SERVER_KEY;
+      else process.env.MIDTRANS_SERVER_KEY = previous;
+    });
+
+    it("fails closed in production when MIDTRANS_SERVER_KEY is absent", async () => {
+      const previousEnv = process.env.NODE_ENV;
+      const previousKey = process.env.MIDTRANS_SERVER_KEY;
+      // @ts-expect-error -- NODE_ENV is read-only in the type but writable at runtime
+      process.env.NODE_ENV = "production";
+      delete process.env.MIDTRANS_SERVER_KEY;
+
+      try {
+        expect(resolveMidtransServerKey()).toBeUndefined();
+
+        const res = await app.request("/api/billing/webhooks/midtrans", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            order_id: "MVX-PROD-NO-KEY",
+            status_code: "200",
+            gross_amount: "1000.00",
+            signature_key: "anything",
+            transaction_status: "settlement",
+            transaction_id: "prod-tx-1",
+          }),
+        });
+
+        expect(res.status).toBe(401);
+      } finally {
+        // @ts-expect-error -- restore the runtime value
+        process.env.NODE_ENV = previousEnv;
+        if (previousKey !== undefined) process.env.MIDTRANS_SERVER_KEY = previousKey;
+      }
+    });
+
     it("refuses to settle an unknown order", async () => {
       const res = await app.request("/api/billing/sandbox/settle", {
         method: "POST",
@@ -273,8 +351,15 @@ describe("Midtrans Payment Gateway & Webhook Integration", () => {
       const grossAmount = "2500000.00";
       const statusCode = "200";
 
-      // Uses default server key fallback or env
-      const signature = calculateMidtransSignature(orderId, statusCode, grossAmount, "dummy_sandbox_key");
+      // Signs with the same resolver the verifier uses. Outside production that
+      // is a random per-process key, so the signature cannot be produced from a
+      // constant an attacker would know.
+      const signature = calculateMidtransSignature(
+        orderId,
+        statusCode,
+        grossAmount,
+        resolveMidtransServerKey()!
+      );
 
       const res = await app.request("/api/billing/webhooks/midtrans", {
         method: "POST",

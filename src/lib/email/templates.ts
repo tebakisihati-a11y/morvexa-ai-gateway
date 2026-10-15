@@ -177,3 +177,46 @@ export function passwordResetEmail(params: {
 
   return { subject, html, text };
 }
+
+/**
+ * Sent at registration. The API key is deliberately NOT included: it is issued
+ * only after the customer proves control of the address by opening this link.
+ */
+export function emailVerificationEmail(params: {
+  name: string;
+  verifyUrl: string;
+  expiresHours: number;
+}): RenderedEmail {
+  const subject = "Verifikasi email Anda untuk Morvexa";
+
+  const html = layout({
+    heading: "Verifikasi email",
+    bodyHtml:
+      paragraph(
+        `Halo ${escapeHtml(params.name)}, terima kasih sudah mendaftar di Morvexa. Satu langkah lagi sebelum akun Anda aktif.`
+      ) +
+      button(params.verifyUrl, "Verifikasi email saya") +
+      paragraph(
+        `Tautan ini berlaku selama ${escapeHtml(String(params.expiresHours))} jam dan hanya bisa dipakai satu kali.`
+      ) +
+      paragraph("Kalau tombol di atas tidak berfungsi, salin alamat berikut ke browser Anda:") +
+      codeBlock(params.verifyUrl) +
+      paragraph(
+        "Kami meminta verifikasi ini untuk memastikan alamat email benar-benar milik Anda, sehingga API key tidak pernah terkirim ke alamat yang salah."
+      ),
+    footnote: "Anda menerima email ini karena alamat ini digunakan untuk mendaftar akun Morvexa.",
+  });
+
+  const text = [
+    `Halo ${params.name}, terima kasih sudah mendaftar di Morvexa.`,
+    "",
+    "Buka tautan berikut untuk memverifikasi email Anda:",
+    params.verifyUrl,
+    "",
+    `Tautan berlaku ${params.expiresHours} jam dan hanya bisa dipakai satu kali.`,
+    "",
+    "Verifikasi ini memastikan API key hanya terkirim ke alamat email yang benar-benar Anda miliki.",
+  ].join("\n");
+
+  return { subject, html, text };
+}

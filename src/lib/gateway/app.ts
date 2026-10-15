@@ -20,6 +20,7 @@ import {
   calculateMidtransSignature,
   getTransaction,
 } from "../billing/midtrans";
+import { resolveMidtransServerKey } from "../billing/sandboxKey";
 import { PLAN_PRICES_IDR } from "../billing/catalog";
 import {
   requestDedicatedEnvironment,
@@ -28,6 +29,7 @@ import {
   deprovisionEnvironment,
 } from "../infrastructure/provisioning";
 import { checkRateLimit } from "./ratelimit";
+import { checkIpRateLimit, clientIpFromHeaders } from "./ipRateLimit";
 import {
   reconcileSingleOrder,
   runAutomatedReconciliation,
@@ -365,12 +367,17 @@ const AUTHORITATIVE_PLAN_PRICES: Record<string, number> = PLAN_PRICES_IDR;
 
 // Helper: Issues the signed session cookie for a freshly authenticated customer.
 // `secure` is only set over HTTPS so local http:// development still works.
-function setSessionCookie(c: any, user: { id: string; email: string; name: string; provider: "gmail" | "yahoo" | "email" }): void {
+function setSessionCookie(
+  c: any,
+  user: { id: string; email: string; name: string; provider: "gmail" | "yahoo" | "email" },
+  passwordEpoch = 0
+): void {
   const token = issueSessionToken({
     sub: user.id,
     email: user.email,
     name: user.name,
     provider: user.provider,
+    pwdAt: passwordEpoch,
   });
   const secure = isSecureRequest(c.req.url, c.req.header("x-forwarded-proto"));
   setCookie(c, SESSION_COOKIE, token, {
@@ -493,7 +500,16 @@ app.post("/billing/sandbox/settle", async (c) => {
     return c.json({ error: "Transaction not found" }, 404);
   }
 
-  const serverKey = process.env.MIDTRANS_SERVER_KEY || "dummy_sandbox_key";
+  const serverKey = resolveMidtransServerKey();
+  if (!serverKey) {
+    return c.json(
+      {
+        error:
+          "MIDTRANS_SERVER_KEY is not configured. Sandbox settlement cannot be signed.",
+      },
+      503
+    );
+  }
   const statusCode = "200";
   const grossAmount = `${tx.amount}.00`;
 
@@ -714,7 +730,31 @@ function lockoutMessage(seconds: number): string {
   return `Terlalu banyak percobaan gagal. Coba lagi dalam ${describeLockout(seconds)}.`;
 }
 
+/**
+ * Applies the per-IP limit for an auth endpoint.
+ *
+ * Returns a 429 response when the caller has exceeded the policy, or null to
+ * continue. Requests with no attributable address are not limited here; the
+ * per-account throttle still applies to them.
+ */
+function enforceIpLimit(c: any, endpoint: string): Response | null {
+  const ip = clientIpFromHeaders(c.req.raw.headers);
+  if (!ip) return null;
+
+  const decision = checkIpRateLimit(endpoint, ip);
+  if (decision.allowed) return null;
+
+  return c.json(
+    { error: lockoutMessage(decision.retryAfterSeconds) },
+    429,
+    { "Retry-After": String(decision.retryAfterSeconds) }
+  );
+}
+
 app.post("/customer/auth/register", async (c) => {
+  const ipBlocked = enforceIpLimit(c, "register");
+  if (ipBlocked) return ipBlocked;
+
   const body = await c.req.json().catch(() => ({}));
   const email = typeof body.email === "string" ? body.email.trim() : "";
   const name = typeof body.name === "string" ? body.name.trim() : "";
@@ -744,12 +784,43 @@ app.post("/customer/auth/register", async (c) => {
 
   clearLoginFailures(throttleKey);
 
-  // Welcome email. A delivery failure must not fail the registration the
-  // customer already completed, so the result is logged rather than surfaced.
+  // Verification email. A delivery failure must not fail a registration the
+  // customer already completed, so the outcome is reported rather than thrown.
+  const delivery = await sendVerificationEmail(c, result.user);
+
+  setSessionCookie(c, result.user);
+  return c.json(
+    {
+      success: true,
+      user: result.user,
+      emailDelivered: delivery.delivered,
+      message: delivery.delivered
+        ? "Akun berhasil dibuat. Kami sudah mengirim tautan verifikasi ke email Anda."
+        : "Akun berhasil dibuat, tetapi email verifikasi belum terkirim. Gunakan tombol kirim ulang di halaman akun Anda.",
+    },
+    201
+  );
+});
+
+/**
+ * Issues a verification token and emails the link.
+ *
+ * Shared by registration and the resend endpoint so both produce identical
+ * mail. Never throws: the caller has already committed the account.
+ */
+async function sendVerificationEmail(c: any, user: { id: string; email: string; name: string }) {
+  const { sendEmail } = await import("../email/send");
+  const { emailVerificationEmail } = await import("../email/templates");
+  const { resolvePublicBaseUrl } = await import("../email/baseUrl");
+  const { issueEmailVerificationToken, VERIFICATION_TOKEN_TTL_MINUTES } = await import(
+    "../auth/verificationTokens"
+  );
+
   try {
-    const { sendEmail } = await import("../email/send");
-    const { welcomeEmail } = await import("../email/templates");
-    const { resolvePublicBaseUrl } = await import("../email/baseUrl");
+    const { rawToken } = await issueEmailVerificationToken({
+      customerId: user.id,
+      email: user.email,
+    });
 
     const baseUrl = resolvePublicBaseUrl({
       url: c.req.url,
@@ -757,28 +828,113 @@ app.post("/customer/auth/register", async (c) => {
       forwardedProto: c.req.header("x-forwarded-proto"),
     });
 
-    const delivery = await sendEmail({
-      to: result.user.email,
-      email: welcomeEmail({ name: result.user.name, portalUrl: `${baseUrl}/customer` }),
+    const result = await sendEmail({
+      to: user.email,
+      email: emailVerificationEmail({
+        name: user.name,
+        verifyUrl: `${baseUrl}/verify-email?token=${encodeURIComponent(rawToken)}`,
+        expiresHours: Math.round(VERIFICATION_TOKEN_TTL_MINUTES / 60),
+      }),
     });
 
-    if (!delivery.delivered) {
+    if (!result.delivered) {
       console.warn(
-        `[Morvexa Auth] Welcome email to ${result.user.email} was NOT delivered (transport: ${delivery.transport}).`
+        `[Morvexa Auth] Verification email to ${user.email} was NOT delivered (transport: ${result.transport}).`
       );
     }
+
+    return result;
   } catch (error) {
-    console.error("[Morvexa Auth] Welcome email failed:", error);
+    console.error("[Morvexa Auth] Verification email failed:", error);
+    return { delivered: false, transport: "none" as const };
+  }
+}
+
+// POST /api/customer/auth/verify-email — redeems a verification link.
+//
+// The route is idempotent: opening the same link twice reports success rather
+// than an error, because a customer may well refresh the page.
+app.post("/customer/auth/verify-email", async (c) => {
+  const ipBlocked = enforceIpLimit(c, "verify-email");
+  if (ipBlocked) return ipBlocked;
+
+  const body = await c.req.json().catch(() => ({}));
+  const rawToken = typeof body.token === "string" ? body.token.trim() : "";
+
+  if (!rawToken) {
+    return c.json({ error: "Tautan verifikasi tidak lengkap." }, 400);
   }
 
-  setSessionCookie(c, result.user);
-  return c.json(
-    { success: true, user: result.user, message: "Akun berhasil dibuat. Selamat datang di Morvexa." },
-    201
+  const { findUsableVerificationToken, consumeVerificationToken, findVerificationTokenEmail } =
+    await import("../auth/verificationTokens");
+  const { markEmailVerified, findCustomerByEmail, isEmailVerified } = await import(
+    "../customer/store"
   );
+
+  const token = await findUsableVerificationToken(rawToken);
+
+  if (!token) {
+    // Distinguish "already verified" from a genuinely dead link so the page can
+    // be reassuring instead of alarming. A used token still resolves to its
+    // address, which is what makes a refresh after success work.
+    const knownEmail = await findVerificationTokenEmail(rawToken);
+    const existing = knownEmail ? findCustomerByEmail(knownEmail) : undefined;
+
+    if (existing && isEmailVerified(existing)) {
+      return c.json({ success: true, alreadyVerified: true, email: existing.email });
+    }
+
+    return c.json(
+      { error: "Tautan verifikasi tidak valid atau sudah kedaluwarsa. Minta tautan baru." },
+      400
+    );
+  }
+
+  const user = await markEmailVerified(token.email);
+  if (!user) {
+    return c.json({ error: "Akun tidak ditemukan." }, 404);
+  }
+
+  await consumeVerificationToken(rawToken);
+
+  return c.json({ success: true, alreadyVerified: false, email: user.email });
+});
+
+// POST /api/customer/auth/resend-verification — issues a fresh link.
+app.post("/customer/auth/resend-verification", async (c) => {
+  const ipBlocked = enforceIpLimit(c, "resend-verification");
+  if (ipBlocked) return ipBlocked;
+
+  const body = await c.req.json().catch(() => ({}));
+  const email = typeof body.email === "string" ? body.email.trim() : "";
+
+  if (!email) {
+    return c.json({ error: "Email wajib diisi." }, 400);
+  }
+
+  const { findCustomerByEmail, isEmailVerified } = await import("../customer/store");
+  const user = findCustomerByEmail(email);
+
+  // Same response whether or not the address exists, and whether or not it is
+  // already verified: this endpoint must not disclose account state.
+  const acknowledgement = {
+    success: true,
+    message:
+      "Jika akun tersebut ada dan belum terverifikasi, kami sudah mengirim tautan verifikasi baru.",
+  };
+
+  if (!user || isEmailVerified(user)) {
+    return c.json(acknowledgement);
+  }
+
+  await sendVerificationEmail(c, user);
+  return c.json(acknowledgement);
 });
 
 app.post("/customer/auth/login", async (c) => {
+  const ipBlocked = enforceIpLimit(c, "login");
+  if (ipBlocked) return ipBlocked;
+
   const body = await c.req.json().catch(() => ({}));
   const email = typeof body.email === "string" ? body.email.trim() : "";
 
@@ -801,7 +957,8 @@ app.post("/customer/auth/login", async (c) => {
   }
 
   clearLoginFailures(throttleKey);
-  setSessionCookie(c, result.user);
+  const { getPasswordEpoch: readEpoch } = await import("../customer/store");
+  setSessionCookie(c, result.user, await readEpoch(result.user.email));
   return c.json({ success: true, user: result.user, message: "Login berhasil." }, 200);
 });
 
@@ -818,6 +975,9 @@ app.post("/customer/auth/logout", (c) => {
  * accounts. The reset email is only sent when an account exists.
  */
 app.post("/customer/auth/forgot-password", async (c) => {
+  const ipBlocked = enforceIpLimit(c, "forgot-password");
+  if (ipBlocked) return ipBlocked;
+
   const body = await c.req.json().catch(() => ({}));
   const email = typeof body.email === "string" ? body.email.trim() : "";
 
@@ -878,6 +1038,9 @@ app.post("/customer/auth/forgot-password", async (c) => {
  * password is safely persisted, so a storage failure does not burn the link.
  */
 app.post("/customer/auth/reset-password", async (c) => {
+  const ipBlocked = enforceIpLimit(c, "reset-password");
+  if (ipBlocked) return ipBlocked;
+
   const body = await c.req.json().catch(() => ({}));
   const token = typeof body.token === "string" ? body.token.trim() : "";
 
@@ -913,8 +1076,10 @@ app.post("/customer/auth/reset-password", async (c) => {
   clearLoginFailures(`login:${record.email}`);
 
   // Sign the customer in so the reset lands them in the portal, not back at the
-  // login screen. The old cookie, if any, is replaced by this one.
-  setSessionCookie(c, result.user);
+  // login screen. The epoch is read after the update, so this cookie carries the
+  // new value while every cookie issued before the reset is now stale.
+  const { getPasswordEpoch } = await import("../customer/store");
+  setSessionCookie(c, result.user, await getPasswordEpoch(result.user.email));
 
   return c.json(
     { success: true, user: result.user, message: "Password berhasil diperbarui." },
@@ -930,9 +1095,18 @@ app.get("/customer/auth/session", async (c) => {
     return c.json({ authenticated: false, user: null }, 200);
   }
 
-  const { findCustomerById } = await import("../customer/store");
+  const { findCustomerById, getPasswordEpoch } = await import("../customer/store");
   const user = findCustomerById(claims.sub);
   if (!user) {
+    deleteCookie(c, SESSION_COOKIE, { path: "/" });
+    return c.json({ authenticated: false, user: null }, 200);
+  }
+
+  // A session issued before the last password change is no longer valid. This is
+  // what makes "reset password" also sign out anyone holding an older cookie.
+  const { isSessionCurrent } = await import("../auth/session");
+  const epoch = await getPasswordEpoch(user.email);
+  if (!isSessionCurrent(claims, epoch)) {
     deleteCookie(c, SESSION_COOKIE, { path: "/" });
     return c.json({ authenticated: false, user: null }, 200);
   }

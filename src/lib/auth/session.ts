@@ -20,6 +20,12 @@ export interface SessionClaims {
   name: string;
   /** Sign-in mechanism used to establish the session. */
   provider: "gmail" | "yahoo" | "email";
+  /**
+   * The account's password epoch at the moment this session was issued, in
+   * epoch seconds. A reset bumps the account's epoch, which makes every older
+   * session stale — that is what lets a password reset evict a stolen cookie.
+   */
+  pwdAt: number;
   /** Issued-at, epoch seconds. */
   iat: number;
   /** Expiry, epoch seconds. */
@@ -70,12 +76,13 @@ function sign(payloadSegment: string, secret: string): string {
 
 /** Issues a signed token for the given claims, applying the default TTL. */
 export function issueSessionToken(
-  claims: Omit<SessionClaims, "iat" | "exp">,
+  claims: Omit<SessionClaims, "iat" | "exp" | "pwdAt"> & { pwdAt?: number },
   ttlSeconds: number = SESSION_TTL_SECONDS
 ): string {
   const issuedAt = Math.floor(Date.now() / 1000);
   const payload: SessionClaims = {
     ...claims,
+    pwdAt: claims.pwdAt ?? 0,
     iat: issuedAt,
     exp: issuedAt + ttlSeconds,
   };
@@ -126,6 +133,20 @@ export function verifySessionToken(token: string | undefined | null): SessionCla
   if (claims.exp <= Math.floor(Date.now() / 1000)) return null;
 
   return claims;
+}
+
+/**
+ * Whether a verified token still reflects the account's current password epoch.
+ *
+ * Tokens issued before this field existed carry pwdAt = 0, so they are accepted
+ * until the account's first reset. That keeps existing sessions working across
+ * the deploy instead of signing everyone out.
+ */
+export function isSessionCurrent(
+  claims: Pick<SessionClaims, "pwdAt">,
+  currentEpochSeconds: number
+): boolean {
+  return (claims.pwdAt ?? 0) >= currentEpochSeconds;
 }
 
 /** Serialises the session cookie. `secure` is derived from the request protocol. */
