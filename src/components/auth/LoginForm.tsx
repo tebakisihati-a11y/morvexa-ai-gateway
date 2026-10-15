@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { AuthShell } from "./AuthShell";
 import { PasswordField, TextField, FormError } from "./fields";
@@ -26,9 +26,6 @@ const HIGHLIGHTS = [
 
 export function LoginForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  // `next` lets /customer bounce a signed-out visitor here and return them after.
-  const nextPath = safeRedirectPath(searchParams.get("next"));
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -49,6 +46,14 @@ export function LoginForm() {
       setFormError("Password wajib diisi.");
       return;
     }
+
+    // Read `next` here rather than through useSearchParams: that hook forces the
+    // whole page into client-side rendering, which left /login with an empty
+    // black first paint while /signup rendered its form immediately. The value
+    // is validated below, so an attacker-supplied target cannot leave the site.
+    const nextPath = safeRedirectPath(
+      new URLSearchParams(window.location.search).get("next")
+    );
 
     setSubmitting(true);
     try {
