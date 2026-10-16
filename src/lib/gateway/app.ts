@@ -46,6 +46,8 @@ import {
   getReconciliationLogs,
 } from "../billing/reconciliation";
 import { DEFAULT_SYSTEM_METRICS } from "../constants";
+import { buildSystemStatus } from "../status/systemStatus";
+import type { UpstreamProviderId } from "../types";
 
 export const app = new Hono().basePath("/api");
 
@@ -139,6 +141,15 @@ app.get("/v1/metrics", (c) => {
       { region: "NRT (Tokyo)", latencyMs: 42, status: "optimal" },
     ],
   });
+});
+
+// 1b. Public System Status: GET /api/v1/status
+//
+// Unauthenticated on purpose so a status page and uptime monitor can read it.
+// It reports only booleans and counts derived from configuration; see
+// src/lib/status/systemStatus.ts for why no secret or latency figure leaks here.
+app.get("/v1/status", (c) => {
+  return c.json(buildSystemStatus());
 });
 
 // 2. Available Models Endpoint
@@ -264,40 +275,29 @@ app.post("/v1/messages", async (c) => {
 
   const route = resolveProviderRoute(model);
 
-  // Check if env variable or custom provider key is set for live proxying
-  const envKey =
-    route.selectedProvider === "anthropic"
-      ? process.env.ANTHROPIC_API_KEY
-      : route.selectedProvider === "openai"
-      ? process.env.OPENAI_API_KEY
-      : route.selectedProvider === "deepseek"
-      ? process.env.DEEPSEEK_API_KEY
-      : route.selectedProvider === "groq"
-      ? process.env.GROQ_API_KEY
-      : undefined;
+  // Real failover: try the primary provider, then every other active provider
+  // that has a server-side key, before giving up to the simulated stream.
+  const live = await attemptLiveFailover({
+    model,
+    messages,
+    system,
+    temperature,
+    stream,
+    primary: route.selectedProvider,
+  });
 
-  if (envKey) {
-    const upstreamRes = await forwardToUpstreamProvider({
-      provider: route.selectedProvider,
-      apiKey: envKey,
-      model,
-      messages,
-      system,
-      temperature,
-      stream,
+  if (live) {
+    const failoverOccurred = live.provider !== route.selectedProvider;
+    return new Response(live.response.body, {
+      status: live.response.status,
+      headers: {
+        "Content-Type": live.response.headers.get("content-type") || "text/event-stream",
+        "Cache-Control": "no-cache, no-transform",
+        "X-Morvexa-Provider": live.provider,
+        "X-Morvexa-Live": "true",
+        "X-Morvexa-Failover": failoverOccurred ? "true" : "false",
+      },
     });
-
-    if (upstreamRes && upstreamRes.body) {
-      return new Response(upstreamRes.body, {
-        status: upstreamRes.status,
-        headers: {
-          "Content-Type": upstreamRes.headers.get("content-type") || "text/event-stream",
-          "Cache-Control": "no-cache, no-transform",
-          "X-Morvexa-Provider": route.selectedProvider,
-          "X-Morvexa-Live": "true",
-        },
-      });
-    }
   }
 
   // Simulated Zero-Buffer SSE stream fallback for playground & testing
@@ -453,6 +453,70 @@ function setSessionCookie(
 }
 
 // Helper: Verifies administrative/cron authorization
+/**
+ * Attempts a real upstream call across the failover chain.
+ *
+ * The chain is built by resolveProviderRoute (primary first) followed by every
+ * other active provider that has a server-side key. A provider is skipped when
+ * its key is absent, when the upstream returns a non-ok status, or when the call
+ * throws. The first provider that answers wins; if none do, the caller falls
+ * back to the simulated stream. This is what makes the promise on the landing
+ * page true: a 429 on the primary really does reach the next provider instead of
+ * dropping straight to a canned response.
+ */
+async function attemptLiveFailover(params: {
+  model: string;
+  messages: Array<{ role: string; content: string }>;
+  system?: string;
+  temperature?: number;
+  stream: boolean;
+  primary: UpstreamProviderId;
+}): Promise<{ response: Response; provider: UpstreamProviderId; hops: UpstreamProviderId[] } | null> {
+  const chain: UpstreamProviderId[] = [params.primary];
+  for (const candidate of DEFAULT_PROVIDERS) {
+    if (candidate.isActive && candidate.id !== params.primary) chain.push(candidate.id);
+  }
+
+  for (const provider of chain) {
+    const apiKey = apiKeyForProvider(provider);
+    if (!apiKey) continue;
+
+    const response = await forwardToUpstreamProvider({
+      provider,
+      apiKey,
+      model: params.model,
+      messages: params.messages,
+      system: params.system,
+      temperature: params.temperature,
+      stream: params.stream,
+    });
+
+    if (response && response.body) {
+      return { response, provider, hops: [...chain] };
+    }
+  }
+
+  return null;
+}
+
+/** The server-side credential for a provider, or undefined when unconfigured. */
+function apiKeyForProvider(provider: UpstreamProviderId): string | undefined {
+  switch (provider) {
+    case "anthropic":
+      return process.env.ANTHROPIC_API_KEY;
+    case "openai":
+      return process.env.OPENAI_API_KEY;
+    case "deepseek":
+      return process.env.DEEPSEEK_API_KEY;
+    case "groq":
+      return process.env.GROQ_API_KEY;
+    case "custom":
+      return process.env.PRIVATE_SERVER_URL ? "configured" : undefined;
+    default:
+      return undefined;
+  }
+}
+
 /**
  * Identifies the actor behind a privileged request.
  *

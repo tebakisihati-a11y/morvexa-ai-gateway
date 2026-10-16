@@ -9,6 +9,8 @@
  * presented as live telemetry.
  */
 
+import React, { useEffect, useState } from "react";
+
 interface Hop {
   provider: string;
   model: string;
@@ -34,7 +36,27 @@ const STATE_LABELS: Record<Hop["state"], string> = {
   skip: "STANDBY",
 };
 
+/* Milliseconds at which each hop becomes "current" as the request travels down
+   the chain, then a settle step that clears the highlight. One pass only: brief
+   section 1 bans looping decorative animation, and a request is not a loop. */
+const TRAVEL_SCHEDULE_MS = [250, 900, 1550] as const;
+const SETTLE_AT_MS = 2200;
+
 export function FailoverTracePreview({ className = "" }: { className?: string }) {
+  const [activeHop, setActiveHop] = useState<number>(-1);
+
+  useEffect(() => {
+    // Respect the OS setting: skip the travel entirely and render the final
+    // state, which is the same picture with no motion.
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const timers: ReturnType<typeof setTimeout>[] = TRAVEL_SCHEDULE_MS.map((delay, index) =>
+      setTimeout(() => setActiveHop(index), delay)
+    );
+    timers.push(setTimeout(() => setActiveHop(-1), SETTLE_AT_MS));
+    return () => timers.forEach(clearTimeout);
+  }, []);
+
   return (
     <div
       className={`rounded-lg border border-[#f4f4f5]/10 bg-[#0e0e11] hairline-top ${className}`}
@@ -49,30 +71,46 @@ export function FailoverTracePreview({ className = "" }: { className?: string })
 
       {/* Provider chain */}
       <div className="divide-y divide-[#f4f4f5]/8">
-        {HOPS.map((hop) => (
-          <div key={hop.provider} className="flex items-center gap-3 px-4 py-3">
-            <span
-              className={`h-1.5 w-1.5 shrink-0 rounded-full ${
-                hop.state === "ok"
-                  ? "bg-[#10b981]"
-                  : hop.state === "retry"
-                    ? "bg-[#ef4444]"
-                    : "bg-[#71717a]"
+        {HOPS.map((hop, index) => {
+          const isActive = activeHop === index;
+          return (
+            <div
+              key={hop.provider}
+              data-active={isActive ? "true" : undefined}
+              className={`relative flex items-center gap-3 px-4 py-3 transition-colors duration-300 ${
+                isActive ? "bg-[#f97316]/6" : "bg-transparent"
               }`}
-              aria-hidden="true"
-            />
-            <div className="min-w-0 flex-1">
-              <p className="truncate font-mono text-[12px] text-[#f4f4f5]">{hop.provider}</p>
-              <p className="truncate font-mono text-[10.5px] text-[#71717a]">{hop.model}</p>
-            </div>
-            <span className="font-mono text-[11px] text-[#a1a1aa]">{hop.latency}</span>
-            <span
-              className={`rounded-sm border px-1.5 py-0.5 font-mono text-[9.5px] font-bold tracking-[0.05em] ${STATE_STYLES[hop.state]}`}
             >
-              {STATE_LABELS[hop.state]}
-            </span>
-          </div>
-        ))}
+              {/* Left accent bar that marks the hop currently being attempted. */}
+              <span
+                aria-hidden="true"
+                className={`absolute left-0 top-0 h-full w-0.5 transition-opacity duration-300 ${
+                  isActive ? "bg-[#f97316] opacity-100" : "opacity-0"
+                }`}
+              />
+              <span
+                className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+                  hop.state === "ok"
+                    ? "bg-[#10b981]"
+                    : hop.state === "retry"
+                      ? "bg-[#ef4444]"
+                      : "bg-[#71717a]"
+                } ${isActive ? "ring-4 ring-[#f97316]/20" : ""}`}
+                aria-hidden="true"
+              />
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-mono text-[12px] text-[#f4f4f5]">{hop.provider}</p>
+                <p className="truncate font-mono text-[10.5px] text-[#71717a]">{hop.model}</p>
+              </div>
+              <span className="font-mono text-[11px] text-[#a1a1aa]">{hop.latency}</span>
+              <span
+                className={`rounded-sm border px-1.5 py-0.5 font-mono text-[9.5px] font-bold tracking-[0.05em] ${STATE_STYLES[hop.state]}`}
+              >
+                {STATE_LABELS[hop.state]}
+              </span>
+            </div>
+          );
+        })}
       </div>
 
       {/* Outcome */}

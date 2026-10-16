@@ -55,7 +55,7 @@ export default function ApiCatalogPage() {
   };
 
   const codeSnippets = {
-    curl: `curl https://morvexa-sistem.vercel.app/api/v1/chat/completions \\
+    curl: `curl https://morvexa-ai-gateway.vercel.app/api/v1/chat/completions \\
   -H "Content-Type: application/json" \\
   -H "Authorization: Bearer mvx_live_YOUR_SECRET_KEY" \\
   -d '{
@@ -69,7 +69,7 @@ export default function ApiCatalogPage() {
 
 const client = new OpenAI({
   apiKey: "mvx_live_YOUR_SECRET_KEY",
-  baseURL: "https://morvexa-sistem.vercel.app/api/v1",
+  baseURL: "https://morvexa-ai-gateway.vercel.app/api/v1",
 });
 
 const response = await client.chat.completions.create({
@@ -82,7 +82,7 @@ console.log(response.choices[0].message.content);`,
 
 const anthropic = new Anthropic({
   apiKey: "mvx_live_YOUR_SECRET_KEY",
-  baseURL: "https://morvexa-sistem.vercel.app/api", // Native /v1/messages compatibility
+  baseURL: "https://morvexa-ai-gateway.vercel.app/api", // Native /v1/messages compatibility
 });
 
 const message = await anthropic.messages.create({
@@ -161,9 +161,9 @@ console.log(message.content);`,
               <span>Base API URL</span>
             </div>
             <div className="font-mono text-xs text-[#f4f4f5] bg-[#08080a] border border-white/5 p-2.5 rounded-lg select-all flex items-center justify-between">
-              <span>https://morvexa-sistem.vercel.app/api/v1</span>
+              <span>https://morvexa-ai-gateway.vercel.app/api/v1</span>
               <button
-                onClick={() => handleCopy("base", "https://morvexa-sistem.vercel.app/api/v1")}
+                onClick={() => handleCopy("base", "https://morvexa-ai-gateway.vercel.app/api/v1")}
                 className="text-[#71717a] hover:text-[#f97316]"
               >
                 {copiedId === "base" ? <Check className="h-3.5 w-3.5 text-[#f97316]" /> : <Copy className="h-3.5 w-3.5" />}

@@ -99,7 +99,7 @@ const STEPS = [
   },
 ];
 
-const CURL_SNIPPET = `curl https://morvexa-sistem.vercel.app/api/v1/messages \\
+const CURL_SNIPPET = `curl https://morvexa-ai-gateway.vercel.app/api/v1/messages \\
   -H "Authorization: Bearer $MORVEXA_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -719,14 +719,12 @@ function SiteFooter() {
           <Link href="/catalog" className="transition-colors hover:text-[#f4f4f5]">
             Katalog API
           </Link>
-          <a
-            href="/api/v1/metrics"
-            target="_blank"
-            rel="noreferrer"
-            className="transition-colors hover:text-[#f4f4f5]"
-          >
-            Status endpoint
-          </a>
+          <Link href="/docs" className="transition-colors hover:text-[#f4f4f5]">
+            Dokumentasi
+          </Link>
+          <Link href="/status" className="transition-colors hover:text-[#f4f4f5]">
+            Status
+          </Link>
         </nav>
 
         <p className="font-mono text-[11.5px] text-[#71717a]">
