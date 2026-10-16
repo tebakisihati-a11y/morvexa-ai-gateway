@@ -8,3 +8,8 @@ node_modules/
 .cf-tunnel.url
 .morvexa-data/
 .openhands/
+
+# Secrets
+.env
+.env.local
+*.env.local
