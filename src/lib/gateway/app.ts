@@ -434,10 +434,16 @@ function isPrivilegedRequest(c: any): boolean {
   const cronSecret = process.env.CRON_SECRET;
   const adminSecret = process.env.ADMIN_SECRET_KEY;
   if (!authHeader) {
-    // Outside production, allow the local UI and test suite through. This is
-    // never permitted in production, where the owner must present either a
-    // signed owner session or a configured secret.
-    return process.env.NODE_ENV !== "production";
+    // Development convenience, opt-in only. Every hosted environment - Vercel
+    // preview included - runs `next start`, where NODE_ENV is "production", so
+    // keying the bypass off NODE_ENV alone is not enough: a preview deployment
+    // must not expose the owner surface either. Requiring this flag means a
+    // deployment has to name itself non-hosted before the bypass can apply, and
+    // forgetting to set it fails closed.
+    return (
+      process.env.MORVEXA_ALLOW_INSECURE_DEV_PRIVILEGED === "true" &&
+      process.env.NODE_ENV !== "production"
+    );
   }
   const token = authHeader.replace(/^Bearer\s+/i, "").trim();
   if (cronSecret && token === cronSecret) return true;

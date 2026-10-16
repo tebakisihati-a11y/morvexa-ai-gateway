@@ -113,4 +113,32 @@ describe("Customer purchase endpoint authorization", () => {
     const res = await app.request(`${BASE}/api/customer/dashboard-data`, { method: "GET" });
     expect(res.status).toBe(403);
   });
+
+  it("refuses privileged routes when the dev bypass is not explicitly enabled", async () => {
+    // The bypass used to key off NODE_ENV alone, so any environment that was
+    // not production - a Vercel preview, a container started with NODE_ENV
+    // unset - served the full owner dataset to anonymous callers. Turning the
+    // flag off has to be enough to close it.
+    vi.stubEnv("MORVEXA_ALLOW_INSECURE_DEV_PRIVILEGED", "");
+    vi.stubEnv("NODE_ENV", "test");
+
+    for (const path of [
+      "/api/customer/dashboard-data",
+      "/api/audit/logs",
+      "/api/billing/reconcile/logs",
+    ]) {
+      const res = await app.request(`${BASE}${path}`, { method: "GET" });
+      // Routes vary between 401 and 403; either is a refusal. What matters is
+      // that none of them returns data.
+      expect([401, 403], `${path} must not answer an anonymous caller`).toContain(res.status);
+    }
+  });
+
+  it("still refuses privileged routes when the flag is set but NODE_ENV is production", async () => {
+    vi.stubEnv("MORVEXA_ALLOW_INSECURE_DEV_PRIVILEGED", "true");
+    vi.stubEnv("NODE_ENV", "production");
+
+    const res = await app.request(`${BASE}/api/customer/dashboard-data`, { method: "GET" });
+    expect(res.status).toBe(403);
+  });
 });

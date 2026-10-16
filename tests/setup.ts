@@ -22,3 +22,8 @@ delete process.env.ADMIN_SECRET_KEY;
 delete process.env.OWNER_PASSCODE;
 delete process.env.MORVEXA_PUBLIC_BASE_URL;
 delete process.env.NEXT_PUBLIC_APP_URL;
+
+// Privileged routes fail closed by default; the suite opts in so its fixtures
+// can reach them. Without this the only way in would be a signed owner session
+// or a configured secret, neither of which these tests set up.
+process.env.MORVEXA_ALLOW_INSECURE_DEV_PRIVILEGED = "true";
