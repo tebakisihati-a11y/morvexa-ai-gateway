@@ -12,8 +12,6 @@ import {
   Cpu,
   CheckCircle2,
   Boxes,
-  Copy,
-  Check,
   KeyRound,
   ExternalLink,
   Coins,
@@ -38,16 +36,7 @@ export function CustomerBentoPortal({
   activeCustomer,
   onOpenAuthModal,
 }: CustomerBentoPortalProps) {
-  const [copiedKey, setCopiedKey] = useState(false);
   const [activeTab, setActiveTab] = useState<"models" | "plans">("models");
-
-  const sampleKey = "mvx_live_9f8a3c4b1e2d7e8f0a9b8c7d6e5f4a3b";
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(sampleKey);
-    setCopiedKey(true);
-    setTimeout(() => setCopiedKey(false), 2000);
-  };
 
   return (
     <div className="space-y-10 animate-in fade-in duration-200">
@@ -117,18 +106,16 @@ export function CustomerBentoPortal({
             </div>
           </div>
 
-          <div className="mt-6 p-4 rounded-lg bg-[#08080a] border border-[#f4f4f5]/10 font-mono text-xs">
-            <div className="flex items-center justify-between text-[#a1a1aa] mb-2 text-[11px]">
-              <span>SAMPLE DISPATCHED TOKEN</span>
-              <button
-                onClick={handleCopy}
-                className="flex items-center gap-1 text-[#f97316] hover:underline cursor-pointer"
-              >
-                {copiedKey ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                <span>{copiedKey ? "Copied" : "Copy"}</span>
-              </button>
+          <div className="mt-6 rounded border border-[#f4f4f5]/10 bg-[#08080a] p-4 font-mono text-xs">
+            <div className="mb-2 text-[10px] uppercase tracking-wider text-[#71717a]">
+              Format kunci yang akan Anda terima
             </div>
-            <div className="text-[#f97316] truncate">{sampleKey}</div>
+            <div className="truncate text-[#71717a]">
+              mvx_live_<span className="text-[#a1a1aa]">••••••••••••••••••••••••</span>
+            </div>
+            <p className="mt-2 text-[11px] leading-relaxed text-[#71717a]">
+              Kunci asli dikirim ke email akun Anda setelah pembayaran terverifikasi.
+            </p>
           </div>
         </div>
 

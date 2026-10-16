@@ -8,10 +8,8 @@ import {
   Building,
   ArrowRight,
   Loader2,
-  Mail,
-  ShieldAlert,
+  ShieldCheck,
   Coins,
-  Sparkles,
 } from "lucide-react";
 import type { ModelProduct } from "@/lib/customer/catalog";
 import { apiFetch } from "@/lib/api/client";
@@ -44,10 +42,6 @@ export function CustomerModelCheckoutModal({
 
   const handleProceedToPayment = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!customerEmail || !customerEmail.includes("@")) {
-      alert("Harap masukkan email pribadi (Gmail/Yahoo) untuk pengiriman API Key & Token.");
-      return;
-    }
     setStep("pay");
   };
 
@@ -124,31 +118,25 @@ export function CustomerModelCheckoutModal({
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-mono text-[#a1a1aa] mb-1.5">
-                Nama Pemesan / Perusahaan
-              </label>
-              <input
-                type="text"
-                value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
-                placeholder="e.g. John Doe / PT Acme"
-                className="w-full px-3.5 py-2.5 rounded-lg bg-[#08080a] border border-[#f4f4f5]/15 text-[#f4f4f5] font-mono text-xs focus:border-[#f97316] focus:outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-mono text-[#a1a1aa] mb-1.5">
-                Email Pribadi (Kunci API & Notif akan dikirim ke sini)
-              </label>
-              <input
-                type="email"
-                required
-                value={customerEmail}
-                onChange={(e) => setCustomerEmail(e.target.value)}
-                placeholder="nama@gmail.com atau @yahoo.com"
-                className="w-full px-3.5 py-2.5 rounded-lg bg-[#08080a] border border-[#f4f4f5]/15 text-[#f4f4f5] font-mono text-xs focus:border-[#f97316] focus:outline-none"
-              />
+            <div className="rounded border border-[#f4f4f5]/10 bg-[#08080a] p-3.5 space-y-2">
+              <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-wider text-[#71717a]">
+                <ShieldCheck className="h-3 w-3" />
+                Ditagihkan ke akun Anda
+              </div>
+              <div className="space-y-1 font-mono text-xs">
+                <div className="flex justify-between gap-3">
+                  <span className="text-[#71717a]">Nama</span>
+                  <span className="truncate text-[#f4f4f5]">{defaultName || "-"}</span>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <span className="text-[#71717a]">Email</span>
+                  <span className="truncate text-[#f4f4f5]">{defaultEmail || "-"}</span>
+                </div>
+              </div>
+              <p className="text-[11px] leading-relaxed text-[#71717a]">
+                Kunci API dan token dikirim ke email akun yang sedang masuk. Untuk
+                menggantinya, masuk dengan akun lain.
+              </p>
             </div>
 
             <div className="pt-2">
