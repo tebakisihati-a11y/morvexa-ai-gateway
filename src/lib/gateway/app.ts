@@ -1343,6 +1343,20 @@ app.post("/customer/api-keys", async (c) => {
   const csrfRejected = enforceCsrfToken(c);
   if (csrfRejected) return csrfRejected;
 
+  // Issuing a live credential to an address nobody has proven they control is
+  // the one hole the purchase path already closes (see autoProvisionCustomerKey);
+  // the self-service path must not be the easier way around it.
+  const { isEmailVerified } = await import("../customer/store");
+  if (!isEmailVerified(user)) {
+    return c.json(
+      {
+        error:
+          "Verifikasi email Anda sebelum membuat API key. Buka tautan verifikasi yang kami kirim, lalu coba lagi.",
+      },
+      403
+    );
+  }
+
   const body = await c.req.json().catch(() => ({}));
   const name = String(body?.name || "").trim();
   if (name.length < 3 || name.length > 60) {

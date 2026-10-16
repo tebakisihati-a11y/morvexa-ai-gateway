@@ -16,6 +16,7 @@ import { isSupabaseAdminConfigured, getSupabaseAdminClient } from "./client";
 import { keyRow, rowToKey, getApiKeyMemory, prependApiKeyToMemory } from "./store";
 import { readCollection, writeCollection } from "../persistence/jsonStore";
 import type { ApiKeyItem } from "../types";
+import { randomUUID } from "node:crypto";
 
 let keysHydrated = false;
 
@@ -58,9 +59,21 @@ export async function persistKey(item: ApiKeyItem): Promise<void> {
   if (isSupabaseAdminConfigured) {
     try {
       const client = await getSupabaseAdminClient();
-      await client.from("api_keys").upsert(keyRow(item), { onConflict: "id" });
-    } catch {
-      // The local collection below still records it.
+      // supabase-js reports failures in `error` rather than by throwing, so a
+      // schema mismatch (for example a non-UUID id against a UUID column) would
+      // otherwise be swallowed and the JSON fallback below would look like
+      // success. Log it so the degradation is visible in the deploy log.
+      const { error } = await client
+        .from("api_keys")
+        .upsert(keyRow(item), { onConflict: "id" });
+      if (error) {
+        console.error(
+          `[Morvexa Durable] api key ${item.id} not persisted to Supabase:`,
+          error.message
+        );
+      }
+    } catch (error) {
+      console.error("[Morvexa Durable] api key persistence threw:", error);
     }
   }
   await writeCollection("api-keys", getApiKeyMemory().filter((k) => k.customerId));
@@ -113,7 +126,10 @@ export async function createApiKeyForCustomer(params: {
   const generated = await generateSecureApiKey("live");
 
   const newKey: ApiKeyItem = {
-    id: `key-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    // api_keys.id is a UUID column, so a 'key-<timestamp>' id would be rejected
+    // by Postgres and the write would silently fall back to the ephemeral JSON
+    // store. A UUID keeps operator-seeded and customer keys in one key space.
+    id: randomUUID(),
     name: params.name,
     prefix: generated.keyPrefix,
     maskedKey: generated.maskedKey,

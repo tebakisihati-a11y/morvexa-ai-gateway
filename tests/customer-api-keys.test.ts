@@ -31,8 +31,12 @@ function cookieValue(res: Response, name: string): string | null {
 }
 
 /** Registers and logs in, returning a Cookie header plus the CSRF header value. */
-async function signIn(email: string, password = "rahasia123") {
+async function signIn(email: string, password = "rahasia123", verified = true) {
   await post("/api/customer/auth/register", { name: "Pengguna", email, password });
+  if (verified) {
+    const { markEmailVerified } = await import("../src/lib/customer/store");
+    await markEmailVerified(email);
+  }
   const login = await post("/api/customer/auth/login", { email, password });
   const session = cookieValue(login, SESSION_COOKIE);
   const csrf = cookieValue(login, "mvx_csrf") ?? "";
@@ -59,6 +63,15 @@ describe("Customer self-service API keys", () => {
   it("refuses to list keys without a session", async () => {
     const res = await app.request(`${BASE}/api/customer/api-keys`);
     expect(res.status).toBe(401);
+  });
+
+  it("refuses to issue a key to an unverified address", async () => {
+    // The purchase path already blocks unverified accounts; if this route did
+    // not, a customer could simply mint the key by hand and skip verification.
+    const { cookie, csrf } = await signIn("belumverifikasi@example.com", "rahasia123", false);
+    const res = await post("/api/customer/api-keys", { name: "Nakal" }, cookie, csrf);
+    expect(res.status).toBe(403);
+    expect((await res.json()).error).toMatch(/[Vv]erifikasi/);
   });
 
   it("starts empty for a new account", async () => {

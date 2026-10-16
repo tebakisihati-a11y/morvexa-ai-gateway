@@ -37,6 +37,30 @@ ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS total_token_cap BIGINT;
 ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS health_status TEXT;
 ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS issue_reason TEXT;
 
+-- 3b. api_keys.id was UUID, but key ids have never been UUIDs: the application
+--     mints 'key-<timestamp>' strings (customer keys now use a real UUID, but
+--     older operator keys and the seeded rows do not). Every insert of such a
+--     key raised "invalid input syntax for type uuid", the write was swallowed,
+--     and the key silently fell back to the ephemeral JSON store - so keys were
+--     lost on each deploy. Widen the column and the two foreign keys that point
+--     at it to TEXT.
+--
+--     The child columns are dropped and re-added rather than altered because
+--     Postgres refuses to alter a column type while a foreign key depends on it.
+--     No customer-facing data lives in those columns yet.
+ALTER TABLE rolling_quota_records DROP CONSTRAINT IF EXISTS rolling_quota_records_key_id_fkey;
+ALTER TABLE request_logs DROP CONSTRAINT IF EXISTS request_logs_key_id_fkey;
+ALTER TABLE rolling_quota_records ALTER COLUMN key_id TYPE TEXT USING key_id::text;
+ALTER TABLE request_logs ALTER COLUMN key_id TYPE TEXT USING key_id::text;
+ALTER TABLE api_keys ALTER COLUMN id DROP DEFAULT;
+ALTER TABLE api_keys ALTER COLUMN id TYPE TEXT USING id::text;
+ALTER TABLE rolling_quota_records
+    ADD CONSTRAINT rolling_quota_records_key_id_fkey
+    FOREIGN KEY (key_id) REFERENCES api_keys(id) ON DELETE CASCADE;
+ALTER TABLE request_logs
+    ADD CONSTRAINT request_logs_key_id_fkey
+    FOREIGN KEY (key_id) REFERENCES api_keys(id) ON DELETE SET NULL;
+
 CREATE INDEX IF NOT EXISTS idx_api_keys_customer ON api_keys (customer_id);
 CREATE INDEX IF NOT EXISTS idx_api_keys_customer_email ON api_keys (lower(customer_email));
 

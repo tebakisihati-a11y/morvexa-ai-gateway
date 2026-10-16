@@ -251,7 +251,11 @@ export async function createApiKey(name: string, rateLimitRpm: number, dailyToke
   const generated = await generateSecureApiKey("live");
 
   const newKey: ApiKeyItem = {
-    id: `key-${Date.now()}`,
+    // The api_keys.id column is a UUID, so a non-UUID id is rejected by Postgres
+    // and the persistence write silently degrades to the ephemeral JSON store.
+    // The global crypto is used rather than node:crypto because this module is
+    // reachable from the client-rendered owner console.
+    id: globalThis.crypto.randomUUID(),
     name,
     prefix: generated.keyPrefix,
     maskedKey: generated.maskedKey,
