@@ -38,7 +38,8 @@ import {
   issueOwnerToken,
   verifyOwnerPasscode,
 } from "../auth/ownerSession";
-import { checkIpRateLimit, clientIpFromHeaders } from "./ipRateLimit";
+import { checkIpRateLimit, clientIpFromHeaders, ipLimitPolicy } from "./ipRateLimit";
+import { readSharedWindow, recordSharedEvent } from "./rateLimitStore";
 import {
   reconcileSingleOrder,
   runAutomatedReconciliation,
@@ -47,6 +48,32 @@ import {
 import { DEFAULT_SYSTEM_METRICS } from "../constants";
 
 export const app = new Hono().basePath("/api");
+
+/**
+ * Loads durable customer records into memory when the gateway module is first
+ * imported. Fired once, not awaited: the process can start serving immediately,
+ * and the synchronous lookups fall back to the JSON store until it resolves.
+ */
+void import("../customer/store")
+  .then(({ hydrateCustomerStore }) => hydrateCustomerStore())
+  .catch((error) => {
+    console.error("[Morvexa Durable] Customer hydration failed:", error);
+  });
+
+// Surfaces a missing email provider in the deploy log, where an operator will
+// see it, instead of only when the first customer fails to verify an address.
+void import("../email/send")
+  .then(({ assertEmailDeliveryConfigured }) => assertEmailDeliveryConfigured())
+  .catch(() => undefined);
+
+// Keys created before this process started are not in memory yet, so the
+// customer portal would show an empty list until the first write. Loading them
+// up front keeps "my keys" accurate on the first page view.
+void import("../supabase/keyPersistence")
+  .then(({ hydrateApiKeys }) => hydrateApiKeys())
+  .catch((error) => {
+    console.error("[Morvexa Durable] API key hydration failed:", error);
+  });
 
 // Global Resilient Error & 404 Handlers (Zero Unhandled Crashes)
 app.onError((err, c) => {
@@ -426,6 +453,35 @@ function setSessionCookie(
 }
 
 // Helper: Verifies administrative/cron authorization
+/**
+ * Identifies the actor behind a privileged request.
+ *
+ * Returns null when the request is not privileged. The label lets the access
+ * audit distinguish an owner session from a machine secret, which matters when
+ * asking why a large read happened.
+ */
+function privilegedActor(c: any): { actorType: "owner_session" | "admin_secret" | "cron_secret"; actorId: string } | null {
+  if (hasOwnerSession(c.req.header("Cookie"))) {
+    return { actorType: "owner_session", actorId: "owner" };
+  }
+
+  const authHeader = c.req.header("Authorization");
+  if (!authHeader) {
+    return isPrivilegedRequest(c)
+      ? { actorType: "admin_secret", actorId: "insecure-dev-bypass" }
+      : null;
+  }
+
+  const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+  if (process.env.CRON_SECRET && token === process.env.CRON_SECRET) {
+    return { actorType: "cron_secret", actorId: "cron" };
+  }
+  if (process.env.ADMIN_SECRET_KEY && token === process.env.ADMIN_SECRET_KEY) {
+    return { actorType: "admin_secret", actorId: "admin" };
+  }
+  return null;
+}
+
 function isPrivilegedRequest(c: any): boolean {
   // A signed owner session is the intended path for the browser console.
   if (hasOwnerSession(c.req.header("Cookie"))) return true;
@@ -783,13 +839,32 @@ function lockoutMessage(seconds: number): string {
  * Returns a 429 response when the caller has exceeded the policy, or null to
  * continue. Requests with no attributable address are not limited here; the
  * per-account throttle still applies to them.
+ *
+ * The decision consults the shared window first so a limit holds across
+ * instances. When the store is unreachable the local window still applies.
  */
-function enforceIpLimit(c: any, endpoint: string): Response | null {
+async function enforceIpLimit(c: any, endpoint: string): Promise<Response | null> {
   const ip = clientIpFromHeaders(c.req.raw.headers);
   if (!ip) return null;
 
-  const decision = checkIpRateLimit(endpoint, ip);
-  if (decision.allowed) return null;
+  const policy = ipLimitPolicy(endpoint);
+  const now = Date.now();
+  const shared = policy
+    ? await readSharedWindow(`${endpoint}:${ip}`, now - policy.sustainedWindowMs)
+    : { timestamps: [], shared: false };
+
+  const decision = checkIpRateLimit(
+    endpoint,
+    ip,
+    now,
+    shared.shared ? shared.timestamps : undefined
+  );
+  if (decision.allowed) {
+    // Only record accepted requests; the count that matters is "how many got
+    // through", and recording rejected ones would extend the block indefinitely.
+    void recordSharedEvent(`${endpoint}:${ip}`, now);
+    return null;
+  }
 
   return c.json(
     { error: lockoutMessage(decision.retryAfterSeconds) },
@@ -799,7 +874,7 @@ function enforceIpLimit(c: any, endpoint: string): Response | null {
 }
 
 app.post("/customer/auth/register", async (c) => {
-  const ipBlocked = enforceIpLimit(c, "register");
+  const ipBlocked = await enforceIpLimit(c, "register");
   if (ipBlocked) return ipBlocked;
 
   const body = await c.req.json().catch(() => ({}));
@@ -902,7 +977,7 @@ async function sendVerificationEmail(c: any, user: { id: string; email: string; 
 // The route is idempotent: opening the same link twice reports success rather
 // than an error, because a customer may well refresh the page.
 app.post("/customer/auth/verify-email", async (c) => {
-  const ipBlocked = enforceIpLimit(c, "verify-email");
+  const ipBlocked = await enforceIpLimit(c, "verify-email");
   if (ipBlocked) return ipBlocked;
 
   const body = await c.req.json().catch(() => ({}));
@@ -949,7 +1024,7 @@ app.post("/customer/auth/verify-email", async (c) => {
 
 // POST /api/customer/auth/resend-verification — issues a fresh link.
 app.post("/customer/auth/resend-verification", async (c) => {
-  const ipBlocked = enforceIpLimit(c, "resend-verification");
+  const ipBlocked = await enforceIpLimit(c, "resend-verification");
   if (ipBlocked) return ipBlocked;
 
   const body = await c.req.json().catch(() => ({}));
@@ -979,7 +1054,7 @@ app.post("/customer/auth/resend-verification", async (c) => {
 });
 
 app.post("/customer/auth/login", async (c) => {
-  const ipBlocked = enforceIpLimit(c, "login");
+  const ipBlocked = await enforceIpLimit(c, "login");
   if (ipBlocked) return ipBlocked;
 
   const body = await c.req.json().catch(() => ({}));
@@ -1017,7 +1092,7 @@ app.post("/customer/auth/login", async (c) => {
  * deployment cannot be opened with a guess.
  */
 app.post("/owner/auth/login", async (c) => {
-  const ipBlocked = enforceIpLimit(c, "login");
+  const ipBlocked = await enforceIpLimit(c, "login");
   if (ipBlocked) return ipBlocked;
 
   if (!isOwnerAuthConfigured()) {
@@ -1078,7 +1153,7 @@ app.post("/customer/auth/logout", (c) => {
  * accounts. The reset email is only sent when an account exists.
  */
 app.post("/customer/auth/forgot-password", async (c) => {
-  const ipBlocked = enforceIpLimit(c, "forgot-password");
+  const ipBlocked = await enforceIpLimit(c, "forgot-password");
   if (ipBlocked) return ipBlocked;
 
   const body = await c.req.json().catch(() => ({}));
@@ -1141,7 +1216,7 @@ app.post("/customer/auth/forgot-password", async (c) => {
  * password is safely persisted, so a storage failure does not burn the link.
  */
 app.post("/customer/auth/reset-password", async (c) => {
-  const ipBlocked = enforceIpLimit(c, "reset-password");
+  const ipBlocked = await enforceIpLimit(c, "reset-password");
   if (ipBlocked) return ipBlocked;
 
   const body = await c.req.json().catch(() => ({}));
@@ -1217,12 +1292,132 @@ app.get("/customer/auth/session", async (c) => {
   return c.json({ authenticated: true, user }, 200);
 });
 
-// 19. Customer Data & Activity Feed for Owner: GET /api/customer/dashboard-data
+/**
+ * Resolves the signed-in customer from the session cookie, or null.
+ *
+ * Mirrors the check in /customer/auth/session: the token must verify, the
+ * account must exist, and the password epoch must still match so a reset
+ * invalidates older cookies.
+ */
+async function currentCustomer(c: any) {
+  const claims = verifySessionToken(readSessionCookie(c.req.header("Cookie")));
+  if (!claims) return null;
+
+  const { findCustomerById, getPasswordEpoch } = await import("../customer/store");
+  const user = findCustomerById(claims.sub);
+  if (!user) return null;
+
+  const { isSessionCurrent } = await import("../auth/session");
+  const epoch = await getPasswordEpoch(user.email);
+  if (!isSessionCurrent(claims, epoch)) return null;
+
+  return user;
+}
+
+// 18b. Customer self-service API keys.
 //
+// The portal previously showed only the *format* of a key. These routes give the
+// customer a real list of their own keys, plus creation and revocation, all
+// scoped to the session so no id from the request can reach another account.
+app.get("/customer/api-keys", async (c) => {
+  const user = await currentCustomer(c);
+  if (!user) return c.json({ error: "Anda harus masuk untuk melihat API key." }, 401);
+
+  const { getApiKeysForCustomer } = await import("../supabase/keyPersistence");
+  const keys = await getApiKeysForCustomer(user.id);
+
+  // Never return the hash: it is the credential-material fingerprint and has no
+  // use in the browser.
+  return c.json(
+    {
+      keys: keys.map(({ hash, ...rest }) => rest),
+    },
+    200
+  );
+});
+
+app.post("/customer/api-keys", async (c) => {
+  const user = await currentCustomer(c);
+  if (!user) return c.json({ error: "Anda harus masuk untuk membuat API key." }, 401);
+
+  const csrfRejected = enforceCsrfToken(c);
+  if (csrfRejected) return csrfRejected;
+
+  const body = await c.req.json().catch(() => ({}));
+  const name = String(body?.name || "").trim();
+  if (name.length < 3 || name.length > 60) {
+    return c.json({ error: "Nama key wajib diisi (3-60 karakter)." }, 400);
+  }
+
+  const { createApiKeyForCustomer, getApiKeysForCustomer } = await import("../supabase/keyPersistence");
+  const existing = await getApiKeysForCustomer(user.id);
+  if (existing.length >= 10) {
+    return c.json({ error: "Batas 10 API key aktif per akun telah tercapai." }, 409);
+  }
+
+  const created = await createApiKeyForCustomer({
+    customerId: user.id,
+    customerEmail: user.email,
+    name,
+    rateLimitRpm: 60,
+    dailyTokenLimit: 500_000,
+  });
+
+  return c.json(
+    {
+      key: {
+        id: created.key.id,
+        name: created.key.name,
+        maskedKey: created.key.maskedKey,
+        prefix: created.key.prefix,
+        rateLimitRpm: created.key.rateLimitRpm,
+        dailyTokenLimit: created.key.dailyTokenLimit,
+        createdAt: created.key.createdAt,
+        isActive: created.key.isActive,
+      },
+      // Shown once, at creation; the caller must copy it now.
+      rawSecret: created.rawSecret,
+      message: "API key dibuat. Salin sekarang — secret tidak ditampilkan lagi.",
+    },
+    201
+  );
+});
+
+app.delete("/customer/api-keys/:id", async (c) => {
+  const user = await currentCustomer(c);
+  if (!user) return c.json({ error: "Anda harus masuk untuk mencabut API key." }, 401);
+
+  const csrfRejected = enforceCsrfToken(c);
+  if (csrfRejected) return csrfRejected;
+
+  const { revokeApiKeyForCustomer } = await import("../supabase/keyPersistence");
+  const revoked = await revokeApiKeyForCustomer(c.req.param("id"), user.id);
+  if (!revoked) {
+    return c.json({ error: "API key tidak ditemukan pada akun Anda." }, 404);
+  }
+
+  return c.json({ success: true, message: "API key dicabut." }, 200);
+});
+
+// 19. Customer Data & Activity Feed for Owner: GET /api/customer/dashboard-data
 // Owner-only. This returns every registered customer's email, plan, orders and
 // activity, so it must never answer an anonymous request.
 app.get("/customer/dashboard-data", async (c) => {
-  if (!isPrivilegedRequest(c)) {
+  const actor = privilegedActor(c);
+  if (!actor) {
+    // Record the refusal as well: a run of denied attempts at this route is
+    // itself worth seeing.
+    const { recordCustomerAccess } = await import("../customer/accessAudit");
+    void recordCustomerAccess({
+      actorType: "anonymous",
+      actorId: "anonymous",
+      action: "customer.read",
+      scope: "dashboard-data",
+      recordsReturned: 0,
+      ipAddress: clientIpFromHeaders(c.req.raw.headers) || undefined,
+      userAgent: c.req.header("User-Agent"),
+      succeeded: false,
+    });
     return c.json({ error: "Forbidden: Privileged access token required" }, 403);
   }
 
@@ -1233,11 +1428,34 @@ app.get("/customer/dashboard-data", async (c) => {
     MODEL_PRODUCTS,
   } = await import("../customer/store");
 
+  const customers = getRegisteredCustomers();
+  const orders = getCustomerOrders();
+  const activities = getCustomerActivities();
+
+  // The access trail is written before the response so it cannot be skipped by a
+  // dropped connection.
+  const { recordCustomerAccess, recentCustomerAccess } = await import("../customer/accessAudit");
+  await recordCustomerAccess({
+    actorType: actor.actorType,
+    actorId: actor.actorId,
+    action: "customer.read",
+    scope: "dashboard-data",
+    recordsReturned: customers.length + orders.length + activities.length,
+    ipAddress: clientIpFromHeaders(c.req.raw.headers) || undefined,
+    userAgent: c.req.header("User-Agent"),
+    succeeded: true,
+  });
+
+  // The console shows recent reads of customer data. The list is read after the
+  // write above, so this access appears in it.
+  const accessAudit = await recentCustomerAccess(50);
+
   return c.json({
-    customers: getRegisteredCustomers(),
-    orders: getCustomerOrders(),
-    activities: getCustomerActivities(),
+    customers,
+    orders,
+    activities,
     modelProducts: MODEL_PRODUCTS,
+    accessAudit,
   }, 200);
 });
 
@@ -1272,10 +1490,18 @@ app.post("/customer/purchase-model", async (c) => {
     return c.json({ error: "Model product not found" }, 404);
   }
 
-  // Provision an API key specifically for model token access
-  const { createApiKey } = await import("../supabase/store");
+  // Provision an API key owned by the buyer, so it appears in their key list and
+  // survives a redeploy.
+  const { createApiKeyForCustomer } = await import("../supabase/keyPersistence");
   const keyName = `${product.name} Key`;
-  const keyCreation = await createApiKey(keyName, 180, product.bundleTokensGranted);
+  const keyCreation = await createApiKeyForCustomer({
+    customerId: claims.sub,
+    customerEmail,
+    name: keyName,
+    rateLimitRpm: 180,
+    dailyTokenLimit: product.bundleTokensGranted,
+    planCode: product.id,
+  });
 
   const order = await recordCustomerOrder({
     customerId: claims.sub,

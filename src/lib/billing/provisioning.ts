@@ -77,9 +77,23 @@ export async function autoProvisionCustomerKey(params: {
     };
   }
 
-  // 1. Generate active API Key for the customer
+  // 1. Generate an active API key for the customer.
+  //
+  //    Issued through the customer-owned path so it is stamped with the account
+  //    and persisted: a subscription key that vanished on the next deploy would
+  //    leave a paying customer with a secret the gateway no longer knows.
   const keyName = `${spec.name} Key (${orderId})`;
-  const creation = await createApiKey(keyName, spec.rateLimitRpm, spec.dailyTokens);
+  const { createApiKeyForCustomer } = await import("../supabase/keyPersistence");
+  const creation = account
+    ? await createApiKeyForCustomer({
+        customerId: account.id,
+        customerEmail,
+        name: keyName,
+        rateLimitRpm: spec.rateLimitRpm,
+        dailyTokenLimit: spec.dailyTokens,
+        planCode: planCode.toLowerCase(),
+      })
+    : await createApiKey(keyName, spec.rateLimitRpm, spec.dailyTokens);
 
   // 2. Deliver the key by email. The receipt is recorded regardless of the
   //    transport outcome so the owner audit trail shows what was attempted.

@@ -14,8 +14,9 @@
  * which is memory-hungry per key, so the tracked-key map is capped and pruned.
  *
  * In-process state only: a multi-instance deployment gets per-instance limits.
- * That is a deliberate trade-off; move this to Redis/Upstash if a shared limit
- * becomes a requirement.
+ * To close that gap the caller can pass a shared window read from
+ * gateway/rateLimitStore.ts, which both instances can see; when it is absent the
+ * local Map is the only source, as before.
  */
 
 export interface IpLimitPolicy {
@@ -53,6 +54,11 @@ const policies: Record<string, IpLimitPolicy> = {
 
 const MAX_TRACKED_KEYS = 10_000;
 
+/** Exposes a policy so callers can size the shared-window read. */
+export function ipLimitPolicy(endpoint: string): IpLimitPolicy | undefined {
+  return policies[endpoint];
+}
+
 const windows = new Map<string, number[]>();
 
 /** Drops a key once every timestamp in it has aged out of the longest window. */
@@ -65,10 +71,20 @@ function pruneExpired(now: number): void {
   }
 }
 
+/**
+ * Decides whether `ip` may proceed, merging the local window with a shared one
+ * when the caller supplies it.
+ *
+ * `sharedTimestamps` are the timestamps other instances have recorded for the
+ * same key. They are unioned with the local ones so the decision reflects total
+ * traffic, not this instance's share of it. Passing nothing keeps the previous
+ * behaviour exactly.
+ */
 export function checkIpRateLimit(
   endpoint: keyof typeof policies | string,
   ip: string,
-  now = Date.now()
+  now = Date.now(),
+  sharedTimestamps?: number[]
 ): IpLimitDecision {
   const policy = policies[endpoint];
   if (!policy) return { allowed: true, retryAfterSeconds: 0 };
@@ -76,12 +92,20 @@ export function checkIpRateLimit(
   if (windows.size >= MAX_TRACKED_KEYS) pruneExpired(now);
 
   const key = `${endpoint}:${ip}`;
-  const timestamps = windows.get(key) ?? [];
+  const local = windows.get(key) ?? [];
 
-  // The sustained window is the longer of the two, so pruning against it keeps
-  // both windows correct.
+  // The shared window is the authoritative count when it is available: it holds
+  // the events every instance recorded, including this one's. Fall back to the
+  // local window when the shared store answered with fewer events than we know
+  // we recorded, which is what a lagging or failed write looks like.
+  //
+  // The two lists are not unioned: deduplicating by timestamp value would treat
+  // two requests that share a millisecond as one, and the limit counts requests,
+  // not milliseconds. Distinct requests legitimately collide at this resolution.
   const oldestRelevant = now - policy.sustainedWindowMs;
-  const active = timestamps.filter((t) => t > oldestRelevant);
+  const merged =
+    sharedTimestamps && sharedTimestamps.length >= local.length ? sharedTimestamps : local;
+  const active = merged.filter((t) => t > oldestRelevant).sort((a, b) => a - b);
 
   const inBurst = active.filter((t) => t > now - policy.burstWindowMs).length;
   const inSustained = active.length;

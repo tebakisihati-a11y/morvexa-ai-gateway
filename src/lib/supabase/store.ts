@@ -1,6 +1,57 @@
 import { isSupabaseConfigured, getSupabaseClient } from "./client";
 import type { ApiKeyItem, QuotaRecord, RequestTraceLog } from "../types";
 
+/**
+ * Durable key storage lives in ./keyPersistence, which is server-only. This
+ * module is reached from the client-rendered owner console, so it must not pull
+ * in node:fs (via the JSON store) even behind a dynamic import - webpack still
+ * follows that edge into the client graph.
+ *
+ * The row mappers below are pure, so both sides can share them.
+ */
+export function keyRow(item: ApiKeyItem) {
+  return {
+    id: item.id,
+    name: item.name,
+    key_prefix: item.prefix,
+    masked_key: item.maskedKey,
+    key_hash: item.hash,
+    is_active: item.isActive,
+    rate_limit_rpm: item.rateLimitRpm,
+    daily_token_limit: item.dailyTokenLimit,
+    created_at: item.createdAt,
+    last_used_at: item.lastUsedAt ?? null,
+    customer_id: item.customerId ?? null,
+    customer_email: item.customerEmail ?? null,
+    plan_code: item.planCode ?? null,
+    tokens_used: item.tokensUsed ?? 0,
+    total_token_cap: item.totalTokenCap ?? null,
+    health_status: item.healthStatus ?? null,
+    issue_reason: item.issueReason ?? null,
+  };
+}
+
+export function rowToKey(d: any): ApiKeyItem {
+  return {
+    id: d.id,
+    name: d.name,
+    prefix: d.key_prefix,
+    maskedKey: d.masked_key,
+    hash: d.key_hash,
+    isActive: d.is_active,
+    rateLimitRpm: d.rate_limit_rpm,
+    dailyTokenLimit: d.daily_token_limit,
+    createdAt: d.created_at,
+    lastUsedAt: d.last_used_at ?? undefined,
+    customerId: d.customer_id ?? undefined,
+    customerEmail: d.customer_email ?? undefined,
+    planCode: d.plan_code ?? undefined,
+    tokensUsed: d.tokens_used ?? undefined,
+    totalTokenCap: d.total_token_cap ?? undefined,
+    healthStatus: d.health_status ?? undefined,
+    issueReason: d.issue_reason ?? undefined,
+  };
+}
 
 // Seed data for immediate out-of-the-box local interactivity
 const now = Date.now();
@@ -418,6 +469,22 @@ export async function findApiKeyBySecret(rawSecret: string): Promise<ApiKeyItem 
 
   const found = memoryApiKeys.find((k) => k.hash === hash);
   return found || null;
+}
+
+/**
+ * Server-only access to the in-memory key table.
+ *
+ * The durable module in ./keyPersistence mutates this same array instance the
+ * server routes read, so a key created through it is immediately visible to
+ * lookups. Keeping the array private to this module and exposing an accessor is
+ * what lets persistence stay out of the client bundle.
+ */
+export function getApiKeyMemory(): ApiKeyItem[] {
+  return memoryApiKeys;
+}
+
+export function prependApiKeyToMemory(item: ApiKeyItem): void {
+  memoryApiKeys.unshift(item);
 }
 
 /**

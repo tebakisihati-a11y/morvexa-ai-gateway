@@ -12,7 +12,9 @@
  *
  * Production with no key is deliberately loud rather than silent: the request
  * still succeeds (so the endpoint does not leak configuration state) but the
- * caller is told nothing was delivered.
+ * caller is told nothing was delivered. `assertEmailDeliveryConfigured()` raises
+ * the same problem at startup, so the misconfiguration is visible in the deploy
+ * log rather than only when the first customer tries to verify their address.
  */
 
 import type { RenderedEmail } from "./templates";
@@ -45,6 +47,30 @@ export function resolveEmailTransport(): EmailTransport {
 /** True when email will not actually reach anybody. */
 export function isEmailDeliveryConfigured(): boolean {
   return resolveEmailTransport() === "resend";
+}
+
+let warnedAboutDelivery = false;
+
+/**
+ * Warns once, at startup, when transactional email cannot be delivered.
+ *
+ * Registration and password reset both depend on this channel: without a
+ * provider key, signup succeeds but the verification link never arrives, so the
+ * account can never verify and cannot receive a key. That failure is invisible
+ * from the outside - the API returns 201 - which is exactly why it is worth
+ * shouting about in the deploy log.
+ */
+export function assertEmailDeliveryConfigured(): void {
+  if (warnedAboutDelivery) return;
+  if (isEmailDeliveryConfigured()) return;
+  if (process.env.NODE_ENV !== "production") return;
+
+  warnedAboutDelivery = true;
+  console.warn(
+    "[Morvexa Email] No email provider configured. Registration and password reset " +
+      "will report success but no message will be delivered. Set RESEND_API_KEY " +
+      "(and optionally MORVEXA_EMAIL_FROM) to enable real delivery."
+  );
 }
 
 export function getEmailSender(): string {

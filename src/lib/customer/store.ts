@@ -9,9 +9,16 @@
  * in this module: Supabase when configured, in-memory otherwise.
  */
 
-import { isSupabaseConfigured, getSupabaseClient } from "../supabase/client";
+import { isSupabaseConfigured, isSupabaseAdminConfigured, getSupabaseClient } from "../supabase/client";
 import { hashPassword, verifyPassword } from "../auth/password";
 import { readCollection, writeCollection } from "../persistence/jsonStore";
+import {
+  loadCustomerSnapshot,
+  upsertCustomerDurable,
+  upsertCredentialDurable,
+  insertOrderDurable,
+  insertActivityDurable,
+} from "./durable";
 
 export interface CustomerCredential {
   customerId: string;
@@ -248,6 +255,49 @@ function credentials(): CustomerCredential[] {
   return memoryCredentials;
 }
 
+/**
+ * Loads durable records into memory on first use.
+ *
+ * The auth routes are async and already read from these tables through the
+ * service-role client, but lookups such as findCustomerByEmail are synchronous -
+ * they run inside request handlers that have already started, so they cannot
+ * await. Hydrating once at startup keeps those lookups synchronous while still
+ * sourcing the data from Supabase.
+ *
+ * Merged rather than replaced: the seed and JSON rows stay available, and a
+ * durable row wins on id collision so a redeploy picks up the real record.
+ */
+let hydration: Promise<void> | null = null;
+
+export function hydrateCustomerStore(): Promise<void> {
+  hydration ??= (async () => {
+    const snapshot = await loadCustomerSnapshot();
+    if (!snapshot) return;
+
+    mergeById(memoryCustomers, snapshot.customers);
+    mergeById(memoryCustomerOrders, snapshot.orders);
+    mergeById(memoryCustomerActivities, snapshot.activities);
+
+    const creds = credentials();
+    for (const incoming of snapshot.credentials) {
+      const index = creds.findIndex((c) => c.email === incoming.email);
+      if (index === -1) creds.push(incoming);
+      else creds[index] = incoming;
+    }
+  })();
+
+  return hydration;
+}
+
+/** Replaces in place by id, appending rows that are not present yet. */
+function mergeById<T extends { id: string }>(target: T[], incoming: T[]): void {
+  for (const row of incoming) {
+    const index = target.findIndex((t) => t.id === row.id);
+    if (index === -1) target.push(row);
+    else target[index] = row;
+  }
+}
+
 // API Functions
 export function getRegisteredCustomers(): CustomerUser[] {
   return [...memoryCustomers];
@@ -312,6 +362,7 @@ export async function markEmailVerified(email: string): Promise<CustomerUser | u
 
   user.emailVerified = true;
   await writeCollection("customers", memoryCustomers);
+  await upsertCustomerDurable(user);
   logCustomerActivity(user, "USER_EMAIL_VERIFIED", `Email terverifikasi: ${user.email}`);
 
   return user;
@@ -323,7 +374,7 @@ function logCustomerActivity(
   description: string,
   details?: Record<string, any>
 ): void {
-  memoryCustomerActivities.unshift({
+  const log: CustomerActivityLog = {
     id: `act-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     timestamp: new Date().toISOString(),
     customerId: customer.id,
@@ -331,8 +382,10 @@ function logCustomerActivity(
     activityType,
     description,
     details,
-  });
+  };
+  memoryCustomerActivities.unshift(log);
   void writeCollection("activities", memoryCustomerActivities);
+  void insertActivityDurable(log);
 }
 
 /* ---------------------------------------------------------------------------
@@ -342,48 +395,34 @@ function logCustomerActivity(
 async function loadCredential(email: string): Promise<CustomerCredential | undefined> {
   const normalized = normaliseEmail(email);
 
-  if (isSupabaseConfigured) {
-    const client = await getSupabaseClient();
-    if (!client) return undefined;
-
-    const { data, error } = await client
-      .from("customer_credentials")
-      .select("customer_id, email, password_hash, failed_attempts, locked_until, created_at, last_verified_at")
-      .eq("email", normalized)
-      .maybeSingle();
-
-    if (!error && data) {
-      return {
-        customerId: data.customer_id,
-        email: data.email,
-        passwordHash: data.password_hash,
-        failedAttempts: data.failed_attempts ?? 0,
-        lockedUntil: data.locked_until ?? 0,
-        createdAt: data.created_at,
-        lastVerifiedAt: data.last_verified_at ?? undefined,
-      };
-    }
-  }
-
+  // Read from the hydrated memory first: the service-role snapshot already
+  // pulled every credential at startup, so this is both faster and immune to a
+  // mid-flight Supabase blip. Only when hydration has not run (no admin key, or
+  // the read failed) do we look at the local JSON collection.
+  await hydrateResolved();
   return credentials().find((c) => c.email === normalized);
 }
 
-async function persistCredential(credential: CustomerCredential): Promise<void> {
-  if (isSupabaseConfigured) {
-    const client = await getSupabaseClient();
-    await client.from("customer_credentials").upsert(
-      {
-        customer_id: credential.customerId,
-        email: credential.email,
-        password_hash: credential.passwordHash,
-        failed_attempts: credential.failedAttempts,
-        locked_until: credential.lockedUntil,
-        created_at: credential.createdAt,
-        last_verified_at: credential.lastVerifiedAt ?? null,
-      },
-      { onConflict: "email" }
-    );
+/**
+ * Resolves hydration but never rejects.
+ *
+ * loadCredential is on the login path; a hydration failure must degrade to the
+ * JSON store, not fail the request.
+ */
+async function hydrateResolved(): Promise<void> {
+  if (!isSupabaseAdminConfigured) return;
+  try {
+    await hydrateCustomerStore();
+  } catch {
+    // hydrateCustomerStore already reports; fall through to local data.
   }
+}
+
+async function persistCredential(credential: CustomerCredential): Promise<void> {
+  // Writes go through the service-role client: the credentials table enables RLS
+  // with no permissive policy for writes, so the anon-key path this used to take
+  // was silently rejected and no hash ever reached Supabase.
+  await upsertCredentialDurable(credential);
 
   const list = credentials();
   const existingIndex = list.findIndex((c) => c.email === credential.email);
@@ -451,6 +490,7 @@ export async function registerCustomer(params: {
 
   memoryCustomers.unshift(user);
   await writeCollection("customers", memoryCustomers);
+  await upsertCustomerDurable(user);
   currentCustomerSession = user;
   logCustomerActivity(
     user,
@@ -522,6 +562,7 @@ export async function authenticateCustomer(params: {
 
   user.lastLoginAt = new Date().toISOString();
   await writeCollection("customers", memoryCustomers);
+  await upsertCustomerDurable(user);
   currentCustomerSession = user;
   logCustomerActivity(user, "USER_LOGIN", `Login berhasil: ${user.name} (${user.email})`);
 
@@ -591,6 +632,7 @@ export async function recordCustomerOrder(
 
   memoryCustomerOrders.unshift(newOrder);
   await writeCollection("orders", memoryCustomerOrders);
+  await insertOrderDurable(newOrder);
 
   // Update customer balance & spent stats
   const customer = memoryCustomers.find(
@@ -629,6 +671,8 @@ export async function recordCustomerOrder(
     writeCollection("customers", memoryCustomers),
     writeCollection("orders", memoryCustomerOrders),
     writeCollection("activities", memoryCustomerActivities),
+    insertActivityDurable(log),
+    customer ? upsertCustomerDurable(customer) : Promise.resolve(),
   ]);
 
   return newOrder;

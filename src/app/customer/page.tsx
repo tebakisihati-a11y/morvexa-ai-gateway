@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, CheckCircle2, Coins, LogOut, User } from "lucide-react";
 import { CustomerBentoPortal } from "@/components/customer/CustomerBentoPortal";
+import { CustomerApiKeys } from "@/components/customer/CustomerApiKeys";
 import { CustomerCheckoutModal } from "@/components/customer/CustomerCheckoutModal";
 import { CustomerModelCheckoutModal } from "@/components/customer/CustomerModelCheckoutModal";
 import { GridBackdrop } from "@/components/visual/GridBackdrop";
@@ -183,6 +184,10 @@ export default function CustomerPortalPage() {
             activeCustomer={user}
             onOpenAuthModal={() => router.push("/login")}
           />
+
+          <div className="mt-10">
+            <CustomerApiKeys />
+          </div>
         </main>
 
         <footer className="border-t border-[#f4f4f5]/8 py-6">

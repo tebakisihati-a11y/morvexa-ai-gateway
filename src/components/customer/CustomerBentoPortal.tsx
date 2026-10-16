@@ -106,15 +106,15 @@ export function CustomerBentoPortal({
             </div>
           </div>
 
-          <div className="mt-6 rounded border border-[#f4f4f5]/10 bg-[#08080a] p-4 font-mono text-xs">
+                      <div className="mt-6 rounded border border-[#f4f4f5]/10 bg-[#08080a] p-4 font-mono text-xs">
             <div className="mb-2 text-[10px] uppercase tracking-wider text-[#71717a]">
-              Format kunci yang akan Anda terima
+              Kelola kunci aktif Anda
             </div>
             <div className="truncate text-[#71717a]">
               mvx_live_<span className="text-[#a1a1aa]">••••••••••••••••••••••••</span>
             </div>
             <p className="mt-2 text-[11px] leading-relaxed text-[#71717a]">
-              Kunci asli dikirim ke email akun Anda setelah pembayaran terverifikasi.
+              Daftar kunci lengkap dengan tombol cabut tersedia di panel &ldquo;API Key Saya&rdquo; di bawah.
             </p>
           </div>
         </div>

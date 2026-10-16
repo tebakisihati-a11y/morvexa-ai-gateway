@@ -47,6 +47,7 @@ export interface ApiKeyItem {
   dailyTokenLimit: number;
   createdAt: string;
   lastUsedAt?: string;
+  customerId?: string;
   customerEmail?: string;
   tokensUsed?: number;
   totalTokenCap?: number;
