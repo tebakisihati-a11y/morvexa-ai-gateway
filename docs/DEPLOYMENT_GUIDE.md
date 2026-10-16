@@ -79,3 +79,36 @@ curl -N -X POST https://your-domain.vercel.app/api/v1/messages \
     "messages": [{"role": "user", "content": "Halo Morvexa!"}]
   }'
 ```
+
+---
+
+## 9. Troubleshooting: deploy gagal "Resource provisioning failed"
+
+Gejala: deployment berhenti sebelum build dimulai (0 ms, tanpa log) dengan
+`errorMessage "Resource provisioning failed"`, `errorCode BUILD_FAILED`. Hanya
+terjadi pada satu project; project lain di akun yang sama tetap bisa deploy.
+Redeploy build lama yang dulu sukses pun ikut gagal.
+
+Penyebab: project terhubung ke Marketplace storage store (mis. Supabase) yang
+statusnya `suspended`, dan store itu punya `deployments.required: true` sehingga
+setiap deploy wajib provisioning resource tersebut.
+
+Perbaikan (salah satu):
+
+1. Resume store dari dashboard: **Vercel > Project > Integrations**, atau
+   dashboard penyedia (Supabase > Restore project untuk project yang di-pause).
+   Setelah pulih, deploy berikutnya jalan tanpa perubahan kode.
+2. Atau lepaskan store dari project bila tidak dipakai lagi:
+
+   ```bash
+   # Cari store id yang terhubung ke project:
+   curl -s -H "Authorization: Bearer $VERCEL_TOKEN" \
+     "https://api.vercel.com/v1/storage/stores?projectId=<PROJECT_ID>&teamId=<TEAM_ID>"
+   # Lepaskan koneksi (id dari field spc_...):
+   curl -s -X DELETE -H "Authorization: Bearer $VERCEL_TOKEN" \
+     "https://api.vercel.com/v1/storage/stores/<STORE_ID>/connections/<CONNECTION_ID>?teamId=<TEAM_ID>"
+   ```
+
+   Pelepasan store juga menghapus variabel `SUPABASE_*` / `POSTGRES_*` dari
+   project, jadi pastikan penyedia database pengganti sudah siap sebelum
+   melakukan ini pada deployment produksi.
