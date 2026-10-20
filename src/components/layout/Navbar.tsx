@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { EdgeStatusRadar } from "./EdgeStatusRadar";
-import { Cpu, Terminal, ExternalLink, Menu, X, Sparkles, LayoutDashboard } from "lucide-react";
+import { Terminal, ExternalLink, Menu, X, Sparkles, LayoutDashboard } from "lucide-react";
 import type { NavTabId } from "./Sidebar";
 
 interface NavbarProps {
@@ -24,10 +24,11 @@ export function Navbar({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems: { id: NavTabId; label: string }[] = [
-    { id: "overview", label: "Overview & Quota" },
+    { id: "overview", label: "Command Center" },
+    { id: "provisioning", label: "Key Provisioning & Auto" },
+    { id: "resolver", label: "Customer Doctor & Triage" },
     { id: "customers", label: "Database Kustomer & Aktivitas" },
     { id: "keys", label: "API Keys & Policies" },
-    { id: "billing", label: "Billing & Subscriptions" },
     { id: "infrastructure", label: "Hybrid Infrastructure" },
     { id: "nexus", label: "Nexus Control Plane" },
     { id: "routing", label: "Model Routing & Failover" },
@@ -46,13 +47,13 @@ export function Navbar({
 
   return (
     <>
-      <header className="h-14 border-b border-[#f97316]/15 bg-[#08080a]/90 sticky top-0 z-40 px-3 sm:px-6 flex items-center justify-between">
+      <header className="h-14 border-b border-white/[0.08] bg-[#07090b]/90 backdrop-blur-xl sticky top-0 z-40 px-3 sm:px-6 flex items-center justify-between">
         {/* Brand & Mobile Hamburger */}
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-1.5 rounded-lg border border-white/10 text-[#a1a1aa] hover:text-white bg-white/5 cursor-pointer"
+            className="md:hidden p-1.5 rounded-lg border border-white/10 text-zinc-400 hover:text-white bg-white/5 cursor-pointer"
             aria-label="Toggle Navigation"
           >
             {mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
@@ -62,14 +63,14 @@ export function Navbar({
             onClick={() => onToggleViewMode?.("landing")}
             className="flex items-center gap-2 cursor-pointer group"
           >
-            <div className="h-7 w-7 rounded-lg bg-surface from-[#f97316] via-[#16161b] to-[#08080a] flex items-center justify-center font-mono font-bold text-xs text-[#08080a] shadow-md shadow-[#f97316]/20 group-hover:scale-105 transition-transform">
+            <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-emerald-400 via-emerald-600 to-emerald-950 flex items-center justify-center font-mono font-bold text-xs text-black shadow-md shadow-emerald-500/20 group-hover:scale-105 transition-transform">
               M
             </div>
             <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-1.5">
               <span className="font-semibold tracking-tight text-sm text-[#f4f4f5]">
                 Morvexa
               </span>
-              <span className="text-[#a1a1aa] font-mono text-[11px] hidden sm:inline">
+              <span className="text-zinc-500 font-mono text-[11px] hidden sm:inline">
                 / master-server
               </span>
             </div>
@@ -84,23 +85,23 @@ export function Navbar({
               <button
                 onClick={() => onToggleViewMode("landing")}
                 className={`px-2.5 py-1 rounded transition-colors cursor-pointer flex items-center gap-1.5 ${
- viewMode === "landing"
- ? "bg-[#c2410c]/50 text-white font-medium border border-white/10"
- : "text-[#a1a1aa] hover:text-[#f4f4f5]"
- }`}
+                  viewMode === "landing"
+                    ? "bg-white/10 text-white font-medium border border-white/10"
+                    : "text-zinc-400 hover:text-[#f4f4f5]"
+                }`}
               >
-                <Sparkles className="h-3 w-3 text-[#f97316]" />
+                <Sparkles className="h-3 w-3 text-emerald-400" />
                 <span className="hidden sm:inline">Experience</span>
               </button>
               <button
                 onClick={() => onToggleViewMode("console")}
                 className={`px-2.5 py-1 rounded transition-colors cursor-pointer flex items-center gap-1.5 ${
- viewMode === "console"
- ? "bg-[#f97316]/40 text-white font-medium border border-white/10"
- : "text-[#a1a1aa] hover:text-[#f4f4f5]"
- }`}
+                  viewMode === "console"
+                    ? "bg-emerald-500/20 text-emerald-300 font-medium border border-emerald-500/30"
+                    : "text-zinc-400 hover:text-[#f4f4f5]"
+                }`}
               >
-                <LayoutDashboard className="h-3 w-3 text-[#a1a1aa]" />
+                <LayoutDashboard className="h-3 w-3 text-emerald-400" />
                 <span className="hidden sm:inline">Console</span>
               </button>
             </div>
@@ -116,15 +117,15 @@ export function Navbar({
 
           <Link
             href="/catalog"
-            className="hidden lg:flex items-center gap-1.5 text-[11px] font-mono text-[#f97316]/90 hover:text-[#f97316] border border-[#f97316]/30 px-2.5 py-1 rounded-lg transition-all bg-[#f97316]/10 hover:bg-[#f97316]/20"
+            className="hidden lg:flex items-center gap-1.5 text-[11px] font-mono text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 px-2.5 py-1 rounded-lg transition-all bg-emerald-500/10 hover:bg-emerald-500/20"
           >
-            <Terminal className="h-3 w-3 text-[#f97316]" />
+            <Terminal className="h-3 w-3 text-emerald-400" />
             <span>API Catalog</span>
-            <ExternalLink className="h-2.5 w-2.5 text-[#f97316]/70" />
+            <ExternalLink className="h-2.5 w-2.5 text-emerald-400/70" />
           </Link>
 
-          <div className="flex items-center gap-1.5 px-2.5 py-1 border border-white/10 rounded-lg text-[11px] font-mono text-[#f4f4f5] bg-white/[0.02]">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#f97316]" />
+          <div className="flex items-center gap-1.5 px-2.5 py-1 border border-white/10 rounded-lg text-[11px] font-mono text-zinc-300 bg-white/[0.02]">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
             <span className="hidden sm:inline">edge_active</span>
           </div>
         </div>
@@ -132,8 +133,8 @@ export function Navbar({
 
       {/* Mobile Drawer Navigation (Phone / Smartphone screens) */}
       {mobileMenuOpen && (
-        <div className="md:hidden fixed inset-x-0 top-14 z-50 bg-[#0e0e11] border-b border-white/10 shadow-2xl p-4 animate-in fade-in slide-in-from-top-2 duration-150">
-          <div className="text-[10px] font-mono uppercase tracking-wider text-[#a1a1aa] font-semibold mb-2">
+        <div className="md:hidden fixed inset-x-0 top-14 z-50 bg-[#07090b] border-b border-white/10 shadow-2xl p-4 animate-in fade-in slide-in-from-top-2 duration-150">
+          <div className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 font-semibold mb-2">
             Navigation Menu
           </div>
           <div className="grid grid-cols-1 gap-1">
@@ -142,7 +143,7 @@ export function Navbar({
                 onToggleViewMode?.("landing");
                 setMobileMenuOpen(false);
               }}
-              className="w-full flex items-center justify-between px-3 py-2.5 rounded text-xs font-mono text-left bg-[#16161b]/60 border border-[#f97316]/30 text-white"
+              className="w-full flex items-center justify-between px-3 py-2.5 rounded text-xs font-mono text-left bg-emerald-950/30 border border-emerald-500/30 text-white"
             >
               <span>✨ 3D Experience (Landing)</span>
             </button>
@@ -154,13 +155,13 @@ export function Navbar({
                   key={item.id}
                   onClick={() => handleSelectTab(item.id)}
                   className={`w-full flex items-center justify-between px-3 py-2.5 rounded text-xs font-mono transition-colors text-left ${
- isActive
- ? "bg-white/10 text-white font-semibold border border-white/10"
- : "text-[#a1a1aa] hover:text-[#f4f4f5] hover:bg-white/5"
- }`}
+                    isActive
+                      ? "bg-white/10 text-white font-semibold border border-white/10"
+                      : "text-zinc-400 hover:text-white hover:bg-white/5"
+                  }`}
                 >
                   <span>{item.label}</span>
-                  {isActive && <span className="text-[#f97316] text-xs">●</span>}
+                  {isActive && <span className="text-emerald-400 text-xs">●</span>}
                 </button>
               );
             })}
@@ -170,4 +171,3 @@ export function Navbar({
     </>
   );
 }
-

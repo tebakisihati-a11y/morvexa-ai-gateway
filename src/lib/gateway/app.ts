@@ -1610,3 +1610,105 @@ app.post("/customer/purchase-model", async (c) => {
 
 
 
+
+// 21. Owner API Key Provisioning Engine: /api/owner/provisioning/*
+app.get("/owner/provisioning/queue", async (c) => {
+  if (!isPrivilegedRequest(c)) return c.json({ error: "Forbidden: Owner session required" }, 403);
+  const { getProvisioningQueue, getProvisioningPolicy } = await import("../owner/provisioning");
+  return c.json({
+    queue: getProvisioningQueue(),
+    policy: getProvisioningPolicy(),
+  }, 200);
+});
+
+app.post("/owner/provisioning/approve", async (c) => {
+  if (!isPrivilegedRequest(c)) return c.json({ error: "Forbidden: Owner session required" }, 403);
+  const body = await c.req.json().catch(() => ({}));
+  const { requestId, rateLimitRpm, dailyTokenLimit } = body;
+  if (!requestId) return c.json({ error: "requestId wajib diisi." }, 400);
+
+  const { approveKeyProvisionRequest } = await import("../owner/provisioning");
+  const result = await approveKeyProvisionRequest(requestId, { rateLimitRpm, dailyTokenLimit });
+  if (!result) return c.json({ error: "Request tidak ditemukan." }, 404);
+
+  return c.json({
+    success: true,
+    message: `Permintaan key untuk ${result.request.customerEmail} berhasil disetujui!`,
+    request: result.request,
+    key: {
+      id: result.key.id,
+      name: result.key.name,
+      maskedKey: result.key.maskedKey,
+      prefix: result.key.prefix,
+    },
+    rawSecret: result.rawSecret,
+  }, 200);
+});
+
+app.post("/owner/provisioning/reject", async (c) => {
+  if (!isPrivilegedRequest(c)) return c.json({ error: "Forbidden: Owner session required" }, 403);
+  const body = await c.req.json().catch(() => ({}));
+  const { requestId, reason } = body;
+  if (!requestId) return c.json({ error: "requestId wajib diisi." }, 400);
+
+  const { rejectKeyProvisionRequest } = await import("../owner/provisioning");
+  const rejected = rejectKeyProvisionRequest(requestId, reason || "Ditolak oleh Administrator.");
+  if (!rejected) return c.json({ error: "Request tidak ditemukan." }, 404);
+
+  return c.json({ success: true, message: "Permintaan key ditolak.", request: rejected }, 200);
+});
+
+app.post("/owner/provisioning/batch-approve", async (c) => {
+  if (!isPrivilegedRequest(c)) return c.json({ error: "Forbidden: Owner session required" }, 403);
+  const { batchApprovePendingRequests } = await import("../owner/provisioning");
+  const result = await batchApprovePendingRequests();
+  return c.json({ success: true, ...result }, 200);
+});
+
+app.post("/owner/provisioning/policy", async (c) => {
+  if (!isPrivilegedRequest(c)) return c.json({ error: "Forbidden: Owner session required" }, 403);
+  const body = await c.req.json().catch(() => ({}));
+  const { updateProvisioningPolicy } = await import("../owner/provisioning");
+  const updated = updateProvisioningPolicy(body);
+  return c.json({ success: true, policy: updated }, 200);
+});
+
+// 22. Owner Customer Issue Resolver & Doctor Engine: /api/owner/resolver/*
+app.get("/owner/resolver/incidents", async (c) => {
+  if (!isPrivilegedRequest(c)) return c.json({ error: "Forbidden: Owner session required" }, 403);
+  const { getCustomerIncidents } = await import("../owner/resolver");
+  return c.json({ incidents: getCustomerIncidents() }, 200);
+});
+
+app.post("/owner/resolver/fix-key", async (c) => {
+  if (!isPrivilegedRequest(c)) return c.json({ error: "Forbidden: Owner session required" }, 403);
+  const body = await c.req.json().catch(() => ({}));
+  const { keyId, action, boostTokens, newRpm, targetProvider } = body;
+  if (!keyId || !action) return c.json({ error: "keyId dan action wajib diisi." }, 400);
+
+  const { remediateKeyIssue } = await import("../owner/resolver");
+  const result = await remediateKeyIssue(keyId, action, { boostTokens, newRpm, targetProvider });
+  return c.json(result, result.success ? 200 : 400);
+});
+
+app.post("/owner/resolver/unlock-customer", async (c) => {
+  if (!isPrivilegedRequest(c)) return c.json({ error: "Forbidden: Owner session required" }, 403);
+  const body = await c.req.json().catch(() => ({}));
+  const { customerIdOrEmail } = body;
+  if (!customerIdOrEmail) return c.json({ error: "customerIdOrEmail wajib diisi." }, 400);
+
+  const { unlockCustomer } = await import("../owner/resolver");
+  const result = await unlockCustomer(customerIdOrEmail);
+  return c.json(result, result.success ? 200 : 400);
+});
+
+app.post("/owner/resolver/probe-key", async (c) => {
+  if (!isPrivilegedRequest(c)) return c.json({ error: "Forbidden: Owner session required" }, 403);
+  const body = await c.req.json().catch(() => ({}));
+  const { keyId, modelRequested } = body;
+  if (!keyId) return c.json({ error: "keyId wajib diisi." }, 400);
+
+  const { probeKeyDiagnostics } = await import("../owner/resolver");
+  const result = await probeKeyDiagnostics(keyId, modelRequested);
+  return c.json(result, 200);
+});

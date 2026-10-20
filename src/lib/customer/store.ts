@@ -677,3 +677,18 @@ export async function recordCustomerOrder(
 
   return newOrder;
 }
+
+export async function unlockCustomerAccount(emailOrId: string): Promise<boolean> {
+  await hydrateCustomerStore();
+  const customer = memoryCustomers.find(
+    (c) => c.id === emailOrId || c.email.toLowerCase() === emailOrId.toLowerCase()
+  );
+  const targetEmail = customer ? customer.email : emailOrId;
+  const credential = await loadCredential(targetEmail);
+  if (!credential) return false;
+
+  credential.failedAttempts = 0;
+  credential.lockedUntil = 0;
+  await persistCredential(credential);
+  return true;
+}
