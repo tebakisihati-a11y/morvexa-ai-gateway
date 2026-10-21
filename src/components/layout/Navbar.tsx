@@ -124,10 +124,6 @@ export function Navbar({
             <ExternalLink className="h-2.5 w-2.5 text-emerald-400/70" />
           </Link>
 
-          <div className="flex items-center gap-1.5 px-2.5 py-1 border border-white/10 rounded-lg text-[11px] font-mono text-zinc-300 bg-white/[0.02]">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-            <span className="hidden sm:inline">edge_active</span>
-          </div>
         </div>
       </header>
 

@@ -1,54 +1,59 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Activity, Wifi } from "lucide-react";
+import { apiFetch } from "@/lib/api/client";
 
-interface RegionPing {
-  code: string;
-  name: string;
-  baseLatency: number;
-  currentLatency: number;
-}
+type StatusState = "checking" | "operational" | "degraded" | "not_configured" | "unavailable";
+
+const STATUS_LABELS: Record<StatusState, string> = {
+  checking: "memeriksa…",
+  operational: "konfigurasi operasional",
+  degraded: "perlu perhatian",
+  not_configured: "belum dikonfigurasi",
+  unavailable: "status tidak tersedia",
+};
 
 export function EdgeStatusRadar() {
-  const [regions, setRegions] = useState<RegionPing[]>([
-    { code: "SIN", name: "Singapore", baseLatency: 14, currentLatency: 14 },
-    { code: "FRA", name: "Frankfurt", baseLatency: 86, currentLatency: 86 },
-    { code: "IAD", name: "Virginia", baseLatency: 128, currentLatency: 128 },
-    { code: "NRT", name: "Tokyo", baseLatency: 42, currentLatency: 42 },
-  ]);
+  const [state, setState] = useState<StatusState>("checking");
 
-  // Subtle real-time latency fluctuations for telemetry dynamism
   useEffect(() => {
-    const interval = setInterval(() => {
-      setRegions((prev) =>
-        prev.map((r) => ({
-          ...r,
-          currentLatency: Math.max(8, r.baseLatency + Math.floor(Math.random() * 7 - 3)),
-        }))
-      );
-    }, 3500);
+    let cancelled = false;
+    const refresh = async () => {
+      try {
+        const response = await apiFetch("/api/v1/status");
+        if (!response.ok) throw new Error("Status request failed.");
+        const data = await response.json();
+        const value: StatusState = ["operational", "degraded", "not_configured"].includes(data.state)
+          ? data.state
+          : "unavailable";
+        if (!cancelled) setState(value);
+      } catch {
+        if (!cancelled) setState("unavailable");
+      }
+    };
 
-    return () => clearInterval(interval);
+    void refresh();
+    const interval = window.setInterval(() => void refresh(), 60_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
   }, []);
 
+  const isOperational = state === "operational";
   return (
-    <div className="flex items-center gap-2.5 text-xs border border-white/10 bg-[#0e0e11] px-2.5 py-1 rounded">
-      <div className="flex items-center gap-1.5 text-[#10b981] font-mono text-[11px]">
-        <span className="h-1.5 w-1.5 rounded-full bg-[#10b981]" />
-        <span className="text-[#f4f4f5]">mesh: operational</span>
-      </div>
-
-      <div className="h-3 w-[1px] bg-white/10 hidden sm:block" />
-
-      <div className="hidden sm:flex items-center gap-2.5">
-        {regions.map((reg) => (
-          <div key={reg.code} className="flex items-center gap-1 font-mono text-[10px] text-[#a1a1aa]">
-            <span className="text-[#71717a]">{reg.code}:</span>
-            <span className="text-[#f4f4f5]">{reg.currentLatency}ms</span>
-          </div>
-        ))}
-      </div>
+    <div
+      className="flex items-center gap-2.5 rounded border border-white/10 bg-[#0e0e11] px-2.5 py-1 text-xs"
+      title="Status berdasarkan konfigurasi layanan, bukan probe latensi regional atau koneksi AI langsung."
+    >
+      <span
+        className={`h-1.5 w-1.5 rounded-full ${
+          isOperational ? "bg-emerald-400" : state === "checking" ? "bg-zinc-400" : "bg-amber-400"
+        }`}
+      />
+      <span className={`font-mono text-[11px] ${isOperational ? "text-emerald-300" : "text-amber-300"}`} role="status" aria-live="polite">
+        sistem: {STATUS_LABELS[state]}
+      </span>
     </div>
   );
 }

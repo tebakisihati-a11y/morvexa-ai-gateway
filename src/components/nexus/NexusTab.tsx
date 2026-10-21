@@ -10,7 +10,6 @@ import {
   Server,
   CheckCircle2,
   Layers,
-  ArrowUpRight,
   Filter,
   Play,
   RotateCw,
@@ -204,6 +203,10 @@ export function NexusTab() {
         </div>
       </div>
 
+      <aside role="note" className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 text-xs leading-relaxed text-amber-100">
+        Panel ini masih berisi data contoh untuk organisasi, transaksi, dan metrik keuangan. Angka dan nama di bawah bukan data pelanggan, penggunaan AI, maupun pendapatan nyata; jangan gunakan untuk laporan atau keputusan billing.
+      </aside>
+
       {/* Executive Metrics Overview */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="rounded-lg border border-white/10 bg-[#0e0e11] p-4 space-y-1">
@@ -211,10 +214,9 @@ export function NexusTab() {
             <span>Monthly Recurring Revenue</span>
             <DollarSign className="h-3.5 w-3.5 text-[#10b981]" />
           </div>
-          <div className="text-xl font-bold font-mono text-[#f4f4f5]">Rp 23.250.000</div>
+          <div className="text-xl font-bold font-mono text-[#f4f4f5]">Belum tersedia</div>
           <div className="text-[11px] font-mono text-[#10b981] flex items-center gap-1">
-            <ArrowUpRight className="h-3 w-3" />
-            <span>+18.4% bulan ini</span>
+            <span>Billing provider belum terhubung</span>
           </div>
         </div>
 
@@ -223,8 +225,8 @@ export function NexusTab() {
             <span>Total Organisasi Aktif</span>
             <Layers className="h-3.5 w-3.5 text-orange-400" />
           </div>
-          <div className="text-xl font-bold font-mono text-[#f4f4f5]">14 Tenants</div>
-          <div className="text-[11px] font-mono text-[#a1a1aa]">92 pengguna terdaftar</div>
+          <div className="text-xl font-bold font-mono text-[#f4f4f5]">Belum tersedia</div>
+          <div className="text-[11px] font-mono text-[#a1a1aa]">Data tenant nyata belum terhubung</div>
         </div>
 
         <div className="rounded-lg border border-white/10 bg-[#0e0e11] p-4 space-y-1">
@@ -232,8 +234,8 @@ export function NexusTab() {
             <span>24h Gateway Requests</span>
             <Activity className="h-3.5 w-3.5 text-[#f97316]" />
           </div>
-          <div className="text-xl font-bold font-mono text-[#f4f4f5]">128.940</div>
-          <div className="text-[11px] font-mono text-[#a1a1aa]">Avg TTFT: 142ms</div>
+          <div className="text-xl font-bold font-mono text-[#f4f4f5]">Gunakan Command Center</div>
+          <div className="text-[11px] font-mono text-[#a1a1aa]">Metrik live bersifat per-instance</div>
         </div>
 
         <div className="rounded-lg border border-white/10 bg-[#0e0e11] p-4 space-y-1">
@@ -241,8 +243,8 @@ export function NexusTab() {
             <span>Dedicated Clusters</span>
             <Server className="h-3.5 w-3.5 text-[#f97316]" />
           </div>
-          <div className="text-xl font-bold font-mono text-[#f4f4f5]">2 Active Nodes</div>
-          <div className="text-[11px] font-mono text-[#f97316]">100% Probes Healthy</div>
+          <div className="text-xl font-bold font-mono text-[#f4f4f5]">Belum tersedia</div>
+          <div className="text-[11px] font-mono text-[#f97316]">Probe infrastruktur belum dikonfigurasi</div>
         </div>
       </div>
 

@@ -18,7 +18,7 @@ interface OverviewTabProps {
 export function OverviewTab({ quota, metrics, onNavigateToTab, metricsError }: OverviewTabProps) {
   const [copied, setCopied] = useState(false);
 
-  const curlSnippet = `curl -X POST https://morvexa-ai-gateway.vercel.app/api/v1/messages \\
+  const curlSnippet = `curl -X POST https://morvexa-sistem.vercel.app/api/v1/messages \\
   -H "Authorization: Bearer mvx_live_your_api_key" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -42,8 +42,8 @@ export function OverviewTab({ quota, metrics, onNavigateToTab, metricsError }: O
               Gateway Command Center
             </h1>
             <span className="flex items-center gap-1.5 text-[11px] font-mono text-[#a1a1aa] border border-white/10 bg-black/40 px-2.5 py-0.5 rounded-full">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#10b981] animate-pulse" />
-              <span>edge-cluster: operational</span>
+              <span className={`h-1.5 w-1.5 rounded-full ${metricsError ? "bg-amber-400" : "bg-[#10b981]"}`} />
+              <span>telemetry: {metricsError ? "unavailable" : "instance-local"}</span>
             </span>
             <span className="text-[11px] font-mono text-[#a1a1aa]/60 hidden md:inline">
               [rev: 2026.10]
