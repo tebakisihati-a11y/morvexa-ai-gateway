@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach, beforeEach } from "vitest";
+import { describe, it, expect, afterEach, beforeEach, vi } from "vitest";
 import { app } from "../src/lib/gateway/app";
 import { buildSystemStatus } from "../src/lib/status/systemStatus";
 
@@ -55,6 +55,19 @@ describe("Public system status", () => {
     const withKey = buildSystemStatus();
     const routingWith = withKey.components.find((c) => c.id === "routing");
     expect(routingWith?.state).toBe("operational");
+  });
+
+  it("reports that production requests fail closed when no provider is configured", () => {
+    vi.stubEnv("NODE_ENV", "production");
+
+    try {
+      const status = buildSystemStatus();
+      const routing = status.components.find((component) => component.id === "routing");
+      expect(routing?.detail).toContain("HTTP 503");
+      expect(routing?.detail).not.toContain("simulasi");
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 
   it("headlines the worst component state rather than a hopeful default", () => {

@@ -35,7 +35,7 @@ export interface SystemStatus {
 }
 
 /**
- * Environment variables that switch a provider from simulated to live.
+ * Environment variables that switch a provider from unavailable/simulated to live.
  *
  * `custom` is intentionally absent: its "key" is the private-server sentinel
  * value, not a real upstream credential, so counting it would overstate how
@@ -80,7 +80,9 @@ export function buildSystemStatus(liveProviders = configuredProviderCount()): Sy
       detail:
         liveProviders > 0
           ? `${inChain} provider dalam rantai failover, ${liveProviders} di antaranya memakai kredensial upstream asli.`
-          : `${inChain} provider dalam rantai failover, tetapi belum ada kredensial upstream. Permintaan dilayani oleh stream simulasi.`,
+          : process.env.NODE_ENV === "production"
+            ? `${inChain} provider dalam rantai failover, tetapi belum ada kredensial upstream. Permintaan AI gagal dengan HTTP 503 sampai provider dikonfigurasi.`
+            : `${inChain} provider dalam rantai failover, tetapi belum ada kredensial upstream. Lingkungan non-production dapat memakai stream simulasi.`,
     },
     {
       id: "customer-store",
