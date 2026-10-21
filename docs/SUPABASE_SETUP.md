@@ -91,7 +91,26 @@ Tanpa kredensial upstream yang aktif, gateway production mengembalikan `503`;
 stream simulasi hanya tersedia untuk development/test agar respons sintetis
 tidak pernah dianggap sebagai jawaban AI sungguhan.
 
-## 5. Deploy ulang dan verifikasi
+## 5. Mengaktifkan email transaksi gratis
+
+Untuk menggunakan paket gratis tanpa domain pengirim sendiri, siapkan akun
+Brevo dan verifikasi alamat Gmail Anda sebagai sender melalui kode konfirmasi
+yang dikirim ke Gmail tersebut. Buat API key di **SMTP & API → API Keys**,
+lalu tambahkan variabel berikut ke Vercel Production:
+
+| Variabel | Nilai |
+|---|---|
+| `BREVO_API_KEY` | API key Brevo (server-side secret) |
+| `MORVEXA_EMAIL_FROM` | `Morvexa <alamat-gmail-anda>` |
+
+Tambahkan sender yang sama di pengaturan Brevo. Jangan gunakan App Password
+Gmail: aplikasi mengirim melalui API HTTPS Brevo, bukan koneksi SMTP langsung.
+Setelah deploy, uji alur verifikasi akun atau reset password dengan alamat email
+yang Anda kuasai. Status email hanya menunjukkan bahwa provider tersedia; uji
+inbox/spam untuk memastikan deliverability. Sender Gmail melalui layanan pihak
+ketiga dapat difilter atau ditolak, dan bukan pengganti autentikasi domain.
+
+## 6. Deploy ulang dan verifikasi
 
 ```bash
 vercel --prod

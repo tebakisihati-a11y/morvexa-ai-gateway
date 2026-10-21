@@ -1,11 +1,17 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { sendEmail, resolveEmailTransport, isEmailDeliveryConfigured } from "../src/lib/email/send";
+import {
+  sendEmail,
+  resolveEmailTransport,
+  isEmailDeliveryConfigured,
+} from "../src/lib/email/send";
 import { welcomeEmail, passwordResetEmail, apiKeyDeliveryEmail, escapeHtml } from "../src/lib/email/templates";
 import { resolvePublicBaseUrl } from "../src/lib/email/baseUrl";
 
 describe("Email transport selection", () => {
   beforeEach(() => {
     delete process.env.RESEND_API_KEY;
+    delete process.env.BREVO_API_KEY;
+    delete process.env.MORVEXA_EMAIL_FROM;
   });
 
   it("falls back to the log transport when no API key is configured", () => {
@@ -19,11 +25,26 @@ describe("Email transport selection", () => {
     expect(isEmailDeliveryConfigured()).toBe(true);
     delete process.env.RESEND_API_KEY;
   });
+
+  it("prefers Brevo when its API key is configured", () => {
+    process.env.BREVO_API_KEY = "brevo_test_key";
+    process.env.RESEND_API_KEY = "re_test_key";
+    process.env.MORVEXA_EMAIL_FROM = "Morvexa <sender@example.com>";
+    expect(resolveEmailTransport()).toBe("brevo");
+    expect(isEmailDeliveryConfigured()).toBe(true);
+  });
+
+  it("does not report Brevo delivery as configured until a sender is set", () => {
+    process.env.BREVO_API_KEY = "brevo_test_key";
+    expect(isEmailDeliveryConfigured()).toBe(false);
+  });
 });
 
 describe("sendEmail", () => {
   beforeEach(() => {
     delete process.env.RESEND_API_KEY;
+    delete process.env.BREVO_API_KEY;
+    delete process.env.MORVEXA_EMAIL_FROM;
   });
 
   it("reports delivered:false on the log transport so callers cannot claim an email was sent", async () => {
@@ -62,6 +83,91 @@ describe("sendEmail", () => {
     expect(body.to).toEqual(["customer@example.com"]);
     expect(body.subject).toBe("Akun Morvexa Anda sudah aktif");
     expect(body.html).toContain("Budi");
+  });
+
+  it("posts a transactional email to Brevo using the configured sender", async () => {
+    process.env.BREVO_API_KEY = "brevo_test_key";
+    process.env.MORVEXA_EMAIL_FROM = "Morvexa <sender@gmail.com>";
+    const fetchImpl = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ messageId: "<email_123>" }), {
+        status: 201,
+        headers: { "Content-Type": "application/json" },
+      })
+    );
+
+    const result = await sendEmail({
+      to: "customer@example.com",
+      email: welcomeEmail({ name: "Budi", portalUrl: "https://example.com/customer" }),
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+
+    expect(result).toEqual({
+      delivered: true,
+      transport: "brevo",
+      id: "<email_123>",
+    });
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+
+    const [url, init] = fetchImpl.mock.calls[0];
+    expect(url).toBe("https://api.brevo.com/v3/smtp/email");
+    expect((init as RequestInit).headers).toMatchObject({
+      "api-key": "brevo_test_key",
+      Accept: "application/json",
+    });
+    const body = JSON.parse((init as RequestInit).body as string);
+    expect(body.sender).toEqual({ name: "Morvexa", email: "sender@gmail.com" });
+    expect(body.to).toEqual([{ email: "customer@example.com" }]);
+    expect(body.subject).toBe("Akun Morvexa Anda sudah aktif");
+    expect(body.htmlContent).toContain("Budi");
+    expect(body.textContent).toContain("Budi");
+    delete process.env.MORVEXA_EMAIL_FROM;
+  });
+
+  it("does not send through Brevo without an API key", async () => {
+    const fetchImpl = vi.fn();
+    const result = await sendEmail({
+      to: "customer@example.com",
+      email: welcomeEmail({ name: "Budi", portalUrl: "https://example.com/customer" }),
+      transport: "brevo",
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+
+    expect(result.delivered).toBe(false);
+    expect(result.error).toContain("BREVO_API_KEY");
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it("does not send through Brevo without a configured sender", async () => {
+    process.env.BREVO_API_KEY = "brevo_test_key";
+    const fetchImpl = vi.fn();
+    const result = await sendEmail({
+      to: "customer@example.com",
+      email: welcomeEmail({ name: "Budi", portalUrl: "https://example.com/customer" }),
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+
+    expect(result.delivered).toBe(false);
+    expect(result.error).toContain("MORVEXA_EMAIL_FROM");
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it("reports Brevo rejection without exposing its response body", async () => {
+    process.env.BREVO_API_KEY = "brevo_test_key";
+    process.env.MORVEXA_EMAIL_FROM = "Morvexa <sender@gmail.com>";
+    const fetchImpl = vi.fn().mockResolvedValue(
+      new Response("sensitive provider response", { status: 401 })
+    );
+
+    const result = await sendEmail({
+      to: "customer@example.com",
+      email: welcomeEmail({ name: "Budi", portalUrl: "https://example.com/customer" }),
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+
+    expect(result.delivered).toBe(false);
+    expect(result.transport).toBe("brevo");
+    expect(result.error).toContain("401");
+    expect(result.error).not.toContain("sensitive");
   });
 
   it("reports delivered:false and an error when the provider rejects the request", async () => {

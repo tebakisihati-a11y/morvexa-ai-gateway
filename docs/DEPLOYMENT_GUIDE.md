@@ -35,6 +35,22 @@ produksi tidak dijamin selalu gratis.
 6. Setelah deployment berhasil, webapp dan Hono API tersedia di URL:
    `https://[nama-proyek].vercel.app` (Lengkap dengan sertifikat SSL gratis otomatis).
 
+### Email transaksi gratis
+
+Vercel lebih cocok memakai provider email melalui HTTPS daripada koneksi Gmail
+SMTP. Untuk opsi gratis, buat akun Brevo, verifikasi alamat Gmail Anda sebagai
+sender, lalu buat API key pada menu **SMTP & API → API Keys**. Tambahkan
+`BREVO_API_KEY` sebagai environment variable server-side di Vercel dan
+`MORVEXA_EMAIL_FROM` dengan format `Morvexa <alamat-gmail-anda>`. Jangan
+menambahkan tanda kutip pada nilai sender di dashboard Vercel.
+
+Brevo harus mengonfirmasi sender sebelum API menerima email. Tes pengiriman ke
+alamat yang Anda kuasai; email yang diterima provider belum tentu masuk inbox
+karena sender Gmail pihak ketiga dapat difilter sebagai spam. Tanpa autentikasi
+domain sendiri, gunakan solusi ini dengan mempertimbangkan batas deliverability.
+Jika `BREVO_API_KEY` dan `RESEND_API_KEY` sama-sama tersedia, aplikasi memilih
+Brevo. Jangan pernah memasukkan API key ke kode, `NEXT_PUBLIC_*`, atau chat.
+
 ---
 
 ## 3. Menghubungkan Domain Gratis (*Custom Subdomain*)
