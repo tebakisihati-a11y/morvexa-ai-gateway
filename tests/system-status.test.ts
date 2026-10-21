@@ -8,6 +8,9 @@ const TOUCHED = [
   "DEEPSEEK_API_KEY",
   "GROQ_API_KEY",
   "GEMINI_API_KEY",
+  "BREVO_API_KEY",
+  "RESEND_API_KEY",
+  "MORVEXA_EMAIL_FROM",
 ] as const;
 const originalProviderEnv = Object.fromEntries(
   TOUCHED.map((key) => [key, process.env[key]])
@@ -68,6 +71,17 @@ describe("Public system status", () => {
     } finally {
       vi.unstubAllEnvs();
     }
+  });
+
+  it("requires a verified Brevo sender before reporting email delivery as operational", () => {
+    process.env.BREVO_API_KEY = "brevo-test-key";
+    const missingSender = buildSystemStatus().components.find((component) => component.id === "email");
+    expect(missingSender?.state).toBe("degraded");
+    expect(missingSender?.detail).toContain("sender Brevo terverifikasi");
+
+    process.env.MORVEXA_EMAIL_FROM = "Morvexa <sender@example.com>";
+    const configured = buildSystemStatus().components.find((component) => component.id === "email");
+    expect(configured?.state).toBe("operational");
   });
 
   it("headlines the worst component state rather than a hopeful default", () => {

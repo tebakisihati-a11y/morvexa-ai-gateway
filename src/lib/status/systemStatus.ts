@@ -98,7 +98,7 @@ export function buildSystemStatus(liveProviders = configuredProviderCount()): Sy
       state: isEmailDeliveryConfigured() ? "operational" : "degraded",
       detail: isEmailDeliveryConfigured()
         ? "Tautan verifikasi dan reset password dikirim lewat penyedia email."
-        : "Belum ada penyedia email. Tautan verifikasi tertulis di log server dan tidak sampai ke kotak masuk.",
+        : "Transport email belum lengkap. Atur BREVO_API_KEY dan sender Brevo terverifikasi, atau RESEND_API_KEY. Tautan verifikasi saat ini tidak sampai ke kotak masuk.",
     },
   ];
 
