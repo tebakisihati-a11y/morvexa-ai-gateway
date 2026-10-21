@@ -86,9 +86,13 @@ export interface RequestTraceLog {
 
 export interface SystemMetrics {
   rps: number;
-  avgTtftMs: number;
-  cacheHitRatio: number;
+  avgLatencyMs: number;
+  cacheHitRatio: number | null;
   errorRate: number;
-  activeKeysCount: number;
   totalRequests24h: number;
+  hourlyRequestCounts: number[];
+  sampleCount: number;
+  successfulRequestCount: number;
+  providerRequestCounts: Record<string, number>;
+  scope: "instance";
 }

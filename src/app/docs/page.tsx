@@ -50,6 +50,14 @@ const ENDPOINTS: Endpoint[] = [
     summary:
       "Status komponen gateway untuk pemantauan otomatis. Hanya berisi boolean dan hitungan, tanpa kredensial maupun latensi upstream.",
   },
+  {
+    method: "GET",
+    path: "/api/v1/metrics",
+    title: "Metrik runtime",
+    auth: "Publik",
+    summary:
+      "Jumlah request, laju, latensi respons handler, dan error dari instance yang menjawab. Data bersifat sementara per instance Vercel, bukan agregat seluruh deployment.",
+  },
 ];
 
 const EMBEDDING_OPTIONS = [
@@ -165,6 +173,9 @@ export default function DocsPage() {
           sekali saat pembuatan; yang tersimpan di server hanya digest SHA-256-nya, sehingga key
           tidak dapat dipulihkan bila hilang.
         </p>
+        <aside className="mt-6 rounded-lg border border-amber-500/20 bg-amber-500/5 p-4 text-[13px] leading-relaxed text-[#d4d4d8]">
+          <strong className="text-amber-200">Catatan paket gratis:</strong> hosting Vercel, database Supabase, dan email Brevo memiliki batas free-tier yang dapat berubah. Morvexa tidak mengenakan biaya untuk pemeriksaan daftar model, tetapi panggilan inferensi menggunakan kuota/harga provider AI Anda. Kunci API gratis tidak menjamin semua model atau volume gratis; periksa batas dan billing provider sebelum mengirim prompt.
+        </aside>
 
         {/* Endpoints */}
         <h2 className="mt-12 text-[20px] font-semibold tracking-tight">Endpoint</h2>

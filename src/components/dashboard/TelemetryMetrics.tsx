@@ -10,45 +10,48 @@ interface TelemetryMetricsProps {
 export function TelemetryMetrics({ metrics }: TelemetryMetricsProps) {
   const cards = [
     {
-      label: "INGRESS THROUGHPUT",
-      value: `${metrics.rps}`,
+      label: "GATEWAY REQUEST RATE",
+      value: metrics.rps.toFixed(3),
       unit: "req/s",
-      meta: "+12.4% vs 1h peak",
-      submeta: "128,940 reqs / 24h",
-      statusColor: "text-[#10b981]",
+      meta: `${metrics.sampleCount} sampel`,
+      submeta: "60 detik terakhir",
+      statusColor: "text-cyan-400",
       accentBorder: "hover:border-[#f97316]/40",
     },
     {
-      label: "MEDIAN TTFT (EDGE)",
-      value: `${metrics.avgTtftMs}`,
+      label: "LATENSI RESPONSE RATA-RATA",
+      value: `${metrics.avgLatencyMs}`,
       unit: "ms",
-      meta: "Global edge avg",
-      submeta: "sin1: 14ms · iad1: 128ms",
-      statusColor: "text-[#10b981]",
+      meta: `${metrics.successfulRequestCount} response berhasil`,
+      submeta: "Respons handler berhasil",
+      statusColor: "text-cyan-400",
       accentBorder: "hover:border-[#c2410c]/40",
     },
     {
       label: "CACHE HIT RATIO",
-      value: `${(metrics.cacheHitRatio * 100).toFixed(1)}`,
-      unit: "%",
-      meta: "36,103 cached",
-      submeta: "Zero upstream billing",
-      statusColor: "text-cyan-400",
+      value: metrics.cacheHitRatio === null ? "—" : `${(metrics.cacheHitRatio * 100).toFixed(1)}`,
+      unit: metrics.cacheHitRatio === null ? "" : "%",
+      meta: metrics.cacheHitRatio === null ? "Cache belum aktif" : "Request tersaji dari cache",
+      submeta: metrics.cacheHitRatio === null ? "Tidak ada cache yang diukur" : "Rasio dalam sampel",
+      statusColor: "text-zinc-400",
       accentBorder: "hover:border-cyan-500/40",
     },
     {
-      label: "GATEWAY ERROR RATE",
+      label: "HTTP ERROR RATE",
       value: `${(metrics.errorRate * 100).toFixed(2)}`,
       unit: "%",
-      meta: "Circuit breaker: normal",
-      submeta: "Auto-failover ready",
-      statusColor: "text-[#f97316]",
+      meta: `${metrics.totalRequests24h} request`,
+      submeta: metrics.scope === "instance" ? "HTTP 4xx/5xx · instance ini · 24 jam" : "HTTP 4xx/5xx · 24 jam",
+      statusColor: metrics.errorRate > 0.05 ? "text-red-400" : "text-emerald-400",
       accentBorder: "hover:border-[#f97316]/40",
     },
   ];
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+      <p className="sr-only" aria-live="polite">
+        Metrik diperbarui dari {metrics.sampleCount} sampel pada {metrics.scope === "instance" ? "instance ini" : "deployment"}.
+      </p>
       {cards.map((card, idx) => (
         <div
           key={idx}
@@ -76,7 +79,20 @@ export function TelemetryMetrics({ metrics }: TelemetryMetricsProps) {
           </div>
         </div>
       ))}
+      {Object.keys(metrics.providerRequestCounts).length > 0 && (
+        <div className="sm:col-span-2 lg:col-span-4 rounded-lg border border-white/10 bg-[#0e0e11]/80 p-4">
+          <p className="text-[11px] font-mono uppercase tracking-wider text-[#a1a1aa]">
+            Request berhasil menurut provider · instance ini · 24 jam
+          </p>
+          <ul className="mt-2 flex flex-wrap gap-2">
+            {Object.entries(metrics.providerRequestCounts).map(([provider, count]) => (
+              <li key={provider} className="rounded border border-white/10 px-2 py-1 text-xs font-mono text-[#f4f4f5]">
+                {provider}: {count}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
-

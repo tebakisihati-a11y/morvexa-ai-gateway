@@ -25,11 +25,23 @@ import {
   getRollingQuotaRecords,
 } from "@/lib/supabase/store";
 import { calculateRollingQuotaStatus } from "@/lib/quota";
-import { DEFAULT_SYSTEM_METRICS } from "@/lib/constants";
-import type { ApiKeyItem, QuotaConfig, QuotaStatus, RequestTraceLog } from "@/lib/types";
+import type { ApiKeyItem, QuotaConfig, QuotaStatus, RequestTraceLog, SystemMetrics } from "@/lib/types";
 import { Lock, ArrowRight, ShieldCheck, ArrowLeft, Zap, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { apiFetch } from "@/lib/api/client";
+
+const EMPTY_SYSTEM_METRICS: SystemMetrics = {
+  rps: 0,
+  avgLatencyMs: 0,
+  cacheHitRatio: null,
+  errorRate: 0,
+  totalRequests24h: 0,
+  hourlyRequestCounts: Array.from({ length: 24 }, () => 0),
+  sampleCount: 0,
+  successfulRequestCount: 0,
+  providerRequestCounts: {},
+  scope: "instance",
+};
 
 const defaultQuotaConfig: QuotaConfig = {
   standardRequest5hLimit: 100,
@@ -51,6 +63,8 @@ export default function OwnerControlPlanePage() {
   const [quota, setQuota] = useState<QuotaStatus>(() =>
     calculateRollingQuotaStatus([], defaultQuotaConfig)
   );
+  const [metrics, setMetrics] = useState<SystemMetrics>(EMPTY_SYSTEM_METRICS);
+  const [metricsError, setMetricsError] = useState<string | null>(null);
 
   // Ask the server whether this browser already holds a valid owner session.
   useEffect(() => {
@@ -87,6 +101,32 @@ export default function OwnerControlPlanePage() {
     if (isAuthenticated) {
       reloadData();
     }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    let cancelled = false;
+    const refreshMetrics = async () => {
+      try {
+        const response = await apiFetch("/api/v1/metrics");
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Permintaan metrik gagal.");
+        if (!cancelled) {
+          setMetrics(data);
+          setMetricsError(null);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setMetricsError(error instanceof Error ? error.message : "Tidak dapat membaca metrik.");
+        }
+      }
+    };
+    void refreshMetrics();
+    const interval = window.setInterval(() => void refreshMetrics(), 30_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
   }, [isAuthenticated]);
 
   const handleCreateKey = async (name: string, rpm: number, dailyTokens: number) => {
@@ -260,7 +300,8 @@ export default function OwnerControlPlanePage() {
 
               <OverviewTab
                 quota={quota}
-                metrics={DEFAULT_SYSTEM_METRICS}
+                metrics={metrics}
+                metricsError={metricsError}
                 onNavigateToTab={setActiveTab}
               />
             </div>

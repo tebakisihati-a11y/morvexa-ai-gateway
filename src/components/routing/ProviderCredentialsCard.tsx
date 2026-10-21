@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import type { UpstreamProviderId } from "@/lib/types";
+import type { ProviderHealthResult } from "@/lib/gateway/providerHealth";
 
 export interface ProviderStatus {
   id: Exclude<UpstreamProviderId, "custom">;
@@ -10,6 +11,7 @@ export interface ProviderStatus {
   source: "environment" | "vault" | "not_configured";
   maskedKey: string | null;
   updatedAt: string | null;
+  health?: ProviderHealthResult;
 }
 
 interface ProviderCredentialsCardProps {
@@ -20,6 +22,8 @@ interface ProviderCredentialsCardProps {
   notice: string | null;
   onSave: (id: ProviderStatus["id"], key: string) => Promise<boolean>;
   onDelete: (id: ProviderStatus["id"]) => Promise<void>;
+  onTest: (id: ProviderStatus["id"]) => Promise<void>;
+  testingProvider: string | null;
 }
 
 export function ProviderCredentialsCard({
@@ -30,6 +34,8 @@ export function ProviderCredentialsCard({
   notice,
   onSave,
   onDelete,
+  onTest,
+  testingProvider,
 }: ProviderCredentialsCardProps) {
   const [drafts, setDrafts] = useState<Record<string, string>>({});
 
@@ -77,6 +83,16 @@ export function ProviderCredentialsCard({
                     {p.configured ? "configured" : "not configured"}
                   </span>
                 </div>
+                {p.health && (
+                  <div className={`mt-1 text-[11px] ${p.health.state === "healthy" ? "text-emerald-300" : "text-amber-300"}`}>
+                    {p.health.message}
+                    {p.health.latencyMs !== null ? ` · ${p.health.latencyMs} ms` : ""}
+                    {" · "}
+                    <time dateTime={p.health.checkedAt}>
+                      {new Date(p.health.checkedAt).toLocaleString()}
+                    </time>
+                  </div>
+                )}
                 <div className="text-[11px] font-mono text-[#71717a] mt-0.5">
                   {p.source === "environment"
                     ? "Dikelola melalui environment variables deployment"
@@ -91,6 +107,16 @@ export function ProviderCredentialsCard({
                 </time>
               )}
             </div>
+            {p.configured && (
+              <button
+                type="button"
+                disabled={testingProvider === p.id || busyProvider === p.id}
+                onClick={() => void onTest(p.id)}
+                className="self-start rounded border border-white/10 bg-white/5 px-3 py-2 text-xs font-mono text-[#f4f4f5] disabled:opacity-50"
+              >
+                {testingProvider === p.id ? "Memeriksa…" : "Uji koneksi (tanpa inferensi)"}
+              </button>
+            )}
             {p.source !== "environment" && (
               <form
                 className="flex flex-col sm:flex-row gap-2"

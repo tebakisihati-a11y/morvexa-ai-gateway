@@ -51,6 +51,21 @@ domain sendiri, gunakan solusi ini dengan mempertimbangkan batas deliverability.
 Jika `BREVO_API_KEY` dan `RESEND_API_KEY` sama-sama tersedia, aplikasi memilih
 Brevo. Jangan pernah memasukkan API key ke kode, `NEXT_PUBLIC_*`, atau chat.
 
+### Batas paket gratis dan penggunaan AI
+
+Hosting Vercel, Supabase Free, dan Brevo Free dapat menjalankan konfigurasi
+awal tanpa biaya langganan, tetapi masing-masing memiliki kuota, batas sumber
+daya, dan kebijakan yang dapat berubah. Pantau dashboard penyedia dan jangan
+menganggap paket gratis sebagai layanan tanpa batas. Pemeriksaan provider dari
+panel Owner hanya meminta daftar model dan tidak membuat permintaan inferensi.
+Sebaliknya, request chat sungguhan memakai kuota provider AI; beberapa provider
+menagih per token atau memerlukan metode pembayaran. Pastikan model dan akun
+provider benar-benar memiliki kuota gratis sebelum mengirim request.
+
+Metrik panel Owner berasal dari sampel memori instance yang melayani request,
+dibatasi 24 jam dan dapat terhapus saat instance serverless dimulai ulang.
+Metrik ini bukan agregat global dan bukan penyimpanan audit atau laporan biaya.
+
 ---
 
 ## 3. Menghubungkan Domain Gratis (*Custom Subdomain*)

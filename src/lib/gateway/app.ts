@@ -45,9 +45,10 @@ import {
   runAutomatedReconciliation,
   getReconciliationLogs,
 } from "../billing/reconciliation";
-import { DEFAULT_SYSTEM_METRICS } from "../constants";
 import { buildSystemStatus } from "../status/systemStatus";
 import type { UpstreamProviderId } from "../types";
+import { getGatewayMetrics, recordGatewayRequest } from "./telemetry";
+import { checkProviderHealth } from "./providerHealth";
 import {
   deleteProviderCredential,
   getProviderCredential,
@@ -57,6 +58,7 @@ import {
 } from "./providerVault";
 
 export const app = new Hono().basePath("/api");
+let lastOwnerEmailTestAt = 0;
 
 /**
  * Loads durable customer records into memory when the gateway module is first
@@ -130,23 +132,46 @@ app.notFound((c) => {
   );
 });
 
-// 1. Health & Telemetry Metrics Endpoint
+app.use("/v1/messages", async (c, next) => {
+  const startedAt = Date.now();
+  let statusCode = 500;
+  try {
+    await next();
+    statusCode = c.res.status;
+  } finally {
+    recordGatewayRequest({
+      timestamp: Date.now(),
+      durationMs: Date.now() - startedAt,
+      statusCode,
+      provider: c.res.headers.get("X-Morvexa-Provider") ?? undefined,
+    });
+  }
+});
+
+app.use("/v1/chat/completions", async (c, next) => {
+  const startedAt = Date.now();
+  let statusCode = 500;
+  try {
+    await next();
+    statusCode = c.res.status;
+  } finally {
+    recordGatewayRequest({
+      timestamp: Date.now(),
+      durationMs: Date.now() - startedAt,
+      statusCode,
+      provider: c.res.headers.get("X-Morvexa-Provider") ?? undefined,
+    });
+  }
+});
+
+// Telemetry is deliberately process-local: serverless instances are not a shared
+// metrics store, so the response identifies its limited scope instead of implying
+// that these samples represent the entire deployment.
 app.get("/v1/metrics", (c) => {
   return c.json({
     status: "healthy",
-    uptimeSeconds: Math.floor(process.uptime ? process.uptime() : 1240),
-    rps: DEFAULT_SYSTEM_METRICS.rps,
-    avgTtftMs: DEFAULT_SYSTEM_METRICS.avgTtftMs,
-    cacheHitRatio: DEFAULT_SYSTEM_METRICS.cacheHitRatio,
-    errorRate: DEFAULT_SYSTEM_METRICS.errorRate,
-    activeKeysCount: DEFAULT_SYSTEM_METRICS.activeKeysCount,
-    totalRequests24h: DEFAULT_SYSTEM_METRICS.totalRequests24h,
-    regions: [
-      { region: "SIN (Singapore)", latencyMs: 14, status: "optimal" },
-      { region: "FRA (Frankfurt)", latencyMs: 86, status: "optimal" },
-      { region: "IAD (Virginia)", latencyMs: 128, status: "optimal" },
-      { region: "NRT (Tokyo)", latencyMs: 42, status: "optimal" },
-    ],
+    uptimeSeconds: Math.floor(process.uptime()),
+    ...getGatewayMetrics(),
   });
 });
 
@@ -1674,6 +1699,71 @@ app.get("/owner/providers", async (c) => {
     console.error("[Morvexa Vault] Provider status read failed:", error);
     return c.json({ error: "Penyimpanan provider belum siap dikonfigurasi." }, 503);
   }
+});
+
+app.post("/owner/providers/:provider/test", async (c) => {
+  if (!hasOwnerSession(c.req.header("Cookie"))) {
+    return c.json({ error: "Forbidden: Owner session required" }, 403);
+  }
+  const csrfRejected = enforceCsrfToken(c);
+  if (csrfRejected) return csrfRejected;
+
+  const provider = c.req.param("provider");
+  if (!isManagedProviderId(provider)) {
+    return c.json({ error: "Provider tidak dikenal." }, 400);
+  }
+
+  try {
+    const apiKey = await apiKeyForProvider(provider);
+    const result = await checkProviderHealth(provider, apiKey);
+    return c.json({ result }, result.state === "degraded" ? 502 : 200);
+  } catch (error) {
+    console.error("[Morvexa Provider Health] Credential lookup failed:", error);
+    return c.json({ error: "Kredensial provider tidak dapat diperiksa." }, 503);
+  }
+});
+
+app.post("/owner/email/test", async (c) => {
+  if (!hasOwnerSession(c.req.header("Cookie"))) {
+    return c.json({ error: "Forbidden: Owner session required" }, 403);
+  }
+  const csrfRejected = enforceCsrfToken(c);
+  if (csrfRejected) return csrfRejected;
+
+  const body = await c.req.json().catch(() => null);
+  const email = typeof body?.email === "string" ? body.email.trim() : "";
+  if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+    return c.json({ error: "Alamat email tujuan tidak valid." }, 400);
+  }
+  if (Date.now() - lastOwnerEmailTestAt < 60_000) {
+    return c.json({ error: "Tunggu satu menit sebelum mengirim tes email berikutnya." }, 429);
+  }
+
+  const { isEmailDeliveryConfigured, sendEmail } = await import("../email/send");
+  if (!isEmailDeliveryConfigured()) {
+    return c.json({ error: "Transport email belum dikonfigurasi sepenuhnya." }, 503);
+  }
+
+  lastOwnerEmailTestAt = Date.now();
+  const { escapeHtml } = await import("../email/templates");
+  const result = await sendEmail({
+    to: email,
+    email: {
+      subject: "Tes email transaksional Morvexa",
+      html: `<p>Ini adalah tes pengiriman email transaksional dari panel Owner Morvexa.</p><p>Jika email ini sampai, periksa juga folder spam dan pastikan sender Anda terautentikasi.</p><p>Waktu permintaan: ${escapeHtml(new Date().toISOString())}</p>`,
+      text: `Ini adalah tes pengiriman email transaksional dari panel Owner Morvexa.\nJika email ini sampai, periksa juga folder spam dan pastikan sender Anda terautentikasi.\nWaktu permintaan: ${new Date().toISOString()}`,
+    },
+  });
+
+  if (!result.delivered) {
+    return c.json({
+      error: "Provider tidak menerima email tes. Periksa log runtime server dan konfigurasi sender.",
+    }, 502);
+  }
+  return c.json({
+    accepted: true,
+    message: "Provider menerima permintaan email. Ini belum menjamin email masuk ke inbox; periksa log provider dan folder spam.",
+  }, 200);
 });
 
 app.post("/owner/providers", async (c) => {

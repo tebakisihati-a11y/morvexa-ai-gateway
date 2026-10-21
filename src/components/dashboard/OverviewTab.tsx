@@ -6,14 +6,16 @@ import { TelemetryMetrics } from "./TelemetryMetrics";
 import { DualQuotaCard } from "./DualQuotaCard";
 import { ThroughputChart } from "./ThroughputChart";
 import { Terminal, Copy, Check, Play, KeyRound, Sparkles } from "lucide-react";
+import Link from "next/link";
 
 interface OverviewTabProps {
   quota: QuotaStatus;
   metrics: SystemMetrics;
   onNavigateToTab: (tab: any) => void;
+  metricsError?: string | null;
 }
 
-export function OverviewTab({ quota, metrics, onNavigateToTab }: OverviewTabProps) {
+export function OverviewTab({ quota, metrics, onNavigateToTab, metricsError }: OverviewTabProps) {
   const [copied, setCopied] = useState(false);
 
   const curlSnippet = `curl -X POST https://morvexa-ai-gateway.vercel.app/api/v1/messages \\
@@ -72,12 +74,20 @@ export function OverviewTab({ quota, metrics, onNavigateToTab }: OverviewTabProp
 
       {/* Telemetry Metrics */}
       <TelemetryMetrics metrics={metrics} />
+      {metricsError && (
+        <p role="status" className="text-xs text-amber-300">
+          Metrik live tidak dapat diperbarui: {metricsError}
+        </p>
+      )}
 
       {/* Core Dual Rolling Quota Gauge Card */}
       <DualQuotaCard quota={quota} />
 
       {/* Throughput Activity Chart */}
-      <ThroughputChart />
+      <ThroughputChart
+        hourlyRequestCounts={metrics.hourlyRequestCounts}
+        scope={metrics.scope}
+      />
 
       {/* Quick Developer Integration cURL Snippet */}
       <div className="rounded-lg border border-white/10 bg-[#0e0e11]/80 p-5">
@@ -110,8 +120,12 @@ export function OverviewTab({ quota, metrics, onNavigateToTab }: OverviewTabProp
         <div className="rounded-lg bg-black/70 border border-white/5 p-4 font-mono text-xs text-[#f4f4f5] overflow-x-auto leading-relaxed">
           <pre>{curlSnippet}</pre>
         </div>
+        <p className="mt-3 text-xs text-[#a1a1aa]">
+          Buat gateway API key di tab <button onClick={() => onNavigateToTab("keys")} className="text-emerald-300 underline">API Keys</button>, lalu lihat panduan endpoint di{" "}
+          <Link href="/docs" className="text-emerald-300 underline">dokumentasi Morvexa</Link>.
+          Penggunaan provider AI dapat dikenai biaya oleh provider; cek kuota gratis dan harga provider Anda.
+        </p>
       </div>
     </div>
   );
 }
-

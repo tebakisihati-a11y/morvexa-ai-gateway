@@ -54,7 +54,9 @@ describe("Hono Edge Gateway Router", () => {
     const json = await res.json();
     expect(json.status).toBe("healthy");
     expect(typeof json.rps).toBe("number");
-    expect(typeof json.avgTtftMs).toBe("number");
+    expect(typeof json.avgLatencyMs).toBe("number");
+    expect(json.scope).toBe("instance");
+    expect(json.hourlyRequestCounts).toHaveLength(24);
   });
 
   describe("API Key Cryptographic Verification (SEC-01 Guard)", () => {
@@ -77,4 +79,3 @@ describe("Hono Edge Gateway Router", () => {
     });
   });
 });
-
