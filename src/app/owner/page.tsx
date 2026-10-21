@@ -40,6 +40,7 @@ const EMPTY_SYSTEM_METRICS: SystemMetrics = {
   sampleCount: 0,
   successfulRequestCount: 0,
   providerRequestCounts: {},
+  providerTokenUsage: {},
   scope: "instance",
 };
 

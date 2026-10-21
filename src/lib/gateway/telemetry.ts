@@ -7,9 +7,42 @@ interface GatewayRequestSample {
   provider?: string;
 }
 
+export interface ProviderTokenUsage {
+  inputTokens: number;
+  outputTokens: number;
+  requests: number;
+}
+
 const WINDOW_MS = 24 * 60 * 60 * 1000;
 const MAX_SAMPLES = 10_000;
 const samples: GatewayRequestSample[] = [];
+const tokenUsageByProvider = new Map<string, ProviderTokenUsage>();
+
+export function recordProviderTokenUsage(
+  provider: string,
+  inputTokens: number,
+  outputTokens: number
+): void {
+  if (
+    !Number.isSafeInteger(inputTokens) ||
+    !Number.isSafeInteger(outputTokens) ||
+    inputTokens < 0 ||
+    outputTokens < 0 ||
+    inputTokens + outputTokens === 0
+  ) {
+    return;
+  }
+  const current = tokenUsageByProvider.get(provider) ?? {
+    inputTokens: 0,
+    outputTokens: 0,
+    requests: 0,
+  };
+  tokenUsageByProvider.set(provider, {
+    inputTokens: current.inputTokens + inputTokens,
+    outputTokens: current.outputTokens + outputTokens,
+    requests: current.requests + 1,
+  });
+}
 
 export function recordGatewayRequest(sample: GatewayRequestSample): void {
   samples.push(sample);
@@ -54,6 +87,7 @@ export function getGatewayMetrics(now = Date.now()): SystemMetrics {
     sampleCount: samples.length,
     successfulRequestCount: successful.length,
     providerRequestCounts,
+    providerTokenUsage: Object.fromEntries(tokenUsageByProvider),
     scope: "instance",
   };
 }
@@ -65,4 +99,5 @@ function pruneSamples(now: number): void {
 
 export function clearGatewayMetricsForTests(): void {
   samples.length = 0;
+  tokenUsageByProvider.clear();
 }

@@ -176,6 +176,9 @@ export default function DocsPage() {
         <aside className="mt-6 rounded-lg border border-amber-500/20 bg-amber-500/5 p-4 text-[13px] leading-relaxed text-[#d4d4d8]">
           <strong className="text-amber-200">Catatan paket gratis:</strong> hosting Vercel, database Supabase, dan email Brevo memiliki batas free-tier yang dapat berubah. Morvexa tidak mengenakan biaya untuk pemeriksaan daftar model, tetapi panggilan inferensi menggunakan kuota/harga provider AI Anda. Kunci API gratis tidak menjamin semua model atau volume gratis; periksa batas dan billing provider sebelum mengirim prompt.
         </aside>
+        <p className="mt-3 text-[12.5px] leading-relaxed text-[#a1a1aa]">
+          Metrik token pada Command Center hanya menghitung usage metadata yang benar-benar dikirim oleh provider setelah respons selesai. Respons yang dibatalkan atau tidak menyertakan metadata tidak dihitung; angka tersebut bukan tagihan atau batas biaya.
+        </p>
 
         {/* Endpoints */}
         <h2 className="mt-12 text-[20px] font-semibold tracking-tight">Endpoint</h2>

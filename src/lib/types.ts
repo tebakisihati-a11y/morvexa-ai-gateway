@@ -94,5 +94,6 @@ export interface SystemMetrics {
   sampleCount: number;
   successfulRequestCount: number;
   providerRequestCounts: Record<string, number>;
+  providerTokenUsage: Record<string, { inputTokens: number; outputTokens: number; requests: number }>;
   scope: "instance";
 }

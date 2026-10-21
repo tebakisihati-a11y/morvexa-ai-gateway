@@ -79,18 +79,21 @@ export function TelemetryMetrics({ metrics }: TelemetryMetricsProps) {
           </div>
         </div>
       ))}
-      {Object.keys(metrics.providerRequestCounts).length > 0 && (
+      {Object.keys(metrics.providerTokenUsage).length > 0 && (
         <div className="sm:col-span-2 lg:col-span-4 rounded-lg border border-white/10 bg-[#0e0e11]/80 p-4">
           <p className="text-[11px] font-mono uppercase tracking-wider text-[#a1a1aa]">
-            Request berhasil menurut provider · instance ini · 24 jam
+            Token terukur dari laporan provider · instance ini
           </p>
           <ul className="mt-2 flex flex-wrap gap-2">
-            {Object.entries(metrics.providerRequestCounts).map(([provider, count]) => (
+            {Object.entries(metrics.providerTokenUsage).map(([provider, usage]) => (
               <li key={provider} className="rounded border border-white/10 px-2 py-1 text-xs font-mono text-[#f4f4f5]">
-                {provider}: {count}
+                {provider}: {(usage.inputTokens + usage.outputTokens).toLocaleString()} token ({usage.requests} respons)
               </li>
             ))}
           </ul>
+          <p className="mt-2 text-[10px] text-zinc-500">
+            Hanya token yang provider kembalikan dalam response usage yang dihitung. Data sementara, bukan biaya atau agregat permanen.
+          </p>
         </div>
       )}
     </div>

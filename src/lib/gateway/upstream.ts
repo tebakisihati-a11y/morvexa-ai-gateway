@@ -119,6 +119,9 @@ export async function forwardToUpstreamProvider(
           messages: formattedMessages,
           temperature,
           stream,
+          ...(stream && provider === "openai"
+            ? { stream_options: { include_usage: true } }
+            : {}),
         }),
       });
 

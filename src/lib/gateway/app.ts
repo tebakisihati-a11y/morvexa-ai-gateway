@@ -49,6 +49,7 @@ import { buildSystemStatus } from "../status/systemStatus";
 import type { UpstreamProviderId } from "../types";
 import { getGatewayMetrics, recordGatewayRequest } from "./telemetry";
 import { checkProviderHealth } from "./providerHealth";
+import { trackProviderUsage } from "./usageTracking";
 import {
   deleteProviderCredential,
   getProviderCredential,
@@ -326,15 +327,16 @@ app.post("/v1/messages", async (c) => {
 
   if (live) {
     const failoverOccurred = live.provider !== route.selectedProvider;
-    return new Response(live.response.body, {
-      status: live.response.status,
-      headers: {
-        "Content-Type": live.response.headers.get("content-type") || "text/event-stream",
-        "Cache-Control": "no-cache, no-transform",
-        "X-Morvexa-Provider": live.provider,
-        "X-Morvexa-Live": "true",
-        "X-Morvexa-Failover": failoverOccurred ? "true" : "false",
-      },
+    const trackedResponse = trackProviderUsage(live.response, live.provider);
+    const headers = new Headers(trackedResponse.headers);
+    headers.set("Content-Type", trackedResponse.headers.get("content-type") || "text/event-stream");
+    headers.set("Cache-Control", "no-cache, no-transform");
+    headers.set("X-Morvexa-Provider", live.provider);
+    headers.set("X-Morvexa-Live", "true");
+    headers.set("X-Morvexa-Failover", failoverOccurred ? "true" : "false");
+    return new Response(trackedResponse.body, {
+      status: trackedResponse.status,
+      headers,
     });
   }
 
@@ -451,15 +453,19 @@ app.post("/v1/chat/completions", async (c) => {
   });
 
   if (live) {
-    return new Response(live.response.body, {
-      status: live.response.status,
-      headers: {
-        "Content-Type": live.response.headers.get("content-type") || "application/json",
-        "Cache-Control": "no-cache, no-transform",
-        "X-Morvexa-Provider": live.provider,
-        "X-Morvexa-Live": "true",
-        "X-Morvexa-Failover": live.provider !== resolveProviderRoute(model).selectedProvider ? "true" : "false",
-      },
+    const trackedResponse = trackProviderUsage(live.response, live.provider);
+    const headers = new Headers(trackedResponse.headers);
+    headers.set("Content-Type", trackedResponse.headers.get("content-type") || "application/json");
+    headers.set("Cache-Control", "no-cache, no-transform");
+    headers.set("X-Morvexa-Provider", live.provider);
+    headers.set("X-Morvexa-Live", "true");
+    headers.set(
+      "X-Morvexa-Failover",
+      live.provider !== resolveProviderRoute(model).selectedProvider ? "true" : "false"
+    );
+    return new Response(trackedResponse.body, {
+      status: trackedResponse.status,
+      headers,
     });
   }
 
