@@ -1,24 +1,45 @@
 "use client";
 
 import React, { useState } from "react";
-import type { UpstreamProviderConfig } from "@/lib/types";
-import { Eye, EyeOff } from "lucide-react";
+import type { UpstreamProviderId } from "@/lib/types";
+
+export interface ProviderStatus {
+  id: Exclude<UpstreamProviderId, "custom">;
+  name: string;
+  configured: boolean;
+  source: "environment" | "vault" | "not_configured";
+  maskedKey: string | null;
+  updatedAt: string | null;
+}
 
 interface ProviderCredentialsCardProps {
-  providers: UpstreamProviderConfig[];
-  onUpdateKey: (id: string, key: string) => void;
-  onToggleActive: (id: string) => void;
+  providers: ProviderStatus[];
+  loading: boolean;
+  busyProvider: string | null;
+  error: string | null;
+  notice: string | null;
+  onSave: (id: ProviderStatus["id"], key: string) => Promise<boolean>;
+  onDelete: (id: ProviderStatus["id"]) => Promise<void>;
 }
 
 export function ProviderCredentialsCard({
   providers,
-  onUpdateKey,
-  onToggleActive,
+  loading,
+  busyProvider,
+  error,
+  notice,
+  onSave,
+  onDelete,
 }: ProviderCredentialsCardProps) {
-  const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
 
-  const toggleVisibility = (id: string) => {
-    setShowKeys((prev) => ({ ...prev, [id]: !prev[id] }));
+  const submit = async (provider: ProviderStatus) => {
+    const apiKey = drafts[provider.id]?.trim();
+    if (!apiKey) return;
+    const saved = await onSave(provider.id, apiKey);
+    if (saved) {
+      setDrafts((current) => ({ ...current, [provider.id]: "" }));
+    }
   };
 
   return (
@@ -29,69 +50,90 @@ export function ProviderCredentialsCard({
             Upstream Provider Credentials & Nodes
           </h3>
           <p className="text-xs text-[#a1a1aa] mt-0.5">
-            BYOK (Bring Your Own Key) vault and local daemon node connection parameters.
+            Kredensial disimpan terenkripsi; nilai asli tidak pernah dikirim kembali ke browser.
           </p>
         </div>
         <span className="text-[11px] font-mono text-[#a1a1aa] border border-white/5 bg-black/40 px-2 py-0.5 rounded self-start sm:self-auto">
-          aes-256-gcm encrypted
+          AES-256-GCM
         </span>
       </div>
 
+      {error && <p role="alert" className="mb-3 text-xs text-red-400">{error}</p>}
+      {notice && <p role="status" className="mb-3 text-xs text-emerald-400">{notice}</p>}
+      {loading ? (
+        <p className="text-xs text-zinc-400">Memuat konfigurasi provider…</p>
+      ) : (
       <div className="space-y-2.5">
         {providers.map((p) => (
           <div
             key={p.id}
-            className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded border border-white/5 bg-black/40 hover:border-white/10 transition-colors"
+            className="flex flex-col gap-3 p-3 rounded border border-white/5 bg-black/40 hover:border-white/10 transition-colors"
           >
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-mono font-medium text-[#f4f4f5]">{p.name}</span>
-                  <span className="text-[10px] font-mono text-[#71717a]">
-                    pri: #{p.priority}
+                  <span className={`text-[10px] font-mono ${p.configured ? "text-emerald-400" : "text-amber-400"}`}>
+                    {p.configured ? "configured" : "not configured"}
                   </span>
                 </div>
-                <div className="flex items-center gap-2 text-[11px] font-mono text-[#71717a] mt-0.5">
-                  <span>latency: <span className="text-[#f4f4f5]">{p.latencyMs}ms</span></span>
-                  <span>·</span>
-                  <span className="text-[#10b981]">status: {p.health}</span>
+                <div className="text-[11px] font-mono text-[#71717a] mt-0.5">
+                  {p.source === "environment"
+                    ? "Dikelola melalui environment variables deployment"
+                    : p.source === "vault"
+                    ? `Vault terenkripsi · ${p.maskedKey}`
+                    : "Belum ada kredensial"}
                 </div>
               </div>
+              {p.source === "vault" && p.updatedAt && (
+                <time className="text-[10px] font-mono text-zinc-500" dateTime={p.updatedAt}>
+                  Diperbarui {new Date(p.updatedAt).toLocaleString()}
+                </time>
+              )}
             </div>
-
-            <div className="flex items-center gap-2 flex-1 max-w-md w-full">
-              <div className="relative flex-1">
+            {p.source !== "environment" && (
+              <form
+                className="flex flex-col sm:flex-row gap-2"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void submit(p);
+                }}
+              >
                 <input
-                  type={showKeys[p.id] ? "text" : "password"}
-                  placeholder={p.id === "custom" ? "http://localhost:5002" : `Enter ${p.name} Key`}
-                  defaultValue={p.apiKey}
-                  onChange={(e) => onUpdateKey(p.id, e.target.value)}
-                  className="w-full rounded border border-white/10 bg-black/60 px-3 py-1.5 text-xs font-mono text-[#f4f4f5] placeholder:text-[#71717a] focus:outline-none focus:border-[#a1a1aa] pr-8"
+                  type="password"
+                  autoComplete="new-password"
+                  value={drafts[p.id] ?? ""}
+                  onChange={(event) => setDrafts((current) => ({
+                    ...current,
+                    [p.id]: event.target.value,
+                  }))}
+                  placeholder={`Masukkan API key ${p.name}`}
+                  aria-label={`API key ${p.name}`}
+                  className="min-w-0 flex-1 rounded border border-white/10 bg-black/60 px-3 py-2 text-xs font-mono text-[#f4f4f5] placeholder:text-[#71717a] focus:outline-none focus:border-[#a1a1aa]"
                 />
                 <button
-                  type="button"
-                  onClick={() => toggleVisibility(p.id)}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#71717a] hover:text-[#f4f4f5] cursor-pointer"
+                  type="submit"
+                  disabled={!drafts[p.id]?.trim() || busyProvider === p.id}
+                  className="rounded border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs font-mono text-emerald-300 disabled:opacity-50"
                 >
-                  {showKeys[p.id] ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                  {busyProvider === p.id ? "Menyimpan…" : p.configured ? "Ganti key" : "Simpan key"}
                 </button>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => onToggleActive(p.id)}
-                className={`px-2.5 py-1.5 rounded text-xs font-mono border transition-colors cursor-pointer shrink-0 ${
- p.isActive
- ? "bg-white/5 border-white/10 text-[#10b981] hover:bg-white/10"
- : "bg-white/[0.02] border-white/5 text-[#71717a] hover:text-[#a1a1aa]"
- }`}
-              >
-                {p.isActive ? "active" : "disabled"}
-              </button>
-            </div>
+                {p.source === "vault" && (
+                  <button
+                    type="button"
+                    disabled={busyProvider === p.id}
+                    onClick={() => void onDelete(p.id)}
+                    className="rounded border border-red-500/20 px-3 py-2 text-xs font-mono text-red-300 disabled:opacity-50"
+                  >
+                    Hapus
+                  </button>
+                )}
+              </form>
+            )}
           </div>
         ))}
       </div>
+      )}
     </div>
   );
 }

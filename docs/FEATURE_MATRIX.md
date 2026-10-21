@@ -17,7 +17,7 @@
 | **Gateway Runtime** | Automatic Failover | **VERIFIED WORKING** | `src/lib/gateway/failover.ts` | Failover fallback route Anthropic -> DeepSeek -> OpenAI. |
 | **Gateway Runtime** | Token Bucket Rate Limiting | **VERIFIED WORKING** | `src/lib/gateway/ratelimit.ts` | Rate limit per key identifier. |
 | **Gateway Runtime** | Rolling Quota Enforcement | **VERIFIED WORKING** | `src/lib/quota.ts` | 5h & 7d sliding window calculation. |
-| **Gateway Runtime** | Live Upstream Proxy | **PARTIALLY WORKING** | `src/lib/gateway/upstream.ts` | Bekerja jika env keys terpasang; fallback ke simulated stream. |
+| **Gateway Runtime** | Live Upstream Proxy | **CONFIGURATION REQUIRED** | `src/lib/gateway/upstream.ts`, `src/lib/gateway/providerVault.ts` | Provider env key atau owner vault diperlukan; production mengembalikan 503 bila provider tidak tersedia. |
 | **Billing & Commerce** | Midtrans Sandbox Checkout | **VERIFIED WORKING** | `src/lib/billing/midtrans.ts` | Snap token generation & checkout order ID. |
 | **Billing & Commerce** | Webhook Signature Check | **VERIFIED WORKING** | `src/lib/billing/midtrans.ts` | SHA-512 order_id + gross_amount + server_key. |
 | **Billing & Commerce** | Automated Reconciliation | **VERIFIED WORKING** | `src/lib/billing/reconciliation.ts` | Anti status drift & stale order resolution. |
@@ -25,7 +25,7 @@
 | **Observability** | Request Trace Logging | **VERIFIED WORKING** | `src/components/traces/TracesTab.tsx` | Latency, TTFT, Token count logging. |
 | **Observability** | Audit Logging | **VERIFIED WORKING** | `src/lib/audit/logger.ts` | Privileged operations audit trail. |
 | **Design & UX** | Public 3D Landing Page | **IN PROGRESS (PHASE 2)** | `src/app/page.tsx` | Saat ini langsung menampilkan dashboard. Akan dipisah ke landing + portal. |
-| **BYOK Security** | Client Vault AES-256-GCM | **EXTEND READY** | `src/lib/gateway/upstream.ts` | Envelope encryption schema siap diintegrasikan. |
+| **BYOK Security** | Owner Provider Vault AES-256-GCM | **IMPLEMENTED; CONFIGURATION REQUIRED** | `src/lib/gateway/providerVault.ts`, `supabase/migrations/20261021_provider_credentials.sql` | Perlu migration, service-role key, dan `ENCRYPTION_MASTER_KEY`. |
 
 ---
 

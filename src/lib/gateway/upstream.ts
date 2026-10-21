@@ -12,7 +12,8 @@ export interface ForwardProxyOptions {
 
 /**
  * Forwards requests to real upstream AI providers when credentials exist,
- * or returns null to use the high-performance local simulation stream.
+ * or returns null when the upstream is unavailable. The route may use a
+ * simulation only outside production.
  */
 export async function forwardToUpstreamProvider(
   options: ForwardProxyOptions
@@ -71,6 +72,30 @@ export async function forwardToUpstreamProvider(
       if (anthropicRes.ok) {
         return anthropicRes;
       }
+    } else if (provider === "gemini") {
+      const contents = messages
+        .filter((message) => message.role !== "system")
+        .map((message) => ({
+          role: message.role === "assistant" ? "model" : "user",
+          parts: [{ text: message.content }],
+        }));
+      const endpoint = stream
+        ? `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:streamGenerateContent?alt=sse`
+        : `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
+      const geminiRes = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": apiKey,
+        },
+        body: JSON.stringify({
+          ...(system ? { systemInstruction: { parts: [{ text: system }] } } : {}),
+          contents,
+          generationConfig: { temperature },
+        }),
+      });
+
+      if (geminiRes.ok) return geminiRes;
     } else if (provider === "deepseek" || provider === "openai" || provider === "groq") {
       const baseUrl =
         provider === "deepseek"

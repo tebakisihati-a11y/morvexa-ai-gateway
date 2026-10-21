@@ -28,6 +28,7 @@ supabase/migrations/20261011_iam_and_rls.sql
 supabase/migrations/20261012_billing_and_subscriptions.sql
 supabase/migrations/20261015_customer_identity.sql
 supabase/migrations/20261016_durable_ownership_throttle_audit.sql
+supabase/migrations/20261021_provider_credentials.sql
 ```
 
 `20261016` menambah kolom `email_verified`, epoch password, kepemilikan API key,
@@ -35,6 +36,12 @@ jendela rate-limit bersama, dan jejak akses PII. Kolom yang hilang tidak
 menggagalkan request — fungsi persistensi jatuh kembali ke penyimpanan JSON dan
 mencatat satu peringatan — jadi urutan penerapan penting agar kegagalan ini tidak
 tersembunyi.
+
+`20261021` membuat vault kredensial provider. Aplikasi mengenkripsi key dengan
+AES-256-GCM sebelum menyimpan ciphertext ke tabel ini; tabel tidak memiliki
+policy akses client dan hanya diakses lewat service role pada server. Jangan
+menjalankan migrasi hanya untuk tabel pelanggan: seluruh urutan di atas harus
+diterapkan.
 
 ## 3. Set variabel lingkungan di Vercel
 
@@ -47,6 +54,9 @@ Di *Project → Settings → Environment Variables*, untuk target **Production**
 | `NEXT_PUBLIC_SUPABASE_URL` | sama dengan `SUPABASE_URL` |
 | `SUPABASE_SERVICE_ROLE_KEY` | kunci `service_role` dari langkah 1 |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | kunci `anon` (dipakai pembacaan publik) |
+| `AUTH_SESSION_SECRET` | secret acak minimal 16 karakter untuk tanda tangan cookie login |
+| `OWNER_PASSCODE` | passcode acak panjang khusus login `/owner` |
+| `ENCRYPTION_MASTER_KEY` | output `openssl rand -base64 48`; simpan sebagai secret server-side |
 
 Lewat CLI:
 
@@ -55,7 +65,33 @@ vercel env add SUPABASE_URL production
 vercel env add SUPABASE_SERVICE_ROLE_KEY production
 ```
 
-## 4. Deploy ulang dan verifikasi
+Tambahkan variabel tersebut untuk **Production** dan **Preview** secara terpisah.
+Jangan memakai nilai contoh atau menempelkan secret di chat, source control,
+`NEXT_PUBLIC_*`, atau browser. `ENCRYPTION_MASTER_KEY` harus tetap sama untuk
+membuka kredensial yang sudah tersimpan; buat backup aman sebelum rotasi.
+
+## 4. Hubungkan provider AI dari panel owner
+
+Setelah migrasi dan environment variables tersedia, deploy aplikasi lalu:
+
+1. Buka `https://<domain-anda>/owner` dan masuk dengan `OWNER_PASSCODE`.
+2. Pilih **Routing & Failover Mesh**.
+3. Masukkan API key provider yang Anda buat di akun resmi Anthropic, OpenAI,
+   DeepSeek, Groq, atau Google Gemini, lalu pilih **Simpan key**.
+4. Pastikan provider berubah menjadi **configured**. Key disimpan dalam
+   bentuk ciphertext di Supabase dan UI hanya mengembalikan fingerprint mask.
+
+Jika provider ditandai dikelola lewat environment variables, gunakan
+`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `DEEPSEEK_API_KEY`, `GROQ_API_KEY`, atau
+`GEMINI_API_KEY` di Vercel. Environment variable selalu mengalahkan nilai vault
+dan harus dihapus/diubah dari Vercel untuk mencabutnya. Jangan memasukkan key
+produksi di deployment Preview yang dapat diakses pihak lain.
+
+Tanpa kredensial upstream yang aktif, gateway production mengembalikan `503`;
+stream simulasi hanya tersedia untuk development/test agar respons sintetis
+tidak pernah dianggap sebagai jawaban AI sungguhan.
+
+## 5. Deploy ulang dan verifikasi
 
 ```bash
 vercel --prod
@@ -68,7 +104,8 @@ curl -s https://<domain-anda>/api/v1/status | python3 -m json.tool
 ```
 
 Komponen `customer-store` harus berubah dari **Terbatas** menjadi
-**Operasional**. Uji juga jalur nyata: daftar akun, login, lalu deploy ulang dan
+**Operasional**, dan `routing` harus operasional setelah setidaknya satu provider
+terhubung. Uji juga jalur nyata: daftar akun, login, lalu deploy ulang dan
 pastikan akun yang sama masih bisa login — inilah yang membuktikan persistensi,
 bukan sekadar status hijau.
 

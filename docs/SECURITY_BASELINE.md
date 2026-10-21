@@ -11,9 +11,11 @@
    - Dibuat melalui secure CSPRNG (`crypto.randomBytes(24)`).
    - Server **hanya menyimpan SHA-256 hash** (`hashApiKeySecret()`).
    - Plaintext rahasia hanya di-render sekali di UI pengguna saat pembuatan dan tidak pernah tersimpan di LocalStorage atau database.
-2. **Third-Party Upstream Provider Keys (Anthropic, OpenAI, DeepSeek, etc.)**:
-   - Disimpan di environment variables server (`ANTHROPIC_API_KEY`, dsb).
-   - **TIDAK PERNAH** dikirimkan ke browser client atau terekspos di API payload.
+2. **Third-Party Upstream Provider Keys (Anthropic, OpenAI, DeepSeek, Groq, Gemini)**:
+   - Dapat dikelola sebagai environment variables server atau dimasukkan owner ke vault.
+   - Vault mengenkripsi kredensial dengan AES-256-GCM sebelum penyimpanan Supabase.
+   - **TIDAK PERNAH** dikirim kembali ke browser; UI hanya menerima status dan fingerprint mask.
+   - `ENCRYPTION_MASTER_KEY` wajib dijaga sebagai server secret dan tidak boleh dirotasi tanpa rencana re-enkripsi.
 3. **Bring Your Own Key (BYOK)**:
    - Jika pengguna memasukkan kredensial provider milik sendiri, wajib dienkripsi di level data layer menggunakan AES-256-GCM dengan envelope key server.
 4. **Administrative & Cron Endpoints**:

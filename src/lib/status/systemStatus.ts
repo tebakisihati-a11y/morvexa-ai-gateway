@@ -46,6 +46,7 @@ const PROVIDER_KEY_ENV: Record<string, string | undefined> = {
   openai: "OPENAI_API_KEY",
   deepseek: "DEEPSEEK_API_KEY",
   groq: "GROQ_API_KEY",
+  gemini: "GEMINI_API_KEY",
 };
 
 function configuredProviderCount(): number {
@@ -61,8 +62,7 @@ function worstState(states: ComponentState[]): ComponentState {
   return "operational";
 }
 
-export function buildSystemStatus(): SystemStatus {
-  const liveProviders = configuredProviderCount();
+export function buildSystemStatus(liveProviders = configuredProviderCount()): SystemStatus {
   const inChain = DEFAULT_PROVIDERS.filter((p) => p.isActive).length;
 
   const components: StatusComponent[] = [

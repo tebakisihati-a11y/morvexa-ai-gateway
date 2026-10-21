@@ -102,10 +102,18 @@
 
 ## 3. Operations & Hybrid Infrastructure
 
-### 3.1 Dedicated Environment Provisioning
+### 3.1 Owner Provider Credential Vault
+- **Endpoint**: `GET /api/owner/providers`, `POST /api/owner/providers`, `DELETE /api/owner/providers/:provider`
+- **Authentication**: sesi owner `HttpOnly` dan token CSRF untuk perubahan.
+- **POST body**: `{ "provider": "openai", "apiKey": "<key dari provider>" }`
+- **Penyimpanan**: ciphertext AES-256-GCM di Supabase; plaintext hanya dipakai selama request dan pemanggilan upstream. GET hanya mengembalikan status serta fingerprint mask.
+- **Providers**: `anthropic`, `openai`, `deepseek`, `groq`, `gemini`.
+- **Environment override**: environment variables server lebih diprioritaskan daripada vault.
+
+### 3.2 Dedicated Environment Provisioning
 - **Endpoint**: `POST /api/infrastructure/provision`
 - **Body**: `{ "orgId": "org_abc", "planCode": "apex", "region": "sin" }`
 
-### 3.2 Health Probes & Liveness
+### 3.3 Health Probes & Liveness
 - **Endpoint**: `POST /api/infrastructure/environments/:envId/probe`
 - **Fungsi**: Memperbarui status detak jantung cluster terisolasi.

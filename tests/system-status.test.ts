@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, afterEach, beforeEach } from "vitest";
 import { app } from "../src/lib/gateway/app";
 import { buildSystemStatus } from "../src/lib/status/systemStatus";
 
@@ -7,10 +7,22 @@ const TOUCHED = [
   "OPENAI_API_KEY",
   "DEEPSEEK_API_KEY",
   "GROQ_API_KEY",
+  "GEMINI_API_KEY",
 ] as const;
+const originalProviderEnv = Object.fromEntries(
+  TOUCHED.map((key) => [key, process.env[key]])
+);
+
+beforeEach(() => {
+  for (const key of TOUCHED) delete process.env[key];
+});
 
 afterEach(() => {
-  for (const key of TOUCHED) delete process.env[key];
+  for (const key of TOUCHED) {
+    const original = originalProviderEnv[key];
+    if (original === undefined) delete process.env[key];
+    else process.env[key] = original;
+  }
 });
 
 describe("Public system status", () => {

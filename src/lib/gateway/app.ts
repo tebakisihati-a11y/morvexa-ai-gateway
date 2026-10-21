@@ -48,6 +48,13 @@ import {
 import { DEFAULT_SYSTEM_METRICS } from "../constants";
 import { buildSystemStatus } from "../status/systemStatus";
 import type { UpstreamProviderId } from "../types";
+import {
+  deleteProviderCredential,
+  getProviderCredential,
+  isManagedProviderId,
+  listProviderCredentialStatuses,
+  saveProviderCredential,
+} from "./providerVault";
 
 export const app = new Hono().basePath("/api");
 
@@ -148,8 +155,15 @@ app.get("/v1/metrics", (c) => {
 // Unauthenticated on purpose so a status page and uptime monitor can read it.
 // It reports only booleans and counts derived from configuration; see
 // src/lib/status/systemStatus.ts for why no secret or latency figure leaks here.
-app.get("/v1/status", (c) => {
-  return c.json(buildSystemStatus());
+app.get("/v1/status", async (c) => {
+  let liveProviderCount: number | undefined;
+  try {
+    const providers = await listProviderCredentialStatuses();
+    liveProviderCount = providers.filter((provider) => provider.configured).length;
+  } catch (error) {
+    console.error("[Morvexa Status] Provider status lookup failed:", error);
+  }
+  return c.json(buildSystemStatus(liveProviderCount));
 });
 
 // 2. Available Models Endpoint
@@ -275,8 +289,7 @@ app.post("/v1/messages", async (c) => {
 
   const route = resolveProviderRoute(model);
 
-  // Real failover: try the primary provider, then every other active provider
-  // that has a server-side key, before giving up to the simulated stream.
+  // Try configured upstream providers before allowing a non-production simulation.
   const live = await attemptLiveFailover({
     model,
     messages,
@@ -298,6 +311,19 @@ app.post("/v1/messages", async (c) => {
         "X-Morvexa-Failover": failoverOccurred ? "true" : "false",
       },
     });
+  }
+
+  if (process.env.NODE_ENV === "production") {
+    return c.json(
+      {
+        type: "error",
+        error: {
+          type: "upstream_unavailable",
+          message: "Tidak ada provider AI aktif yang dapat melayani permintaan ini.",
+        },
+      },
+      503
+    );
   }
 
   // Simulated Zero-Buffer SSE stream fallback for playground & testing
@@ -391,6 +417,39 @@ app.post("/v1/chat/completions", async (c) => {
 
   const body = await c.req.json().catch(() => ({}));
   const model = body.model || "gpt-4o";
+  const messages = Array.isArray(body.messages) ? body.messages : [];
+  const live = await attemptLiveFailover({
+    model,
+    messages,
+    stream: body.stream === true,
+    primary: resolveProviderRoute(model).selectedProvider,
+  });
+
+  if (live) {
+    return new Response(live.response.body, {
+      status: live.response.status,
+      headers: {
+        "Content-Type": live.response.headers.get("content-type") || "application/json",
+        "Cache-Control": "no-cache, no-transform",
+        "X-Morvexa-Provider": live.provider,
+        "X-Morvexa-Live": "true",
+        "X-Morvexa-Failover": live.provider !== resolveProviderRoute(model).selectedProvider ? "true" : "false",
+      },
+    });
+  }
+
+  if (process.env.NODE_ENV === "production") {
+    return c.json(
+      {
+        error: {
+          type: "upstream_unavailable",
+          code: "provider_unavailable",
+          message: "Tidak ada provider AI aktif yang dapat melayani permintaan ini.",
+        },
+      },
+      503
+    );
+  }
 
   return c.json({
     id: `chatcmpl-mvx-${Date.now()}`,
@@ -459,8 +518,8 @@ function setSessionCookie(
  * The chain is built by resolveProviderRoute (primary first) followed by every
  * other active provider that has a server-side key. A provider is skipped when
  * its key is absent, when the upstream returns a non-ok status, or when the call
- * throws. The first provider that answers wins; if none do, the caller falls
- * back to the simulated stream. This is what makes the promise on the landing
+ * throws. The first provider that answers wins; otherwise production returns
+ * an upstream-unavailable response and non-production may simulate. This is what makes the promise on the landing
  * page true: a 429 on the primary really does reach the next provider instead of
  * dropping straight to a canned response.
  */
@@ -478,7 +537,7 @@ async function attemptLiveFailover(params: {
   }
 
   for (const provider of chain) {
-    const apiKey = apiKeyForProvider(provider);
+    const apiKey = await apiKeyForProvider(provider);
     if (!apiKey) continue;
 
     const response = await forwardToUpstreamProvider({
@@ -500,20 +559,16 @@ async function attemptLiveFailover(params: {
 }
 
 /** The server-side credential for a provider, or undefined when unconfigured. */
-function apiKeyForProvider(provider: UpstreamProviderId): string | undefined {
+async function apiKeyForProvider(provider: UpstreamProviderId): Promise<string | undefined> {
   switch (provider) {
     case "anthropic":
-      return process.env.ANTHROPIC_API_KEY;
     case "openai":
-      return process.env.OPENAI_API_KEY;
     case "deepseek":
-      return process.env.DEEPSEEK_API_KEY;
     case "groq":
-      return process.env.GROQ_API_KEY;
+    case "gemini":
+      return getProviderCredential(provider);
     case "custom":
       return process.env.PRIVATE_SERVER_URL ? "configured" : undefined;
-    default:
-      return undefined;
   }
 }
 
@@ -1607,6 +1662,102 @@ app.post("/customer/purchase-model", async (c) => {
   }, 200);
 });
 
+// Owner-managed upstream credentials. Plaintext is accepted only for the
+// duration of the request and is encrypted before persistence.
+app.get("/owner/providers", async (c) => {
+  if (!hasOwnerSession(c.req.header("Cookie"))) {
+    return c.json({ error: "Forbidden: Owner session required" }, 403);
+  }
+  try {
+    return c.json({ providers: await listProviderCredentialStatuses() }, 200);
+  } catch (error) {
+    console.error("[Morvexa Vault] Provider status read failed:", error);
+    return c.json({ error: "Penyimpanan provider belum siap dikonfigurasi." }, 503);
+  }
+});
+
+app.post("/owner/providers", async (c) => {
+  if (!hasOwnerSession(c.req.header("Cookie"))) {
+    return c.json({ error: "Forbidden: Owner session required" }, 403);
+  }
+  const csrfRejected = enforceCsrfToken(c);
+  if (csrfRejected) return csrfRejected;
+
+  const body = await c.req.json().catch(() => null);
+  if (
+    !body ||
+    typeof body.provider !== "string" ||
+    !isManagedProviderId(body.provider) ||
+    typeof body.apiKey !== "string"
+  ) {
+    return c.json({ error: "Provider dan API key yang valid wajib diisi." }, 400);
+  }
+
+  try {
+    await saveProviderCredential(body.provider, body.apiKey);
+    const { recordAuditLog } = await import("../audit/logger");
+    recordAuditLog({
+      actorType: "system",
+      actorId: "owner",
+      action: "PROVIDER_CREDENTIAL_UPDATED",
+      resourceType: "provider_credential",
+      resourceId: body.provider,
+      status: "success",
+      details: { provider: body.provider },
+    });
+    return c.json({
+      success: true,
+      providers: await listProviderCredentialStatuses(),
+    }, 200);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    if (message.includes("deployment environment variables")) {
+      return c.json({ error: "Provider ini dikelola melalui environment variables deployment." }, 409);
+    }
+    if (message.includes("between 8 and 4096 characters")) {
+      return c.json({ error: "API key harus berisi 8 sampai 4096 karakter." }, 400);
+    }
+    console.error("[Morvexa Vault] Provider credential save failed:", error);
+    return c.json({ error: "Provider credential tidak dapat disimpan. Periksa konfigurasi Supabase dan ENCRYPTION_MASTER_KEY." }, 503);
+  }
+});
+
+app.delete("/owner/providers/:provider", async (c) => {
+  if (!hasOwnerSession(c.req.header("Cookie"))) {
+    return c.json({ error: "Forbidden: Owner session required" }, 403);
+  }
+  const csrfRejected = enforceCsrfToken(c);
+  if (csrfRejected) return csrfRejected;
+
+  const provider = c.req.param("provider");
+  if (!isManagedProviderId(provider)) {
+    return c.json({ error: "Provider tidak dikenal." }, 400);
+  }
+  try {
+    await deleteProviderCredential(provider);
+    const { recordAuditLog } = await import("../audit/logger");
+    recordAuditLog({
+      actorType: "system",
+      actorId: "owner",
+      action: "PROVIDER_CREDENTIAL_REVOKED",
+      resourceType: "provider_credential",
+      resourceId: provider,
+      status: "success",
+      details: { provider },
+    });
+    return c.json({
+      success: true,
+      providers: await listProviderCredentialStatuses(),
+    }, 200);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    if (message.includes("deployment environment variables")) {
+      return c.json({ error: "Hapus environment variable provider dari Vercel untuk mencabut kredensial ini." }, 409);
+    }
+    console.error("[Morvexa Vault] Provider credential delete failed:", error);
+    return c.json({ error: "Provider credential tidak dapat dihapus. Periksa konfigurasi Supabase." }, 503);
+  }
+});
 
 
 

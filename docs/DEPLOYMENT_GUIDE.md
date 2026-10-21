@@ -1,6 +1,8 @@
-# Panduan Deployment 100% Gratis: Morvexa AI Gateway
+# Panduan Deployment: Morvexa AI Gateway
 
-Dokumen ini menjelaskan langkah demi langkah cara men-deploy **Morvexa AI Gateway** ke infrastruktur cloud publik tanpa biaya sepeser pun ($0 / bulan selamanya).
+Dokumen ini menjelaskan deployment Morvexa AI Gateway ke Vercel dan Supabase.
+Biaya serta batas layanan mengikuti paket dan penggunaan provider; deployment
+produksi tidak dijamin selalu gratis.
 
 ---
 
@@ -11,14 +13,14 @@ Dokumen ini menjelaskan langkah demi langkah cara men-deploy **Morvexa AI Gatewa
    * Pilih region terdekat (misalnya: `Southeast Asia - Singapore`).
    * Salin database password yang Anda buat.
 3. Buka menu **SQL Editor** di dashboard Supabase Anda.
-4. Buka file [supabase/migrations/20261008_init.sql](../supabase/migrations/20261008_init.sql) di repository ini, salin seluruh kodenya, dan tekan **Run**.
+4. Terapkan seluruh migration secara berurutan seperti daftar dalam [SUPABASE_SETUP.md](./SUPABASE_SETUP.md), bukan hanya migration awal.
 5. Buka **Project Settings** > **API**, lalu salin:
    * `Project URL` (misal: `https://xyzcompany.supabase.co`)
    * `anon public key` (kunci publik)
 
 ---
 
-## 2. Deploy Webapp Gratis (Vercel)
+## 2. Deploy Webapp (Vercel)
 
 1. Buat repository baru di GitHub (misal: `morvexa-ai-gateway`) dan push seluruh kode proyek ini:
    ```bash
@@ -28,11 +30,9 @@ Dokumen ini menjelaskan langkah demi langkah cara men-deploy **Morvexa AI Gatewa
    ```
 2. Buka [vercel.com](https://vercel.com) dan masuk menggunakan akun GitHub Anda.
 3. Klik **Add New...** > **Project**, lalu pilih repository `morvexa-ai-gateway`.
-4. Pada bagian **Environment Variables**, tambahkan:
-   * `NEXT_PUBLIC_SUPABASE_URL` = (Project URL dari Supabase)
-   * `NEXT_PUBLIC_SUPABASE_ANON_KEY` = (Anon Public Key dari Supabase)
+4. Tambahkan semua environment variables server-side yang tercantum dalam [SUPABASE_SETUP.md](./SUPABASE_SETUP.md), termasuk service-role key, `AUTH_SESSION_SECRET`, `OWNER_PASSCODE`, dan `ENCRYPTION_MASTER_KEY`. Jangan masukkan secret ke variabel `NEXT_PUBLIC_*`.
 5. Klik tombol **Deploy**.
-6. Dalam waktu ~60 detik, webapp dan Hono Edge API Anda telah live di URL:  
+6. Setelah deployment berhasil, webapp dan Hono API tersedia di URL:
    `https://[nama-proyek].vercel.app` (Lengkap dengan sertifikat SSL gratis otomatis).
 
 ---
@@ -66,7 +66,9 @@ Jika proyek Anda open-source JavaScript/TypeScript, Anda dapat mendaftarkan `[na
 
 ## 4. Menguji API Proxy Gateway Live
 
-Setelah ter-deploy, aplikasi Anda siap menerima request AI format Anthropic maupun OpenAI:
+Setelah seluruh migration dan konfigurasi production selesai serta minimal satu
+provider AI terhubung, uji API dengan gateway key valid. Tanpa provider aktif,
+production mengembalikan `503` dan tidak menggunakan balasan simulasi:
 
 ```bash
 # Uji format Anthropic Claude dengan streaming SSE:
