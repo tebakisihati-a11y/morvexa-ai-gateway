@@ -26,7 +26,7 @@ import {
 } from "@/lib/supabase/store";
 import { calculateRollingQuotaStatus } from "@/lib/quota";
 import type { ApiKeyItem, QuotaConfig, QuotaStatus, RequestTraceLog, SystemMetrics } from "@/lib/types";
-import { Lock, ArrowRight, ShieldCheck, ArrowLeft, Zap, Sparkles } from "lucide-react";
+import { Lock, ArrowRight, ShieldCheck, ArrowLeft, Zap, Sparkles, LogOut } from "lucide-react";
 import Link from "next/link";
 import { apiFetch } from "@/lib/api/client";
 

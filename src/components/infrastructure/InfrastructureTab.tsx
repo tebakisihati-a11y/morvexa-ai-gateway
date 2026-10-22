@@ -37,23 +37,8 @@ export function InfrastructureTab() {
   const [envData, setEnvData] = useState<EnvironmentData | null>(null);
   const [probeLoading, setProbeLoading] = useState(false);
 
-  // Initialize with a provisioned instance if available
-  useEffect(() => {
-    // Check if default environment is running
-    async function checkExisting() {
-      try {
-        const res = await apiFetch("/api/infrastructure/environments/env_ded_default_sin");
-        if (res.ok) {
-          const data = await res.json();
-          setEnvData(data);
-          setSelectedTier("dedicated");
-        }
-      } catch {
-        // ignore
-      }
-    }
-    checkExisting();
-  }, []);
+  // No initial hardcoded environment check to avoid 404s on unprovisioned instances.
+  // Dedicated state is activated when the user provisions via handleProvision.
 
   const handleProvision = async () => {
     setIsProvisioning(true);
