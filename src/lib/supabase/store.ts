@@ -406,6 +406,32 @@ export async function getRequestLogs(): Promise<RequestTraceLog[]> {
   return [...memoryRequestLogs];
 }
 
+/**
+ * Appends a request trace. Called by the gateway telemetry middleware so live
+ * inference is recorded instead of only serving the static seed list.
+ */
+export function addRequestLog(entry: Partial<RequestTraceLog>): void {
+  const now = Date.now();
+  const log: RequestTraceLog = {
+    id: `tr-${now}-${Math.random().toString(36).slice(2, 8)}`,
+    timestamp: entry.timestamp ?? now,
+    endpoint: entry.endpoint ?? "/v1/messages",
+    modelRequested: entry.modelRequested ?? "unknown",
+    modelRouted: entry.modelRouted ?? "unknown",
+    provider: entry.provider ?? "anthropic",
+    statusCode: entry.statusCode ?? 200,
+    ttftMs: entry.ttftMs ?? 0,
+    totalDurationMs: entry.totalDurationMs ?? 0,
+    promptTokens: entry.promptTokens ?? 0,
+    completionTokens: entry.completionTokens ?? 0,
+    cached: entry.cached ?? false,
+    failoverOccurred: entry.failoverOccurred ?? false,
+    failoverReason: entry.failoverReason,
+  };
+  memoryRequestLogs.unshift(log);
+  if (memoryRequestLogs.length > 500) memoryRequestLogs = memoryRequestLogs.slice(0, 500);
+}
+
 export async function getRollingQuotaRecords(): Promise<QuotaRecord[]> {
   return [...memoryQuotaRecords];
 }

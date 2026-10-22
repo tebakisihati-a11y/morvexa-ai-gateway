@@ -140,11 +140,24 @@ app.use("/v1/messages", async (c, next) => {
     await next();
     statusCode = c.res.status;
   } finally {
+    const provider = c.res.headers.get("X-Morvexa-Provider") ?? "anthropic";
+    const duration = Date.now() - startedAt;
     recordGatewayRequest({
       timestamp: Date.now(),
-      durationMs: Date.now() - startedAt,
+      durationMs: duration,
       statusCode,
-      provider: c.res.headers.get("X-Morvexa-Provider") ?? undefined,
+      provider,
+    });
+    const { addRequestLog } = await import("../supabase/store");
+    addRequestLog({
+      endpoint: "/v1/messages",
+      modelRequested: c.res.headers.get("X-Morvexa-Model") ?? "unknown",
+      modelRouted: c.res.headers.get("X-Morvexa-Provider") ?? provider,
+      provider: (c.res.headers.get("X-Morvexa-Provider") ?? provider) as any,
+      statusCode,
+      totalDurationMs: duration,
+      failoverOccurred: c.res.headers.get("X-Morvexa-Failover") === "true",
+      cached: c.res.headers.get("X-Morvexa-Cache") === "hit",
     });
   }
 });
@@ -156,11 +169,24 @@ app.use("/v1/chat/completions", async (c, next) => {
     await next();
     statusCode = c.res.status;
   } finally {
+    const provider = c.res.headers.get("X-Morvexa-Provider") ?? "anthropic";
+    const duration = Date.now() - startedAt;
     recordGatewayRequest({
       timestamp: Date.now(),
-      durationMs: Date.now() - startedAt,
+      durationMs: duration,
       statusCode,
-      provider: c.res.headers.get("X-Morvexa-Provider") ?? undefined,
+      provider,
+    });
+    const { addRequestLog } = await import("../supabase/store");
+    addRequestLog({
+      endpoint: "/v1/chat/completions",
+      modelRequested: c.res.headers.get("X-Morvexa-Model") ?? "unknown",
+      modelRouted: c.res.headers.get("X-Morvexa-Provider") ?? provider,
+      provider: (c.res.headers.get("X-Morvexa-Provider") ?? provider) as any,
+      statusCode,
+      totalDurationMs: duration,
+      failoverOccurred: c.res.headers.get("X-Morvexa-Failover") === "true",
+      cached: c.res.headers.get("X-Morvexa-Cache") === "hit",
     });
   }
 });
@@ -332,6 +358,7 @@ app.post("/v1/messages", async (c) => {
     headers.set("Content-Type", trackedResponse.headers.get("content-type") || "text/event-stream");
     headers.set("Cache-Control", "no-cache, no-transform");
     headers.set("X-Morvexa-Provider", live.provider);
+    headers.set("X-Morvexa-Model", model);
     headers.set("X-Morvexa-Live", "true");
     headers.set("X-Morvexa-Failover", failoverOccurred ? "true" : "false");
     return new Response(trackedResponse.body, {
@@ -457,6 +484,7 @@ app.post("/v1/chat/completions", async (c) => {
     const headers = new Headers(trackedResponse.headers);
     headers.set("Content-Type", trackedResponse.headers.get("content-type") || "application/json");
     headers.set("Cache-Control", "no-cache, no-transform");
+    headers.set("X-Morvexa-Model", model);
     headers.set("X-Morvexa-Provider", live.provider);
     headers.set("X-Morvexa-Live", "true");
     headers.set(
