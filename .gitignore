@@ -16,3 +16,8 @@ node_modules/
 
 # Supabase CLI local state (holds project ref + pooler credentials)
 supabase/.temp/
+
+# Local scratch artifacts
+favicon.ico
+.playwright-mcp/
+.morvexa-data/
