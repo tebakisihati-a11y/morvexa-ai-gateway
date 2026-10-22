@@ -1,12 +1,50 @@
 "use client";
 
-import React, { useState } from "react";
-import { Shield, Lock, Database, Users, Globe, ExternalLink, CheckCircle } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Shield, Lock, Database, Users, Globe, ExternalLink, CheckCircle, RefreshCw } from "lucide-react";
+import { apiFetch } from "@/lib/api/client";
 
 export function GuardrailsTab() {
   const [maskPii, setMaskPii] = useState(true);
   const [promptCaching, setPromptCaching] = useState(true);
   const [budgetCap, setBudgetCap] = useState(50);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  const loadConfig = async () => {
+    setLoading(true);
+    try {
+      const res = await apiFetch("/api/owner/guardrails");
+      const data = await res.json();
+      if (res.ok) {
+        setMaskPii(data.maskPii);
+        setPromptCaching(data.promptCaching);
+        setBudgetCap(data.monthlyBudgetCeiling);
+      }
+    } catch { /* keep defaults */ } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { void loadConfig(); }, []);
+
+  const saveToggle = async () => {
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const res = await apiFetch("/api/owner/guardrails", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ maskPii, promptCaching, monthlyBudgetCeiling: budgetCap }),
+      });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || "Save failed");
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : "Gagal menyimpan konfigurasi guardrails.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -41,7 +79,7 @@ export function GuardrailsTab() {
               </div>
               <button
                 type="button"
-                onClick={() => setMaskPii(!maskPii)}
+                onClick={() => { setMaskPii(!maskPii); void saveToggle(); }}
                 className={`px-2.5 py-1 rounded text-xs font-mono border transition-colors cursor-pointer shrink-0 ${
  maskPii
  ? "bg-white/5 border-white/10 text-[#10b981]"
@@ -61,7 +99,7 @@ export function GuardrailsTab() {
               </div>
               <button
                 type="button"
-                onClick={() => setPromptCaching(!promptCaching)}
+                onClick={() => { setPromptCaching(!promptCaching); void saveToggle(); }}
                 className={`px-2.5 py-1 rounded text-xs font-mono border transition-colors cursor-pointer shrink-0 ${
  promptCaching
  ? "bg-white/5 border-white/10 text-[#10b981]"
@@ -83,7 +121,7 @@ export function GuardrailsTab() {
                 max="500"
                 step="5"
                 value={budgetCap}
-                onChange={(e) => setBudgetCap(Number(e.target.value))}
+                onChange={(e) => { setBudgetCap(Number(e.target.value)); void saveToggle(); }}
                 className="w-full accent-orange-500 cursor-pointer"
               />
               <span className="text-[10px] font-mono text-[#71717a] block">
@@ -91,6 +129,11 @@ export function GuardrailsTab() {
               </span>
             </div>
           </div>
+
+{saveError && (
+  <p className="text-[11px] text-[#ef4444] font-mono mt-1">{saveError}</p>
+)}
+{saving && <p className="text-[10px] font-mono text-[#a1a1aa]">Menyimpan…</p>}
         </div>
 
         {/* Free Cloud Deployment Guide */}

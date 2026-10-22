@@ -1,4 +1,6 @@
 import type { UpstreamProviderId } from "../types";
+import { getGuardrailsConfig, sanitizePii } from "../owner/guardrails";
+
 
 export interface ForwardProxyOptions {
   provider: UpstreamProviderId;
@@ -20,6 +22,13 @@ export async function forwardToUpstreamProvider(
 ): Promise<Response | null> {
   const { provider, apiKey, model, messages, system, temperature = 0.7, stream = true } = options;
 
+  const guardrails = getGuardrailsConfig();
+  const safeMessages = guardrails.maskPii
+    ? messages.map((m) => ({ ...m, content: sanitizePii(m.content) }))
+    : messages;
+  const safeSystem = system && guardrails.maskPii ? sanitizePii(system) : system;
+
+
   if (!apiKey || apiKey.trim() === "") {
     return null; // Fallback to zero-buffer local stream engine
   }
@@ -28,9 +37,9 @@ export async function forwardToUpstreamProvider(
     if (provider === "custom") {
       const privateServerUrl =
         process.env.PRIVATE_SERVER_URL || "http://localhost:5002";
-      const formattedMessages = system
-        ? [{ role: "system", content: system }, ...messages]
-        : messages;
+      const formattedMessages = safeSystem
+        ? [{ role: "system", content: safeSystem }, ...safeMessages]
+        : safeMessages;
 
       const targetEndpoint = `${privateServerUrl.replace(/\/+$/, "")}/v1/chat/completions`;
 

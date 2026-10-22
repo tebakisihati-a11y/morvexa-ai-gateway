@@ -1589,9 +1589,11 @@ app.get("/customer/dashboard-data", async (c) => {
     getRegisteredCustomers,
     getCustomerOrders,
     getCustomerActivities,
+    hydrateCustomerStore,
     MODEL_PRODUCTS,
   } = await import("../customer/store");
 
+  await hydrateCustomerStore();
   const customers = getRegisteredCustomers();
   const orders = getCustomerOrders();
   const activities = getCustomerActivities();
@@ -1705,6 +1707,31 @@ app.get("/owner/providers", async (c) => {
     console.error("[Morvexa Vault] Provider status read failed:", error);
     return c.json({ error: "Penyimpanan provider belum siap dikonfigurasi." }, 503);
   }
+});
+
+app.get("/owner/guardrails", async (c) => {
+  if (!hasOwnerSession(c.req.header("Cookie"))) {
+    return c.json({ error: "Forbidden: Owner session required" }, 403);
+  }
+  const { getGuardrailsConfig } = await import("../owner/guardrails");
+  return c.json(getGuardrailsConfig(), 200);
+});
+
+app.post("/owner/guardrails", async (c) => {
+  if (!hasOwnerSession(c.req.header("Cookie"))) {
+    return c.json({ error: "Forbidden: Owner session required" }, 403);
+  }
+  const csrfRejected = enforceCsrfToken(c);
+  if (csrfRejected) return csrfRejected;
+  const body = await c.req.json().catch(() => ({}));
+  const { maskPii, promptCaching, monthlyBudgetCeiling } = body;
+  const { updateGuardrailsConfig } = await import("../owner/guardrails");
+  const result = updateGuardrailsConfig({
+    ...(typeof maskPii === "boolean" ? { maskPii } : {}),
+    ...(typeof promptCaching === "boolean" ? { promptCaching } : {}),
+    ...(typeof monthlyBudgetCeiling === "number" ? { monthlyBudgetCeiling } : {}),
+  });
+  return c.json(result, 200);
 });
 
 app.post("/owner/providers/:provider/test", async (c) => {
