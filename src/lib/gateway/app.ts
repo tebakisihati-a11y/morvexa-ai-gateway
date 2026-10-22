@@ -46,9 +46,11 @@ import {
   getReconciliationLogs,
 } from "../billing/reconciliation";
 import { buildSystemStatus } from "../status/systemStatus";
-import type { UpstreamProviderId } from "../types";
+import type { UpstreamProviderId, ApiKeyItem } from "../types";
 import { getGatewayMetrics, recordGatewayRequest } from "./telemetry";
+import { isPrivilegedRequest } from "./privilegeCheck";
 import { checkProviderHealth } from "./providerHealth";
+import ownerKeysApp from "./ownerKeysRouter"; // mounted at /owner/keys to survive Vercel edge tree-shaking
 import { trackProviderUsage } from "./usageTracking";
 import {
   deleteProviderCredential,
@@ -658,31 +660,6 @@ function privilegedActor(c: any): { actorType: "owner_session" | "admin_secret" 
     return { actorType: "admin_secret", actorId: "admin" };
   }
   return null;
-}
-
-function isPrivilegedRequest(c: any): boolean {
-  // A signed owner session is the intended path for the browser console.
-  if (hasOwnerSession(c.req.header("Cookie"))) return true;
-
-  const authHeader = c.req.header("Authorization");
-  const cronSecret = process.env.CRON_SECRET;
-  const adminSecret = process.env.ADMIN_SECRET_KEY;
-  if (!authHeader) {
-    // Development convenience, opt-in only. Every hosted environment - Vercel
-    // preview included - runs `next start`, where NODE_ENV is "production", so
-    // keying the bypass off NODE_ENV alone is not enough: a preview deployment
-    // must not expose the owner surface either. Requiring this flag means a
-    // deployment has to name itself non-hosted before the bypass can apply, and
-    // forgetting to set it fails closed.
-    return (
-      process.env.MORVEXA_ALLOW_INSECURE_DEV_PRIVILEGED === "true" &&
-      process.env.NODE_ENV !== "production"
-    );
-  }
-  const token = authHeader.replace(/^Bearer\s+/i, "").trim();
-  if (cronSecret && token === cronSecret) return true;
-  if (adminSecret && token === adminSecret) return true;
-  return false;
 }
 
 // 5. Billing Checkout Endpoint: POST /api/billing/checkout
@@ -2005,73 +1982,11 @@ app.post("/owner/keys/regenerate", async (c) => {
   return c.json({ rawSecret: generated.rawSecret, maskedKey: generated.maskedKey }, 200);
 });
 
-// 20a. Owner API Key Management: GET /api/owner/keys
-// Owner console reads keys through the server-side service-role client so RLS
-// cannot suppress the global list. The anon client always sees zero rows
-// (auth.uid() is null under HMAC cookie auth), which silently fell back to seed
-// data on the owner dashboard.
-app.get("/owner/keys", async (c) => {
-  if (!isPrivilegedRequest(c)) return c.json({ error: "Forbidden: Owner session required" }, 403);
-  const { getSupabaseAdminClient, isSupabaseAdminConfigured } = await import("../supabase/client");
-  if (!isSupabaseAdminConfigured) {
-    const { getApiKeys } = await import("../supabase/store");
-    return c.json({ keys: await getApiKeys() }, 200);
-  }
-  const client = await getSupabaseAdminClient();
-  const { data, error } = await client.from("api_keys").select("*").order("created_at", { ascending: false });
-  if (error) {
-    console.error("[Morvexa Owner Keys] Read failed:", error);
-    return c.json({ error: "Gagal membaca daftar API key." }, 500);
-  }
-  return c.json(
-    {
-      keys: data.map((d: any) => ({
-        id: d.id,
-        name: d.name,
-        prefix: d.key_prefix,
-        maskedKey: d.masked_key,
-        isActive: d.is_active,
-        rateLimitRpm: d.rate_limit_rpm,
-        dailyTokenLimit: d.daily_token_limit,
-        createdAt: d.created_at,
-        lastUsedAt: d.last_used_at,
-      })),
-    },
-    200
-  );
-});
-
-app.post("/owner/keys/revoke", async (c) => {
-  if (!isPrivilegedRequest(c)) return c.json({ error: "Forbidden: Owner session required" }, 403);
-  const csrfRejected = enforceCsrfToken(c);
-  if (csrfRejected) return csrfRejected;
-  const body = await c.req.json().catch(() => ({}));
-  const id = String(body?.id || "").trim();
-  if (!id) return c.json({ error: "id key wajib diisi." }, 400);
-  const { getSupabaseAdminClient, isSupabaseAdminConfigured } = await import("../supabase/client");
-  if (!isSupabaseAdminConfigured) return c.json({ error: "Storage belum terkonfigurasi." }, 503);
-  const client = await getSupabaseAdminClient();
-  const { error } = await client.from("api_keys").update({ is_active: false }).eq("id", id);
-  if (error) return c.json({ error: "Gagal revoke key." }, 500);
-  const { recordAuditLog } = await import("../audit/logger");
-  await recordAuditLog({ actorType: "user", actorId: "owner", action: "API_KEY_REVOKED", resourceType: "api_keys", resourceId: id, status: "success" });
-  return c.json({ success: true }, 200);
-});
-
-app.post("/owner/keys/reset-quota", async (c) => {
-  if (!isPrivilegedRequest(c)) return c.json({ error: "Forbidden: Owner session required" }, 403);
-  const csrfRejected = enforceCsrfToken(c);
-  if (csrfRejected) return csrfRejected;
-  const body = await c.req.json().catch(() => ({}));
-  const id = String(body?.id || "").trim();
-  const boost = Number(body?.boostTokens) || 100000;
-  if (!id) return c.json({ error: "id key wajib diisi." }, 400);
-  const { resetKeyQuota } = await import("../supabase/store");
-  const updated = await resetKeyQuota(id, boost);
-  if (!updated) return c.json({ error: "Key tidak ditemukan." }, 404);
-  return c.json({ success: true, key: updated }, 200);
-});
-
+// 20a. Owner API Key Management: /api/owner/keys
+// Mounted from a dedicated Hono sub-app (ownerKeysRouter.ts). The keys routes
+// were previously inlined in the catch-all edge function and got tree-shaken
+// out by Vercel bundling under load; the split sub-app keeps them registered.
+app.route("/owner/keys", ownerKeysApp);
 
 // 21. Owner API Key Provisioning Engine: /api/owner/provisioning/*
 app.get("/owner/provisioning/queue", async (c) => {
