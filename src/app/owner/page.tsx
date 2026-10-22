@@ -15,15 +15,8 @@ import { CustomersManagementTab } from "@/components/owner/CustomersManagementTa
 import { KeyProvisioningTab } from "@/components/owner/KeyProvisioningTab";
 import { CustomerIssueResolverTab } from "@/components/owner/CustomerIssueResolverTab";
 import { AgenticCoreMesh } from "@/components/visual/AgenticCoreMesh";
-import {
-  getApiKeys,
-  createApiKey,
-  revokeApiKey,
-  regenerateKeySecret,
-  resetKeyQuota,
-  getRequestLogs,
-  getRollingQuotaRecords,
-} from "@/lib/supabase/store";
+// Key/quota/traces reads moved to server-side owner APIs (service-role) so RLS
+// cannot silently degrade to seed data on the anonymized browser client.
 import { calculateRollingQuotaStatus } from "@/lib/quota";
 import type { ApiKeyItem, QuotaConfig, QuotaStatus, RequestTraceLog, SystemMetrics } from "@/lib/types";
 import { Lock, ArrowRight, ShieldCheck, ArrowLeft, Zap, Sparkles, LogOut } from "lucide-react";
@@ -87,15 +80,21 @@ export default function OwnerControlPlanePage() {
   }, []);
 
   const reloadData = async () => {
-    const [apiKeys, quotaRecords, logs] = await Promise.all([
-      getApiKeys(),
-      getRollingQuotaRecords(),
-      getRequestLogs(),
-    ]);
-
-    setKeys(apiKeys);
-    setTraces(logs);
-    setQuota(calculateRollingQuotaStatus(quotaRecords, defaultQuotaConfig));
+    try {
+      const [keysRes, quotaRes, tracesRes] = await Promise.all([
+        apiFetch("/api/owner/keys"),
+        apiFetch("/api/owner/quota"),
+        apiFetch("/api/owner/traces"),
+      ]);
+      const keysData = await keysRes.json();
+      const quotaData = await quotaRes.json();
+      const tracesData = await tracesRes.json();
+      if (keysRes.ok) setKeys(keysData.keys || []);
+      if (quotaRes.ok) setQuota(calculateRollingQuotaStatus(quotaData.records || [], defaultQuotaConfig));
+      if (tracesRes.ok) setTraces(tracesData.traces || []);
+    } catch {
+      /* keep previous state on transient error */
+    }
   };
 
   useEffect(() => {
@@ -131,30 +130,46 @@ export default function OwnerControlPlanePage() {
   }, [isAuthenticated]);
 
   const handleCreateKey = async (name: string, rpm: number, dailyTokens: number) => {
-    const res = await createApiKey(name, rpm, dailyTokens);
-    setKeys((prev) => [res.key, ...prev]);
-    return res;
+    const res = await apiFetch("/api/owner/keys/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, rateLimitRpm: rpm, dailyTokenLimit: dailyTokens }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Gagal membuat API key.");
+    setKeys((prev) => [data.key, ...prev]);
+    return data;
   };
 
   const handleRevokeKey = async (id: string) => {
-    await revokeApiKey(id);
+    const res = await apiFetch("/api/owner/keys/revoke", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    if (!res.ok) return;
     setKeys((prev) => prev.map((k) => (k.id === id ? { ...k, isActive: false, healthStatus: "revoked" } : k)));
   };
 
   const handleRegenerateKey = async (id: string) => {
-    const res = await regenerateKeySecret(id);
-    if (res) {
-      setKeys((prev) => prev.map((k) => (k.id === id ? res.key : k)));
-      return { rawSecret: res.rawSecret };
-    }
-    return null;
+    const res = await apiFetch("/api/owner/keys/regenerate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    if (!res.ok) return null;
+    return await res.json();
   };
 
   const handleResetQuota = async (id: string, boostTokens = 100000) => {
-    const updated = await resetKeyQuota(id, boostTokens);
-    if (updated) {
-      setKeys((prev) => prev.map((k) => (k.id === id ? updated : k)));
-    }
+    const res = await apiFetch("/api/owner/keys/reset-quota", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, boostTokens }),
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data.key) setKeys((prev) => prev.map((k) => (k.id === id ? data.key : k)));
   };
 
   const handleLogin = async (e: React.FormEvent) => {
